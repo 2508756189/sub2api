@@ -91,6 +91,9 @@ temp/
 # 构建产物
 # ===================
 dist/
+!frontend/public/skill-market/dist/
+!frontend/public/skill-market/dist/skills/
+!frontend/public/skill-market/dist/skills/*.zip
 build/
 release/
 
@@ -118,7 +121,9 @@ backend/.installed
 tests
 CLAUDE.md
 .claude
-scripts
+scripts/*
+!scripts/
+!scripts/sync-skill-market.ps1
 .code-review-state
 #openspec/
 code-reviews/
@@ -131,6 +136,7 @@ docs/*
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
+!docs/CONNECTOR_CUSTOMIZATION_SYNC.md
 !docs/legal/
 !docs/legal/*.md
 .serena/

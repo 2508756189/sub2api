@@ -8,7 +8,7 @@
       <span>
         <span class="block text-sm font-medium text-gray-900 dark:text-gray-100">Skill Market</span>
         <span class="block text-xs text-gray-500 dark:text-gray-400">
-          {{ selectedIds.length ? `已选择 ${selectedIds.length} 个技能包` : '从 state-of-art-skills 选择要安装的技能包' }}
+          {{ selectedIds.length ? `已选择 ${selectedIds.length} 个技能包` : '从已同步的 Skill Market 选择要安装的技能包' }}
         </span>
       </span>
       <span class="text-sm text-gray-500">{{ expanded ? '收起' : '展开' }}</span>

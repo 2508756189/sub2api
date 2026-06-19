@@ -124,6 +124,7 @@ CLAUDE.md
 scripts/*
 !scripts/
 !scripts/sync-skill-market.ps1
+!scripts/apply-deepseek-channel-pricing.ps1
 .code-review-state
 #openspec/
 code-reviews/
@@ -137,6 +138,7 @@ docs/*
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/CONNECTOR_CUSTOMIZATION_SYNC.md
+!docs/DEEPSEEK_CHANNEL_PRICING.md
 !docs/legal/
 !docs/legal/*.md
 .serena/

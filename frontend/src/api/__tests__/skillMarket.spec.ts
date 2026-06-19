@@ -36,10 +36,8 @@ describe('skillMarket', () => {
     vi.unstubAllGlobals()
   })
 
-  it('falls back to the bundled same-origin registry when remote registries fail', async () => {
+  it('loads the bundled same-origin registry by default', async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: false, status: 404 })
-      .mockResolvedValueOnce({ ok: false, status: 404 })
       .mockResolvedValueOnce({ ok: true, json: async () => registry })
 
     vi.stubGlobal('fetch', fetchMock)
@@ -48,7 +46,21 @@ describe('skillMarket', () => {
 
     expect(result.registryUrl).toBe('/skill-market/index.json')
     expect(result.registry.skills).toHaveLength(1)
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to remote registries when the bundled registry is unavailable', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 404 })
+      .mockResolvedValueOnce({ ok: true, json: async () => registry })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchSkillMarketWithSource()
+
+    expect(result.registryUrl).toBe('https://cdn.jsdelivr.net/gh/2508756189/state-of-art-skills@main/market/index.json')
+    expect(result.registry.skills).toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('resolves archive paths relative to the loaded registry source', () => {

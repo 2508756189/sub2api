@@ -32,7 +32,7 @@ function hasClaudeOptions(options?: ConnectorOptions): boolean {
 
 function hasCodexOptions(options?: ConnectorOptions): boolean {
   const normalized = normalizeConnectorOptions(options)
-  return normalized.codex.model !== 'gpt-5.5' ||
+  return Boolean(normalized.codex.model) ||
     normalized.codex.reasoningEffort !== 'xhigh' ||
     normalized.codex.mcpServers.length > 0
 }
@@ -250,7 +250,7 @@ function codexConfigDir(shell: ConnectorShell): string {
 
 function buildCodexConfig(input: BuildConnectorFilesInput, webSocket: boolean): string {
   const options = normalizeConnectorOptions(input.options)
-  const model = hasCodexOptions(input.options) ? options.codex.model : 'gpt-5.5'
+  const model = options.codex.model || 'REPLACE_WITH_AVAILABLE_MODEL'
   const reasoningEffort = hasCodexOptions(input.options) ? options.codex.reasoningEffort : 'xhigh'
   const lines = [
     'model_provider = "OpenAI"',

@@ -59,11 +59,26 @@
       <div v-if="showCodexOptions" class="grid gap-4 md:grid-cols-3">
         <label class="space-y-1">
           <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Codex 模型</span>
-          <select class="input input-sm w-full" :value="value.codex?.model || 'gpt-5.5'" @change="updateCodexModel(($event.target as HTMLSelectElement).value)">
-            <option v-for="model in CODEX_MODELS" :key="model.id" :value="model.id">
-              {{ model.label }}
+          <select
+            v-if="availableModels.length > 0"
+            class="input input-sm w-full"
+            :value="value.codex?.model || availableModels[0]"
+            @change="updateCodexModel(($event.target as HTMLSelectElement).value)"
+          >
+            <option v-for="model in availableModels" :key="model" :value="model">
+              {{ model }}
             </option>
           </select>
+          <input
+            v-else
+            :value="value.codex?.model || ''"
+            class="input input-sm w-full"
+            placeholder="需同步渠道模型，或手动填写真实模型名"
+            @input="updateCodexModel(($event.target as HTMLInputElement).value)"
+          />
+          <p v-if="availableModels.length === 0" class="text-xs text-amber-600 dark:text-amber-400">
+            当前分组没有可用模型数据，请先在渠道定价/模型列表中同步，或手动填写上游真实模型名。
+          </p>
         </label>
 
         <label class="space-y-1">
@@ -97,13 +112,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { GroupPlatform } from '@/types'
 import {
   CLAUDE_MODEL_TIERS,
   CLAUDE_PLUGINS,
   CODEX_MCP_SERVERS,
-  CODEX_MODELS,
   CODEX_REASONING_EFFORTS,
   type ClaudeModelTier,
   type CodexReasoningEffort,
@@ -115,6 +129,7 @@ const props = defineProps<{
   modelValue?: ConnectorOptions
   platform: GroupPlatform | null
   client: string
+  availableModels?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -124,10 +139,16 @@ const emit = defineEmits<{
 const expanded = ref(true)
 
 const value = computed(() => normalizeConnectorOptions(props.modelValue))
+const availableModels = computed(() => props.availableModels ?? [])
 const showClaudeOptions = computed(() => props.client === 'claude')
 const showCodexOptions = computed(() => props.client === 'codex' || props.client === 'codex-ws')
 const selectedPlugins = computed(() => value.value.claude.enabledPlugins)
 const selectedMcpServers = computed(() => value.value.codex.mcpServers)
+
+watch([availableModels, showCodexOptions], ([models, enabled]) => {
+  if (!enabled || models.length === 0 || value.value.codex.model) return
+  updateCodexModel(models[0])
+})
 
 function emitValue(next: ConnectorOptions) {
   emit('update:modelValue', normalizeConnectorOptions(next))

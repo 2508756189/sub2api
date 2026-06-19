@@ -1,9 +1,8 @@
-export const DEFAULT_SKILL_MARKET_REGISTRY_URL =
-  'https://cdn.jsdelivr.net/gh/2508756189/state-of-art-skills@main/market/index.json'
+export const DEFAULT_SKILL_MARKET_REGISTRY_URL = '/skill-market/index.json'
 
 export const SKILL_MARKET_REGISTRY_FALLBACK_URLS = [
+  'https://cdn.jsdelivr.net/gh/2508756189/state-of-art-skills@main/market/index.json',
   'https://raw.githubusercontent.com/2508756189/state-of-art-skills/main/market/index.json',
-  '/skill-market/index.json',
 ]
 
 export interface SkillMarketCategory {

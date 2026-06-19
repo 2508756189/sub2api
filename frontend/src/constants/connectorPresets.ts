@@ -38,11 +38,6 @@ export interface PluginPreset {
   default: boolean
 }
 
-export interface CodexModelPreset {
-  id: string
-  label: string
-}
-
 export interface CodexMcpServerPreset {
   id: string
   label: string
@@ -82,15 +77,6 @@ export const CLAUDE_PLUGINS: PluginPreset[] = [
   { id: 'playwright@claude-plugins-official', label: 'Playwright', default: false },
 ]
 
-export const CODEX_MODELS: CodexModelPreset[] = [
-  { id: 'gpt-5.5', label: 'GPT-5.5' },
-  { id: 'gpt-5.2', label: 'GPT-5.2' },
-  { id: 'gpt-5.4', label: 'GPT-5.4' },
-  { id: 'gpt-5.4-mini', label: 'GPT-5.4 Mini' },
-  { id: 'gpt-5.3-codex', label: 'GPT-5.3 Codex' },
-  { id: 'codex-mini-latest', label: 'Codex Mini' },
-]
-
 export const CODEX_REASONING_EFFORTS: CodexReasoningEffort[] = [
   'minimal',
   'low',
@@ -120,7 +106,7 @@ export const DEFAULT_CONNECTOR_OPTIONS: ConnectorOptions = {
     enabledPlugins: [],
   },
   codex: {
-    model: 'gpt-5.5',
+    model: '',
     reasoningEffort: 'xhigh',
     mcpServers: [],
   },
@@ -136,7 +122,7 @@ export function normalizeConnectorOptions(options?: ConnectorOptions): Normalize
       enabledPlugins: [...(options?.claude?.enabledPlugins ?? DEFAULT_CONNECTOR_OPTIONS.claude?.enabledPlugins ?? [])],
     },
     codex: {
-      model: options?.codex?.model || DEFAULT_CONNECTOR_OPTIONS.codex?.model || 'gpt-5.5',
+      model: options?.codex?.model || DEFAULT_CONNECTOR_OPTIONS.codex?.model || '',
       reasoningEffort: options?.codex?.reasoningEffort || DEFAULT_CONNECTOR_OPTIONS.codex?.reasoningEffort || 'xhigh',
       mcpServers: [...(options?.codex?.mcpServers ?? DEFAULT_CONNECTOR_OPTIONS.codex?.mcpServers ?? [])],
     },

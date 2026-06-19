@@ -8,7 +8,7 @@ This fork keeps TokenPort-specific connector behavior as small, reusable fronten
 - `frontend/src/components/keys/SkillMarketSelector.vue` renders the Skill Market picker.
 - `frontend/src/components/keys/connectorTemplates.ts` generates Claude Code, Codex, and skill install scripts.
 - `frontend/src/constants/connectorPresets.ts` owns Claude plugin/model and Codex model/MCP presets.
-- `frontend/src/api/skillMarket.ts` loads remote registries and falls back to the bundled `/skill-market/index.json`.
+- `frontend/src/api/skillMarket.ts` loads the bundled same-origin `/skill-market/index.json` first, then falls back to remote registries when available.
 - `frontend/src/components/keys/UseKeyModal.vue` is the only upstream component with mount-point changes.
 
 ## Why It Survives Upstream Updates
@@ -19,40 +19,43 @@ The runtime image must still be rebuilt. Sub2API embeds the frontend into the Go
 
 ## Skill Market Refresh
 
-After updating `state-of-art-skills`, rebuild the market there, then refresh the bundled fallback:
+After updating `state-of-art-skills`, rebuild the market there, then refresh the bundled registry:
 
 ```powershell
-Set-Location D:\TokenPort智能应用与技能接入平台\state-of-art-skills
+Set-Location E:\state-of-art-skills
 python scripts\test_build_market.py
 python scripts\build_market.py
 
-Set-Location D:\TokenPort智能应用与技能接入平台\sub2api
+Set-Location E:\sub2api-fork
 .\scripts\sync-skill-market.ps1
 ```
 
-The preferred live registry is jsDelivr:
-
-```text
-https://cdn.jsdelivr.net/gh/2508756189/state-of-art-skills@main/market/index.json
-```
-
-If CDN/raw GitHub is unavailable, the UI falls back to the bundled same-origin registry:
+The preferred runtime registry is the bundled same-origin registry:
 
 ```text
 /skill-market/index.json
 ```
 
+Remote GitHub/CDN registry URLs only work when `2508756189/state-of-art-skills` is public. If the skills repository stays private, unauthenticated browser requests to jsDelivr/raw GitHub return `404`, so the UI should not depend on them for normal demos.
+
+Remote registry candidates:
+
+```text
+https://cdn.jsdelivr.net/gh/2508756189/state-of-art-skills@main/market/index.json
+https://raw.githubusercontent.com/2508756189/state-of-art-skills/main/market/index.json
+```
+
 ## Upstream Sync Workflow
 
 ```powershell
-Set-Location D:\TokenPort智能应用与技能接入平台\sub2api
+Set-Location E:\sub2api-fork
 git status --short
 git fetch origin
 git rebase origin/main
 .\scripts\sync-skill-market.ps1
-docker build -t sub2api-fork:dev .
+docker build --build-arg GOLANG_IMAGE=golang:alpine -t sub2api-fork:dev .
 
-Set-Location D:\TokenPort智能应用与技能接入平台\token-platform
+Set-Location E:\token-platform
 docker compose -f docker-compose.local.yml up -d --force-recreate sub2api
 curl.exe -s http://127.0.0.1:8080/health
 curl.exe -s http://127.0.0.1:8080/skill-market/index.json

@@ -76,6 +76,7 @@
           v-model="connectorOptions"
           :platform="platform"
           :client="activeClientTab"
+          :available-models="connectorAvailableModels"
         />
 
         <SkillMarketSelector
@@ -153,6 +154,7 @@ import ConnectorOptions from '@/components/keys/ConnectorOptions.vue'
 import SkillMarketSelector from '@/components/keys/SkillMarketSelector.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import type { GroupPlatform } from '@/types'
+import userChannelsAPI, { type UserAvailableChannel } from '@/api/channels'
 import type { SkillInstallSelection } from '@/api/skillMarket'
 import {
   DEFAULT_CONNECTOR_OPTIONS,
@@ -170,6 +172,7 @@ interface Props {
   apiKey: string
   baseUrl: string
   platform: GroupPlatform | null
+  groupId?: number | null
   allowMessagesDispatch?: boolean
 }
 
@@ -201,6 +204,7 @@ const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
 const connectorOptions = ref<ConnectorOptionsState>(structuredClone(DEFAULT_CONNECTOR_OPTIONS))
 const selectedSkills = ref<SkillInstallSelection[]>([])
+const connectorAvailableModels = ref<string[]>([])
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
@@ -225,6 +229,52 @@ watch(() => props.platform, () => {
 watch(activeClientTab, () => {
   activeTab.value = 'unix'
 })
+
+watch(
+  () => [props.show, props.platform, props.groupId] as const,
+  () => {
+    if (props.show) {
+      loadConnectorAvailableModels()
+    } else {
+      connectorAvailableModels.value = []
+    }
+  },
+  { immediate: true },
+)
+
+function extractConnectorModels(channels: UserAvailableChannel[]): string[] {
+  const platform = props.platform
+  if (!platform) return []
+
+  const models = new Set<string>()
+  channels.forEach((channel) => {
+    channel.platforms
+      .filter((section) => section.platform === platform)
+      .filter((section) => {
+        if (!props.groupId) return true
+        return section.groups.some((group) => group.id === props.groupId)
+      })
+      .forEach((section) => {
+        section.supported_models.forEach((model) => {
+          if (model.name) models.add(model.name)
+        })
+      })
+  })
+  return Array.from(models).sort((a, b) => a.localeCompare(b))
+}
+
+async function loadConnectorAvailableModels() {
+  if (!props.platform || !['openai', 'anthropic', 'gemini', 'antigravity'].includes(props.platform)) {
+    connectorAvailableModels.value = []
+    return
+  }
+  try {
+    connectorAvailableModels.value = extractConnectorModels(await userChannelsAPI.getAvailable())
+  } catch (error) {
+    console.error('Failed to load connector available models:', error)
+    connectorAvailableModels.value = []
+  }
+}
 
 // Icon components
 const AppleIcon = {

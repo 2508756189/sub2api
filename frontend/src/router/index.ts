@@ -40,6 +40,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/skill-market',
+    name: 'SkillMarket',
+    component: () => import('@/views/user/SkillMarketView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Skill Market'
+    }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/LoginView.vue'),

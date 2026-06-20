@@ -19,7 +19,7 @@
         </span>
         <span class="brand-text">
           <strong>{{ displayName }}</strong>
-          <small>Connector Control Plane</small>
+          <small>智能应用接入平台</small>
         </span>
       </router-link>
 
@@ -56,12 +56,12 @@
         <div class="hero-glow" aria-hidden="true"></div>
 
         <div class="hero-content">
-          <p class="eyebrow">Token 经营闭环 · 智能应用接入 · Skill Market</p>
+          <p class="eyebrow">统一接入 · 模型路由 · 用量核算</p>
           <h1>{{ displayName }}</h1>
-          <p class="hero-tagline">把接入和经营，收进一个控制面</p>
+          <p class="hero-tagline">给每个团队一把可管理的 AI 密钥</p>
           <p class="hero-copy">
-            部门 API Key 池、真实模型路由、Codex / Claude Code 一键接入与技能包分发，
-            统一在一个清晰可审计的控制面里完成。
+            管理员先配置上游账号、可用模型和部门额度；开发者复制接入地址和密钥，
+            就能把 Codex、Claude Code、OpenCode 或业务系统接进来。每次调用都会记录 Token 和扣费明细。
           </p>
           <div class="hero-actions">
             <router-link :to="isAuthenticated ? dashboardPath : '/login'" class="primary-action">
@@ -69,45 +69,45 @@
               <Icon name="arrowRight" size="md" />
             </router-link>
             <router-link to="/available-channels" class="secondary-action">
-              查看可用模型
+              查看模型与价格
             </router-link>
           </div>
         </div>
 
-        <div class="ops-panel" aria-label="TokenPort operation snapshot">
+        <div class="ops-panel" aria-label="TokenPort onboarding flow">
           <div class="panel-head">
-            <span>LIVE ROUTING</span>
-            <b class="status-pill">healthy</b>
+            <span>接入路径</span>
+            <b class="status-pill">可审计</b>
           </div>
           <div class="route-stack">
             <div class="route-row">
-              <span>研发部 App</span>
+              <span>创建部门密钥</span>
               <i></i>
-              <b>OpenAI pool</b>
+              <b>限定模型与额度</b>
             </div>
             <div class="route-row">
-              <span>财务部 App</span>
+              <span>选择客户端</span>
               <i></i>
-              <b>Anthropic pool</b>
+              <b>生成接入配置</b>
             </div>
             <div class="route-row">
-              <span>技能包安装</span>
+              <span>发起模型调用</span>
               <i></i>
-              <b>12 indexed</b>
+              <b>记录 Token 与成本</b>
             </div>
           </div>
           <div class="metric-grid">
             <div>
-              <span>模型来源</span>
-              <b>真实同步</b>
+              <span>协议兼容</span>
+              <b>OpenAI / Anthropic</b>
             </div>
             <div>
-              <span>密钥输出</span>
-              <b>已脱敏</b>
+              <span>接入方式</span>
+              <b>应用 / AI 工具</b>
             </div>
             <div>
-              <span>成本归因</span>
-              <b>部门级</b>
+              <span>统计维度</span>
+              <b>部门 / 模型</b>
             </div>
           </div>
         </div>
@@ -115,49 +115,51 @@
 
       <section class="workflow">
         <div class="section-title">
-          <p>OPERATING SYSTEM</p>
-          <h2>从接入到经营，少填配置，多看真实数据</h2>
+          <p>常用操作</p>
+          <h2>发密钥、配接入、看用量</h2>
+          <span class="section-summary">管理员设置模型和额度，开发者复制接入配置，团队在用量页查看 Token 与扣费明细。</span>
         </div>
 
         <div class="workflow-grid">
           <article>
             <span>01</span>
-            <h3>真实模型池</h3>
-            <p>连接器只读取 `/channels/available` 和已同步渠道模型。没有模型时提示同步或手动填写，不再展示假 GPT / Claude 选项。</p>
+            <h3>发放部门密钥</h3>
+            <p>为不同团队、应用或 AI 工具创建独立密钥，设置可用模型、上游账号池、额度和限流策略。</p>
           </article>
           <article>
             <span>02</span>
-            <h3>一键接入包</h3>
-            <p>按 Codex CLI、Claude Code、OpenCode 等客户端生成配置片段、安装命令和诊断路径，接入过程可复制、可审计。</p>
+            <h3>生成接入配置</h3>
+            <p>按 Codex、Claude Code、OpenCode 或业务系统生成配置、安装命令和诊断步骤，减少手工复制错误。</p>
           </article>
           <article>
             <span>03</span>
-            <h3>技能市场</h3>
-            <p>默认从同源 `/skill-market/index.json` 加载技能包，包含分类、版本、风险等级、安装目标和 checksum。</p>
+            <h3>安装常用技能</h3>
+            <p>按 Codex、Claude Code 等客户端选择代码评审、资料整理、前端设计、会议纪要等技能，并查看版本、风险等级和校验信息。</p>
           </article>
           <article>
             <span>04</span>
-            <h3>经营归因</h3>
-            <p>把部门、API Key、模型、技能包和 token 成本连起来，为后续预算、定价和效能评估提供基础数据。</p>
+            <h3>查看用量成本</h3>
+            <p>每次调用按密钥、部门、模型和时间归集，管理员可以看到 Token、钱包扣费、异常和预算消耗。</p>
           </article>
         </div>
       </section>
 
       <section class="pricing-strip">
         <div class="section-title">
-          <p>UPSTREAM ACCOUNTING</p>
-          <h2>上游账号定价，按真实模型扣钱包</h2>
+          <p>模型计价</p>
+          <h2>真实模型价格，清楚扣费</h2>
+          <span class="section-summary">不同协议入口可以共用同一套模型池，费用仍按实际上游模型单价计算。</span>
         </div>
 
         <div class="pricing-grid">
           <article class="pricing-card">
             <span class="plan-kicker">DeepSeek V4 Pro</span>
-            <h3>高能力模型</h3>
+            <h3>复杂任务模型</h3>
             <div class="price-line">
               <b>$0.435 / $0.870</b>
               <span>每 1M 输入 / 输出 token</span>
             </div>
-            <p>用于复杂推理、代码生成和长链路智能应用。渠道协议可以是 OpenAI 或 Anthropic，但成本按 DeepSeek 模型计算。</p>
+            <p>适合复杂推理、代码生成和长链路智能应用。协议入口可以兼容 OpenAI 或 Anthropic，成本按真实模型价格核算。</p>
             <ul>
               <li>模型别名：deepseek-v4-pro</li>
               <li>Cache miss 按输入价核算</li>
@@ -172,7 +174,7 @@
               <b>$0.140 / $0.280</b>
               <span>每 1M 输入 / 输出 token</span>
             </div>
-            <p>用于日常问答、轻量代码辅助和批量工具调用。适合默认分配给部门应用，先把成本跑出真实曲线。</p>
+            <p>适合日常问答、轻量代码辅助和批量工具调用。可作为部门默认模型，先用低成本跑出真实使用曲线。</p>
             <ul>
               <li>模型别名：deepseek-v4-flash</li>
               <li>输入输出分项入账</li>
@@ -187,7 +189,7 @@
               <b>Token × 单价</b>
               <span>按 API Key / 部门归集</span>
             </div>
-            <p>每次请求都会记录 input、output、cache 与实际扣费，后续可沉淀为预算、成本分摊和效能评估。</p>
+            <p>每次请求记录输入、输出、缓存和实际扣费，后续可用于预算提醒、成本分摊和用量分析。</p>
             <ul>
               <li>usage_logs 保留成本明细</li>
               <li>actual_cost 直接影响钱包余额</li>
@@ -199,7 +201,7 @@
 
       <section class="provider-strip">
         <div>
-          <p>PROVIDER MATRIX</p>
+          <p>模型与客户端</p>
           <h2>{{ t('home.providers.title') }}</h2>
           <span>{{ t('home.providers.description') }}</span>
         </div>
@@ -217,7 +219,7 @@
       <span>&copy; {{ currentYear }} {{ displayName }}. {{ t('home.footer.allRightsReserved') }}</span>
       <span>
         <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
-        <a :href="githubUrl" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <router-link to="/available-channels">模型与价格</router-link>
       </span>
     </footer>
   </div>
@@ -247,8 +249,6 @@ const isHomeContentUrl = computed(() => {
 })
 
 const isDark = ref(document.documentElement.classList.contains('dark'))
-const githubUrl = 'https://github.com/2508756189/sub2api'
-
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => isAdmin.value ? '/admin/dashboard' : '/dashboard')
@@ -439,10 +439,10 @@ onMounted(() => {
 .hero {
   display: grid;
   min-height: calc(100vh - 86px);
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
-  gap: clamp(28px, 5vw, 68px);
+  grid-template-columns: minmax(440px, 0.96fr) minmax(360px, 520px);
+  gap: clamp(36px, 5vw, 72px);
   align-items: center;
-  padding: 54px clamp(18px, 5vw, 72px) 84px;
+  padding: 46px clamp(22px, 5vw, 72px) 76px;
 }
 
 .hero-glow {
@@ -470,7 +470,7 @@ onMounted(() => {
 .hero-content h1 {
   margin-top: 16px;
   color: var(--text);
-  font-size: clamp(48px, 7vw, 86px);
+  font-size: clamp(56px, 7.4vw, 92px);
   font-weight: 900;
   line-height: 0.94;
   letter-spacing: -0.02em;
@@ -479,16 +479,18 @@ onMounted(() => {
 .hero-tagline {
   margin-top: 14px;
   color: var(--text);
-  font-size: clamp(22px, 3vw, 34px);
+  max-width: 760px;
+  font-size: clamp(24px, 3vw, 36px);
   font-weight: 800;
   line-height: 1.2;
+  text-wrap: balance;
 }
 
 .hero-copy {
-  max-width: 560px;
-  margin-top: 20px;
-  font-size: clamp(15px, 1.4vw, 18px);
-  line-height: 1.7;
+  max-width: 620px;
+  margin-top: 18px;
+  font-size: 16px;
+  line-height: 1.82;
 }
 
 .hero-actions {
@@ -573,37 +575,59 @@ onMounted(() => {
 .workflow,
 .pricing-strip,
 .provider-strip {
-  padding: 74px clamp(18px, 5vw, 72px);
+  padding: 68px clamp(22px, 5vw, 72px);
 }
 
 .section-title {
   display: grid;
-  max-width: 780px;
-  gap: 10px;
+  max-width: 720px;
+  gap: 9px;
 }
 
 .section-title h2,
 .provider-strip h2 {
   color: var(--text);
-  font-size: clamp(28px, 4vw, 42px);
+  font-size: clamp(28px, 3.2vw, 40px);
   font-weight: 800;
   line-height: 1.16;
   letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.section-summary {
+  max-width: 660px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.72;
 }
 
 .workflow-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 34px;
+  gap: 16px;
+  margin-top: 28px;
 }
 
 .workflow article {
-  min-height: 230px;
-  padding: 22px;
+  position: relative;
+  min-height: 218px;
+  padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--panel);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 56%),
+    var(--panel);
+  overflow: hidden;
+}
+
+.workflow article::after {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 44px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(46, 229, 140, 0.72));
+  content: "";
 }
 
 .workflow article span {
@@ -614,16 +638,16 @@ onMounted(() => {
 }
 
 .workflow article h3 {
-  margin-top: 34px;
+  margin-top: 28px;
   color: var(--text);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 800;
 }
 
 .workflow article p {
   margin-top: 12px;
-  font-size: 14px;
-  line-height: 1.72;
+  font-size: 13.5px;
+  line-height: 1.7;
 }
 
 .pricing-strip {
@@ -636,8 +660,8 @@ onMounted(() => {
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 34px;
+  gap: 16px;
+  margin-top: 28px;
 }
 
 .pricing-card {
@@ -810,7 +834,7 @@ onMounted(() => {
 
 @media (max-width: 1080px) {
   .hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .ops-panel {
@@ -851,11 +875,20 @@ onMounted(() => {
 
   .hero {
     min-height: auto;
-    padding: 54px 18px 64px;
+    padding: 46px 18px 58px;
   }
 
   .hero-content h1 {
-    font-size: clamp(44px, 13vw, 60px);
+    font-size: clamp(46px, 14vw, 62px);
+  }
+
+  .hero-tagline {
+    font-size: clamp(22px, 8vw, 30px);
+  }
+
+  .hero-copy {
+    font-size: 15px;
+    line-height: 1.75;
   }
 
   .metric-grid,
@@ -875,7 +908,16 @@ onMounted(() => {
   .workflow,
   .pricing-strip,
   .provider-strip {
-    padding: 56px 18px;
+    padding: 52px 18px;
+  }
+
+  .section-title h2,
+  .provider-strip h2 {
+    font-size: clamp(26px, 8vw, 34px);
+  }
+
+  .workflow article {
+    min-height: auto;
   }
 
   .home-footer {

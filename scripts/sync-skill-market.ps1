@@ -5,7 +5,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$skillRepo = Resolve-Path (Join-Path $repoRoot $SkillRepoPath)
+if ([System.IO.Path]::IsPathRooted($SkillRepoPath)) {
+  $skillRepo = Resolve-Path $SkillRepoPath
+} else {
+  $skillRepo = Resolve-Path (Join-Path $repoRoot $SkillRepoPath)
+}
 $marketIndex = Join-Path $skillRepo "market\index.json"
 $archiveDir = Join-Path $skillRepo "dist\skills"
 $targetRoot = Join-Path $repoRoot "frontend\public\skill-market"

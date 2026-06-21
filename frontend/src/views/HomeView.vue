@@ -409,11 +409,16 @@ onMounted(() => {
 .header-cta,
 .primary-action,
 .secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
   min-height: 40px;
   padding: 0 14px;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .header-cta,
@@ -438,11 +443,12 @@ onMounted(() => {
 
 .hero {
   display: grid;
-  min-height: min(760px, calc(100vh - 86px));
-  grid-template-columns: minmax(440px, 0.96fr) minmax(360px, 520px);
-  gap: clamp(36px, 5vw, 72px);
+  min-height: min(680px, calc(100vh - 86px));
+  grid-template-columns: minmax(420px, 620px) minmax(380px, 520px);
+  column-gap: clamp(42px, 6vw, 128px);
   align-items: center;
-  padding: 34px clamp(22px, 5vw, 72px) 52px;
+  justify-content: start;
+  padding: 26px clamp(22px, 5vw, 72px) 42px;
 }
 
 .hero-glow {
@@ -501,7 +507,6 @@ onMounted(() => {
 
 .primary-action,
 .secondary-action {
-  display: inline-flex;
   min-height: 46px;
   padding: 0 18px;
 }

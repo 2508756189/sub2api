@@ -11,7 +11,7 @@
     <div v-else v-html="homeContent"></div>
   </div>
 
-  <div v-else class="tokenport-home min-h-screen bg-[#0c0f11] text-[#f4f0e8]">
+  <div v-else class="tokenport-home min-h-screen" :class="{ 'is-light': !isDark }">
     <header class="home-header">
       <router-link to="/home" class="brand">
         <span class="brand-mark">
@@ -19,12 +19,27 @@
         </span>
         <span class="brand-text">
           <strong>{{ displayName }}</strong>
-          <small>智能应用接入平台</small>
+          <small>{{ homeText.productLabel }}</small>
         </span>
       </router-link>
 
       <nav class="header-actions" aria-label="Home actions">
-        <LocaleSwitcher />
+        <div class="locale-segment" aria-label="Language">
+          <button
+            type="button"
+            :class="{ active: locale === 'zh' }"
+            @click="changeLocale('zh')"
+          >
+            中文
+          </button>
+          <button
+            type="button"
+            :class="{ active: locale === 'en' }"
+            @click="changeLocale('en')"
+          >
+            EN
+          </button>
+        </div>
         <a
           v-if="docUrl"
           :href="docUrl"
@@ -37,12 +52,17 @@
         </a>
         <button
           type="button"
-          class="icon-button"
+          class="theme-toggle"
           :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
           @click="toggleTheme"
         >
-          <Icon v-if="isDark" name="sun" size="md" />
-          <Icon v-else name="moon" size="md" />
+          <span class="theme-track">
+            <span class="theme-thumb">
+              <Icon v-if="isDark" name="moon" size="sm" />
+              <Icon v-else name="sun" size="sm" />
+            </span>
+          </span>
+          <span>{{ isDark ? homeText.darkMode : homeText.lightMode }}</span>
         </button>
         <router-link :to="isAuthenticated ? dashboardPath : '/login'" class="header-cta">
           <span>{{ isAuthenticated ? t('home.dashboard') : t('home.login') }}</span>
@@ -56,58 +76,36 @@
         <div class="hero-glow" aria-hidden="true"></div>
 
         <div class="hero-content">
-          <p class="eyebrow">统一接入 · 模型路由 · 用量核算</p>
+          <p class="eyebrow">{{ homeText.eyebrow }}</p>
           <h1>{{ displayName }}</h1>
-          <p class="hero-tagline">给每个团队一把可管理的 AI 密钥</p>
-          <p class="hero-copy">
-            管理员先配置上游账号、可用模型和部门额度；开发者复制接入地址和密钥，
-            就能把 Codex、Claude Code、OpenCode 或业务系统接进来。每次调用都会记录 Token 和扣费明细。
-          </p>
+          <p class="hero-tagline">{{ homeText.tagline }}</p>
+          <p class="hero-copy">{{ homeText.heroCopy }}</p>
           <div class="hero-actions">
             <router-link :to="isAuthenticated ? dashboardPath : '/login'" class="primary-action">
-              {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
+              {{ isAuthenticated ? homeText.goToDashboard : homeText.getStarted }}
               <Icon name="arrowRight" size="md" />
             </router-link>
             <router-link to="/available-channels" class="secondary-action">
-              查看模型与价格
+              {{ homeText.viewModels }}
             </router-link>
           </div>
         </div>
-
         <div class="ops-panel" aria-label="TokenPort onboarding flow">
           <div class="panel-head">
-            <span>接入路径</span>
-            <b class="status-pill">可审计</b>
+            <span>{{ homeText.pathTitle }}</span>
+            <b class="status-pill">{{ homeText.auditable }}</b>
           </div>
           <div class="route-stack">
-            <div class="route-row">
-              <span>创建部门密钥</span>
+            <div v-for="step in homeText.steps" :key="step.left" class="route-row">
+              <span>{{ step.left }}</span>
               <i></i>
-              <b>限定模型与额度</b>
-            </div>
-            <div class="route-row">
-              <span>选择客户端</span>
-              <i></i>
-              <b>生成接入配置</b>
-            </div>
-            <div class="route-row">
-              <span>发起模型调用</span>
-              <i></i>
-              <b>记录 Token 与成本</b>
+              <b>{{ step.right }}</b>
             </div>
           </div>
           <div class="metric-grid">
-            <div>
-              <span>协议兼容</span>
-              <b>OpenAI / Anthropic</b>
-            </div>
-            <div>
-              <span>接入方式</span>
-              <b>应用 / AI 工具</b>
-            </div>
-            <div>
-              <span>统计维度</span>
-              <b>部门 / 模型</b>
+            <div v-for="metric in homeText.metrics" :key="metric.label">
+              <span>{{ metric.label }}</span>
+              <b>{{ metric.value }}</b>
             </div>
           </div>
         </div>
@@ -229,10 +227,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { setLocale } from '@/i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
@@ -253,11 +251,70 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => isAdmin.value ? '/admin/dashboard' : '/dashboard')
 const currentYear = computed(() => new Date().getFullYear())
+const isZh = computed(() => locale.value === 'zh')
+const homeText = computed(() => isZh.value
+  ? {
+      productLabel: '智能应用接入平台',
+      darkMode: '暗色',
+      lightMode: '亮色',
+      dashboard: '控制台',
+      login: '登录',
+      goToDashboard: '进入控制台',
+      getStarted: '立即开始',
+      viewModels: '查看模型与价格',
+      eyebrow: '统一接入 · 模型路由 · 用量核算',
+      tagline: '给每个团队一把可管理的 AI 密钥',
+      heroCopy: '管理员先配置上游账号、可用模型和部门额度；开发者复制接入地址和密钥，就能把 Codex、Claude Code、OpenCode 或业务系统接进来。每次调用都会记录 Token 和扣费明细。',
+      pathTitle: '接入路径',
+      auditable: '可审计',
+      steps: [
+        { left: '创建部门密钥', right: '限定模型与额度' },
+        { left: '选择客户端', right: '生成接入配置' },
+        { left: '发起模型调用', right: '记录 Token 与成本' }
+      ],
+      metrics: [
+        { label: '协议兼容', value: 'OpenAI / Anthropic' },
+        { label: '接入方式', value: '应用 / AI 工具' },
+        { label: '统计维度', value: '部门 / 模型' }
+      ]
+    }
+  : {
+      productLabel: 'AI application gateway',
+      darkMode: 'Dark',
+      lightMode: 'Light',
+      dashboard: 'Dashboard',
+      login: 'Log in',
+      goToDashboard: 'Dashboard',
+      getStarted: 'Get started',
+      viewModels: 'Models and pricing',
+      eyebrow: 'Unified access · Model routing · Usage accounting',
+      tagline: 'Managed AI keys for every team',
+      heroCopy: 'Admins configure upstream accounts, available models, and team budgets. Developers copy one endpoint and one key to connect Codex, Claude Code, OpenCode, or business systems. Every call is recorded with Token usage and billing details.',
+      pathTitle: 'Access path',
+      auditable: 'Auditable',
+      steps: [
+        { left: 'Create team key', right: 'Limit models and quota' },
+        { left: 'Choose client', right: 'Generate config' },
+        { left: 'Send model request', right: 'Record Token and cost' }
+      ],
+      metrics: [
+        { label: 'Protocols', value: 'OpenAI / Anthropic' },
+        { label: 'Entry', value: 'Apps / AI tools' },
+        { label: 'Reports', value: 'Team / Model' }
+      ]
+    })
 
 function toggleTheme() {
   isDark.value = !isDark.value
   document.documentElement.classList.toggle('dark', isDark.value)
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+
+async function changeLocale(code: 'zh' | 'en') {
+  if (locale.value === code) {
+    return
+  }
+  await setLocale(code)
 }
 
 function initTheme() {
@@ -293,8 +350,22 @@ onMounted(() => {
   --amber: #ffc35a;
   --red: #ff6e5d;
   position: relative;
+  background: var(--bg);
+  color: var(--text);
   overflow-x: hidden;
   font-family: "Aptos", "Segoe UI", sans-serif;
+}
+
+.tokenport-home.is-light {
+  --bg: #f4f7f2;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.9);
+  --line: rgba(24, 45, 37, 0.14);
+  --text: #111a16;
+  --muted: #637069;
+  --green: #12b86c;
+  --cyan: #087ea4;
+  --amber: #9a6500;
 }
 
 .tokenport-home::before {
@@ -308,6 +379,14 @@ onMounted(() => {
     radial-gradient(circle at 72% 12%, rgba(85, 215, 255, 0.16), transparent 27%),
     radial-gradient(circle at 12% 88%, rgba(255, 195, 90, 0.09), transparent 24%),
     linear-gradient(180deg, #0c0f11, #111512 58%, #0c0f11);
+}
+
+.tokenport-home.is-light::before {
+  background:
+    linear-gradient(110deg, rgba(18, 184, 108, 0.13), transparent 24%),
+    radial-gradient(circle at 70% 10%, rgba(8, 126, 164, 0.18), transparent 29%),
+    radial-gradient(circle at 12% 86%, rgba(154, 101, 0, 0.08), transparent 24%),
+    linear-gradient(180deg, #f7faf4, #edf5ef 58%, #f7faf4);
 }
 
 .home-header,
@@ -388,6 +467,78 @@ onMounted(() => {
   gap: 10px;
 }
 
+.locale-segment,
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.locale-segment {
+  gap: 2px;
+  padding: 3px;
+}
+
+.locale-segment button {
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0 10px;
+}
+
+.locale-segment button.active {
+  background: var(--panel-strong);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.theme-toggle {
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0 11px 0 8px;
+}
+
+.theme-track {
+  position: relative;
+  display: inline-flex;
+  width: 42px;
+  height: 24px;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.theme-thumb {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  margin-left: 2px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.tokenport-home.is-light .theme-thumb {
+  transform: translateX(18px);
+}
+
 .icon-button,
 .header-cta,
 .primary-action,
@@ -434,6 +585,8 @@ onMounted(() => {
 }
 
 .icon-button:hover,
+.locale-segment:hover,
+.theme-toggle:hover,
 .header-cta:hover,
 .primary-action:hover,
 .secondary-action:hover {

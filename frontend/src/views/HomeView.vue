@@ -438,11 +438,11 @@ onMounted(() => {
 
 .hero {
   display: grid;
-  min-height: calc(100vh - 86px);
+  min-height: min(760px, calc(100vh - 86px));
   grid-template-columns: minmax(440px, 0.96fr) minmax(360px, 520px);
   gap: clamp(36px, 5vw, 72px);
   align-items: center;
-  padding: 46px clamp(22px, 5vw, 72px) 76px;
+  padding: 34px clamp(22px, 5vw, 72px) 52px;
 }
 
 .hero-glow {
@@ -470,17 +470,17 @@ onMounted(() => {
 .hero-content h1 {
   margin-top: 16px;
   color: var(--text);
-  font-size: clamp(56px, 7.4vw, 92px);
+  font-size: clamp(56px, 7vw, 86px);
   font-weight: 900;
   line-height: 0.94;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .hero-tagline {
   margin-top: 14px;
   color: var(--text);
   max-width: 760px;
-  font-size: clamp(24px, 3vw, 36px);
+  font-size: clamp(24px, 2.8vw, 34px);
   font-weight: 800;
   line-height: 1.2;
   text-wrap: balance;
@@ -490,13 +490,13 @@ onMounted(() => {
   max-width: 620px;
   margin-top: 18px;
   font-size: 16px;
-  line-height: 1.82;
+  line-height: 1.72;
 }
 
 .hero-actions {
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 34px;
+  margin-top: 26px;
 }
 
 .primary-action,

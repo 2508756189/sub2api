@@ -1,3 +1,10 @@
+# TokenPort 运行仓库
+
+> [!IMPORTANT]
+> 当前默认分支 `tokenport/main` 是基于 Sub2API 构建的 TokenPort 产品分支，保存品牌界面、统一接入中心、连接器配置和 Skill Market。`main` 只镜像 `Wei-Shaw/sub2api` 官方源码，用于接收上游更新。仓库与分支规则见 [TOKENPORT.md](TOKENPORT.md)。
+
+以下继续保留 Sub2API 原项目说明、许可证和风险提示。
+
 # Sub2API
 
 <div align="center">
@@ -31,6 +38,11 @@
 > [想出现在这里？](mailto:support@sub2api.org)
 
 <table>
+
+<tr>
+<td width="180"><a href="https://cctk.ai/register?aff=SUB2API"><img src="assets/partners/logos/cctk.jpg" alt="CCTK.AI" width="150"></a></td>
+<td>感谢 CCTK.AI 赞助了本项目！<a href="https://cctk.ai/register?aff=SUB2API">CCTK.AI</a> 是一个专注于稳定与性价比的 AI API 网关平台，提供 Claude、OpenAI、Gemini 等主流模型的高速中转服务，无缝兼容 Claude Code、Codex 等主流编程工具，以远低于官方的成本获得同等的模型能力。点击<a href="https://cctk.ai/register?aff=SUB2API">此链接</a>注册，即刻体验更快、更稳、更省的 AI API 接入。</td>
+</tr>
 
 <tr>
 <td width="180"><a href="https://www.openmodel.ai?ref=sub2api"><img src="assets/partners/logos/openmodel.jpg" alt="openmodel" width="150"></a></td>

@@ -8,6 +8,7 @@
       <nav>
         <router-link to="/skill-market">Skill Market</router-link>
         <router-link to="/available-channels">模型与渠道</router-link>
+        <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">Docs</a>
         <button type="button" class="icon-control" :title="isDark ? '切换浅色模式' : '切换深色模式'" @click="toggleTheme">
           <Icon :name="isDark ? 'sun' : 'moon'" size="sm" />
         </button>
@@ -95,12 +96,17 @@ import { TOKENPORT_BRAND, TOKENPORT_PRODUCT, resolveTokenPortName, resolveTokenP
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const props = withDefaults(defineProps<{ siteLogo?: string; docUrl?: string }>(), {
+  siteLogo: '',
+  docUrl: '',
+})
 const skillCount = ref(0)
 const categoryCount = ref(0)
 const isDark = ref(document.documentElement.classList.contains('dark'))
 const siteName = computed(() => resolveTokenPortName(appStore.cachedPublicSettings?.site_name || appStore.siteName))
 const siteSubtitle = computed(() => resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle))
-const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
+const siteLogo = computed(() => props.siteLogo)
+const docUrl = computed(() => props.docUrl)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const entryPath = computed(() => isAuthenticated.value ? (authStore.isAdmin ? '/admin/dashboard' : '/dashboard') : '/login')
 const currentYear = new Date().getFullYear()

@@ -18,9 +18,9 @@
       <div class="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
         技能包不会由浏览器自动写入本机。勾选后会在下方生成 Bash/PowerShell 安装脚本，复制到终端执行后，
         才会下载 zip、校验 SHA256，并安装到 Codex 或 Claude Code 的 skills 目录。
-        <a href="/skill-market" target="_blank" rel="noreferrer" class="ml-1 font-medium underline underline-offset-2">
+        <router-link to="/skill-market" class="ml-1 font-medium underline underline-offset-2">
           查看完整市场
-        </a>
+        </router-link>
       </div>
 
       <div class="flex flex-col gap-2 md:flex-row">
@@ -66,15 +66,31 @@
             <span class="mt-1 block line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
               {{ getSkillDisplayDescription(skill) }}
             </span>
+            <button
+              type="button"
+              class="mt-2 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+              @click.prevent.stop="selectedSkill = skill"
+            >
+              查看详情
+            </button>
           </span>
         </label>
       </div>
     </div>
+
+    <SkillDetailDialog
+      :show="Boolean(selectedSkill)"
+      :skill="selectedSkill"
+      :registry="registry"
+      :registry-url="loadedRegistryUrl || registryUrl"
+      @close="selectedSkill = null"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import SkillDetailDialog from '@/tokenport/market/SkillDetailDialog.vue'
 import {
   DEFAULT_SKILL_MARKET_REGISTRY_URL,
   fetchSkillMarketWithSource,
@@ -103,6 +119,7 @@ const query = ref('')
 const category = ref('')
 const registry = ref<SkillMarketRegistry | null>(null)
 const loadedRegistryUrl = ref('')
+const selectedSkill = ref<SkillMarketEntry | null>(null)
 
 const selectedIds = computed(() => (props.modelValue || []).map((skill) => skill.id))
 const registryUrl = computed(() => props.registryUrl || DEFAULT_SKILL_MARKET_REGISTRY_URL)

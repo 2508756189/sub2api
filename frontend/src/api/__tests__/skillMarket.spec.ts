@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   fetchSkillMarketWithSource,
+  fetchSkillDetailMarkdown,
   resolveSkillArchiveUrl,
   toSkillInstallSelection,
   type SkillMarketRegistry,
@@ -23,6 +24,14 @@ const registry: SkillMarketRegistry = {
       },
       version: '0.1.0',
       riskLevel: 'medium',
+      detail: {
+        summary: 'Convert documents',
+        useCases: ['Knowledge ingestion'],
+        capabilities: ['Conversion'],
+        requirements: [],
+        permissions: ['Read files'],
+        markdownPath: 'details/markitdown.md',
+      },
       archive: {
         path: 'dist/skills/markitdown.zip',
         sha256: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
@@ -70,5 +79,15 @@ describe('skillMarket', () => {
     expect(archiveUrl).toContain('/skill-market/dist/skills/markitdown.zip')
     expect(selection.archiveUrl).toContain('/skill-market/dist/skills/markitdown.zip')
     expect(selection.sha256).toBe(registry.skills[0].archive.sha256)
+  })
+
+  it('loads detail markdown relative to the active registry source', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, text: async () => '# MarkItDown' })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const markdown = await fetchSkillDetailMarkdown(registry.skills[0], '/skill-market/index.json')
+
+    expect(markdown).toBe('# MarkItDown')
+    expect(fetchMock.mock.calls[0][0]).toContain('/skill-market/details/markitdown.md')
   })
 })

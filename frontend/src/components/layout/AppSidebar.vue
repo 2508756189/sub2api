@@ -196,6 +196,7 @@ import VersionBadge from '@/components/common/VersionBadge.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
+import { resolveTokenPortName } from '@/tokenport/brand/tokenPortBrand'
 
 interface NavItem {
   path: string
@@ -255,7 +256,7 @@ const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboar
 const expandedGroups = ref<Set<string>>(new Set())
 
 // Site settings from appStore (cached, no flicker)
-const siteName = computed(() => appStore.siteName)
+const siteName = computed(() => resolveTokenPortName(appStore.siteName))
 const siteLogo = computed(() => appStore.siteLogo)
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)

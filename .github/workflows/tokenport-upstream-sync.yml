@@ -1,0 +1,85 @@
+name: TokenPort upstream sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 2 * * 1'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out TokenPort product branch
+        uses: actions/checkout@v4
+        with:
+          ref: tokenport/main
+          fetch-depth: 0
+
+      - name: Fetch Sub2API upstream
+        run: |
+          git remote add upstream https://github.com/Wei-Shaw/sub2api.git || true
+          git fetch upstream main
+
+      - name: Merge upstream into a review branch
+        id: merge
+        shell: bash
+        run: |
+          branch="sync/upstream-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
+          if ! git merge --no-edit upstream/main; then
+            git status --short > upstream-conflicts.txt
+            git diff --name-only --diff-filter=U >> upstream-conflicts.txt
+            exit 1
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Validate TokenPort overlay
+        shell: pwsh
+        run: ./scripts/check-tokenport-overlay.ps1
+
+      - name: Test and build frontend
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm typecheck
+          pnpm test:run
+          pnpm build
+
+      - name: Build runtime image
+        run: docker build -t tokenport-upstream-sync:${GITHUB_SHA} .
+
+      - name: Push review branch
+        run: |
+          git push origin "${{ steps.merge.outputs.branch }}"
+
+      - name: Open synchronization pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base tokenport/main \
+            --head "${{ steps.merge.outputs.branch }}" \
+            --title "sync: merge latest Sub2API upstream" \
+            --body "Automated upstream merge. TokenPort overlay checks, frontend tests, and image build completed before this PR was opened."
+
+      - name: Upload conflict report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tokenport-upstream-conflicts
+          path: upstream-conflicts.txt
+          if-no-files-found: ignore

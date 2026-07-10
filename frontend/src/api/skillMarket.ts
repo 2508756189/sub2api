@@ -27,6 +27,14 @@ export interface SkillMarketEntry {
   license?: string
   source?: string
   riskLevel?: 'low' | 'medium' | 'high' | string
+  detail?: {
+    summary: string
+    useCases: string[]
+    capabilities: string[]
+    requirements: string[]
+    permissions: string[]
+    markdownPath: string
+  }
   archive: {
     path: string
     sha256: string
@@ -40,6 +48,14 @@ export interface SkillMarketRegistry {
   repository?: string
   categories: SkillMarketCategory[]
   skills: SkillMarketEntry[]
+}
+
+export function resolveSkillMarketAssetUrl(registryUrl: string, assetPath: string): string {
+  if (/^https?:\/\//i.test(assetPath)) return assetPath
+  const baseUrl = /^https?:\/\//i.test(registryUrl)
+    ? registryUrl
+    : new URL(registryUrl, globalThis.location?.origin || 'http://localhost').toString()
+  return new URL(assetPath.replace(/^\/+/, ''), baseUrl).toString()
 }
 
 export interface SkillInstallSelection {
@@ -142,13 +158,18 @@ export function getSkillRiskLabel(riskLevel?: string): string {
 }
 
 export function resolveSkillArchiveUrl(registryUrl: string, archivePath: string): string {
-  if (/^https?:\/\//i.test(archivePath)) {
-    return archivePath
-  }
-  const baseUrl = /^https?:\/\//i.test(registryUrl)
-    ? registryUrl
-    : new URL(registryUrl, globalThis.location?.origin || 'http://localhost').toString()
-  return new URL(archivePath.replace(/^\/+/, ''), baseUrl).toString()
+  return resolveSkillMarketAssetUrl(registryUrl, archivePath)
+}
+
+export async function fetchSkillDetailMarkdown(
+  skill: SkillMarketEntry,
+  registryUrl = DEFAULT_SKILL_MARKET_REGISTRY_URL,
+): Promise<string> {
+  const markdownPath = skill.detail?.markdownPath
+  if (!markdownPath) return ''
+  const response = await fetch(resolveSkillMarketAssetUrl(registryUrl, markdownPath), { cache: 'no-store' })
+  if (!response.ok) throw new Error(`技能详情加载失败：${response.status}`)
+  return response.text()
 }
 
 export function toSkillInstallSelection(

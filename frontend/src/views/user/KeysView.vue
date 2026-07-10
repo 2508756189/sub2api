@@ -985,163 +985,10 @@
       :platform="selectedKey?.group?.platform || null"
       :group-id="selectedKey?.group_id || null"
       :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
+      :initial-mode="accessCenterMode"
+      :key-name="selectedKey?.name || ''"
       @close="closeUseKeyModal"
     />
-
-    <!-- CCS Import Options Dialog -->
-    <BaseDialog
-      :show="showCcsImportOptions"
-      title="导入到 CCS"
-      width="normal"
-      @close="closeCcsImportOptions"
-    >
-      <div class="space-y-4">
-        <div>
-          <p class="text-sm text-gray-700 dark:text-gray-300">
-            将当前 API Key 导入到 CCS，并同步写入客户端配置内容。
-          </p>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Codex 会写入 auth.json 和 config.toml；Claude Code 会写入 settings.json。这里选择的模型、推理强度、插件和 MCP 会跟随导入内容一起生效。
-          </p>
-        </div>
-
-        <div
-          v-if="ccsConnectorClient === 'codex'"
-          class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
-        >
-          如果本机 Codex config.toml 已经有项目声明或自定义配置，CCS 客户端可能按整文件写入。建议先备份，或使用“使用密钥”里的 TokenPort 一键配置脚本，它会保留原文件并只更新 TokenPort 管理块。
-        </div>
-
-        <ConnectorOptions
-          v-model="ccsConnectorOptions"
-          :platform="ccsImportPlatform"
-          :client="ccsConnectorClient"
-          :available-model-options="ccsAvailableModelOptions"
-        />
-
-        <div
-          v-if="ccsConnectorClient === 'codex' && ccsAvailableModelOptions.length === 0"
-          class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
-        >
-          当前 API Key 分组没有同步到可用模型。请先在渠道模型列表同步，或在上方手动填写上游真实模型名。
-        </div>
-
-        <section
-          v-if="ccsAuthText || ccsConfigText"
-          class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-850"
-        >
-          <div class="mb-3">
-            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">导入内容</h4>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              可以直接修改下面的内容。点击导入后，CCS 收到的是这里最终的配置文本。
-            </p>
-            <button
-              type="button"
-              class="mt-2 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
-              @click="resetCcsEditableTexts"
-            >
-              按当前选项重新生成
-            </button>
-          </div>
-
-          <div class="space-y-3">
-            <label v-if="ccsAuthText" class="block space-y-1">
-              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Codex auth.json</span>
-              <textarea
-                v-model="ccsAuthText"
-                class="input min-h-[120px] w-full font-mono text-xs leading-5"
-                spellcheck="false"
-                @input="ccsAuthTouched = true"
-              />
-            </label>
-
-            <label v-if="ccsConfigText" class="block space-y-1">
-              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
-                {{ ccsConfigTextLabel }}
-              </span>
-              <textarea
-                v-model="ccsConfigText"
-                class="input min-h-[220px] w-full font-mono text-xs leading-5"
-                spellcheck="false"
-                @input="ccsConfigTouched = true"
-              />
-            </label>
-          </div>
-        </section>
-
-        <label class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
-          <input
-            v-model="ccsSaveAsDefault"
-            type="checkbox"
-            class="checkbox mt-0.5"
-          />
-          <span>
-            保存为我的默认导入配置
-            <span class="block text-xs text-gray-500 dark:text-gray-400">
-              只保存在当前浏览器，按当前分组和客户端区分；下次点击导入会自动带出。
-            </span>
-          </span>
-        </label>
-      </div>
-
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <button @click="closeCcsImportOptions" class="btn btn-secondary">
-            {{ t('common.cancel') }}
-          </button>
-          <button @click="confirmCcsImport" class="btn btn-primary">
-            导入
-          </button>
-        </div>
-      </template>
-    </BaseDialog>
-
-    <!-- CCS Client Selection Dialog for Antigravity -->
-    <BaseDialog
-      :show="showCcsClientSelect"
-      :title="t('keys.ccsClientSelect.title')"
-      width="narrow"
-      @close="closeCcsClientSelect"
-    >
-      <div class="space-y-4">
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('keys.ccsClientSelect.description') }}
-	        </p>
-	        <div class="grid grid-cols-2 gap-3">
-	          <button
-	            @click="handleCcsClientSelect('claude')"
-	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
-	          >
-	            <Icon name="terminal" size="xl" class="text-gray-600 dark:text-gray-400" />
-	            <span class="font-medium text-gray-900 dark:text-white">{{
-	              t('keys.ccsClientSelect.claudeCode')
-	            }}</span>
-	            <span class="text-xs text-gray-500 dark:text-gray-400">{{
-	              t('keys.ccsClientSelect.claudeCodeDesc')
-	            }}</span>
-	          </button>
-	          <button
-	            @click="handleCcsClientSelect('gemini')"
-	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
-	          >
-	            <Icon name="sparkles" size="xl" class="text-gray-600 dark:text-gray-400" />
-	            <span class="font-medium text-gray-900 dark:text-white">{{
-	              t('keys.ccsClientSelect.geminiCli')
-	            }}</span>
-	            <span class="text-xs text-gray-500 dark:text-gray-400">{{
-	              t('keys.ccsClientSelect.geminiCliDesc')
-	            }}</span>
-	          </button>
-	        </div>
-	      </div>
-      <template #footer>
-        <div class="flex justify-end">
-          <button @click="closeCcsClientSelect" class="btn btn-secondary">
-            {{ t('common.cancel') }}
-          </button>
-        </div>
-      </template>
-    </BaseDialog>
 
     <!-- Group Selector Dropdown (Teleported to body to avoid overflow clipping) -->
     <Teleport to="body">
@@ -1215,7 +1062,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, reactive, computed, watch, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
+	import { ref, reactive, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useAppStore } from '@/stores/app'
 	import { useOnboardingStore } from '@/stores/onboarding'
@@ -1235,7 +1082,6 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import SearchInput from '@/components/common/SearchInput.vue'
 	import Icon from '@/components/icons/Icon.vue'
 	import UseKeyModal from '@/components/keys/UseKeyModal.vue'
-	import ConnectorOptions from '@/components/keys/ConnectorOptions.vue'
 	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
 	import GroupBadge from '@/components/common/GroupBadge.vue'
 	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
@@ -1244,25 +1090,6 @@ import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
 import { maskApiKey } from '@/utils/maskApiKey'
-import {
-  buildCcSwitchImportDeeplink,
-  resolveCcSwitchImportConfig,
-  type CcSwitchClientType
-} from '@/utils/ccswitchImport'
-import userChannelsAPI from '@/api/channels'
-import {
-  extractConnectorModelOptions,
-  type ConnectorModelOption
-} from '@/utils/connectorModelOptions'
-import {
-  DEFAULT_CONNECTOR_OPTIONS,
-  normalizeConnectorOptions,
-  type ConnectorOptions as ConnectorOptionsState
-} from '@/constants/connectorPresets'
-import {
-  buildAnthropicFiles as buildAnthropicConnectorFiles,
-  buildOpenAIFiles as buildOpenAIConnectorFiles
-} from '@/components/keys/connectorTemplates'
 
 // Helper to format date for datetime-local input
 const formatDateTimeLocal = (isoDate: string): string => {
@@ -1308,7 +1135,6 @@ const DEFAULT_HIDDEN_COLUMNS = ['rate_limit', 'last_used_at']
 const HIDDEN_COLUMNS_KEY = 'api-key-hidden-columns'
 const COLUMN_SETTINGS_VERSION_KEY = 'api-key-column-settings-version'
 const COLUMN_SETTINGS_VERSION = 1
-const CCS_IMPORT_PREF_PREFIX = 'ccs-import-preferences-v1'
 
 const toggleableColumns = computed(() =>
   allColumns.value.filter((col) => !ALWAYS_VISIBLE_COLUMNS.has(col.key))
@@ -1396,18 +1222,8 @@ const showDeleteDialog = ref(false)
 const showResetQuotaDialog = ref(false)
 const showResetRateLimitDialog = ref(false)
 const showUseKeyModal = ref(false)
-const showCcsImportOptions = ref(false)
-const showCcsClientSelect = ref(false)
+const accessCenterMode = ref<'direct' | 'ccs'>('direct')
 const showColumnDropdown = ref(false)
-const pendingCcsRow = ref<ApiKey | null>(null)
-const pendingCcsClientType = ref<CcSwitchClientType>('claude')
-const ccsConnectorOptions = ref<ConnectorOptionsState>(structuredClone(DEFAULT_CONNECTOR_OPTIONS))
-const ccsAvailableModelOptions = ref<ConnectorModelOption[]>([])
-const ccsAuthText = ref('')
-const ccsConfigText = ref('')
-const ccsAuthTouched = ref(false)
-const ccsConfigTouched = ref(false)
-const ccsSaveAsDefault = ref(false)
 const selectedKey = ref<ApiKey | null>(null)
 const copiedKeyId = ref<number | null>(null)
 const groupSelectorKeyId = ref<number | null>(null)
@@ -1423,22 +1239,6 @@ const selectedKeyForGroup = computed(() => {
   if (groupSelectorKeyId.value === null) return null
   return apiKeys.value.find((k) => k.id === groupSelectorKeyId.value) || null
 })
-
-const ccsImportPlatform = computed<GroupPlatform | null>(() => pendingCcsRow.value?.group?.platform || null)
-
-const ccsConnectorClient = computed(() => {
-  if (ccsImportPlatform.value === 'openai') return 'codex'
-  if (ccsImportPlatform.value === 'gemini') return 'gemini'
-  return pendingCcsClientType.value
-})
-
-const ccsConfigTextLabel = computed(() =>
-  ccsConnectorClient.value === 'codex' ? 'Codex config.toml' : 'Claude Code settings.json'
-)
-
-watch(ccsConnectorOptions, () => {
-  syncCcsEditableTexts(false)
-}, { deep: true })
 
 const setGroupButtonRef = (keyId: number, el: Element | ComponentPublicInstance | null) => {
   if (el instanceof HTMLElement) {
@@ -1652,6 +1452,13 @@ const loadPublicSettings = async () => {
 
 const openUseKeyModal = (key: ApiKey) => {
   selectedKey.value = key
+  accessCenterMode.value = 'direct'
+  showUseKeyModal.value = true
+}
+
+const importToCcswitch = (key: ApiKey) => {
+  selectedKey.value = key
+  accessCenterMode.value = 'ccs'
   showUseKeyModal.value = true
 }
 
@@ -1985,296 +1792,6 @@ const resetRateLimitUsage = async () => {
     const errorMsg = error.response?.data?.detail || t('keys.failedToResetRateLimit')
     appStore.showError(errorMsg)
   }
-}
-
-const importToCcswitch = (row: ApiKey) => {
-  const platform = row.group?.platform || 'anthropic'
-
-  // For antigravity platform, show client selection dialog
-  if (platform === 'antigravity') {
-    pendingCcsRow.value = row
-    showCcsClientSelect.value = true
-    return
-  }
-
-  openCcsImportOptions(row, platform === 'gemini' ? 'gemini' : 'claude')
-}
-
-interface CcsImportPreference {
-  options?: ConnectorOptionsState
-  authText?: string
-  configText?: string
-}
-
-function ccsPreferenceKey(row: ApiKey, clientType: CcSwitchClientType): string {
-  const platform = row.group?.platform || 'anthropic'
-  return `${CCS_IMPORT_PREF_PREFIX}:${platform}:${clientType}:group:${row.group_id ?? 'none'}`
-}
-
-function loadCcsPreference(row: ApiKey, clientType: CcSwitchClientType): CcsImportPreference | null {
-  try {
-    const raw = localStorage.getItem(ccsPreferenceKey(row, clientType))
-    return raw ? JSON.parse(raw) as CcsImportPreference : null
-  } catch {
-    return null
-  }
-}
-
-function saveCcsPreference(row: ApiKey, clientType: CcSwitchClientType) {
-  try {
-    const preference: CcsImportPreference = {
-      options: normalizeConnectorOptions(ccsConnectorOptions.value),
-      authText: ccsAuthText.value,
-      configText: ccsConfigText.value
-    }
-    localStorage.setItem(ccsPreferenceKey(row, clientType), JSON.stringify(preference))
-  } catch {
-    appStore.showError('默认导入配置保存失败，请检查浏览器存储权限')
-  }
-}
-
-function clearCcsPreference(row: ApiKey, clientType: CcSwitchClientType) {
-  try {
-    localStorage.removeItem(ccsPreferenceKey(row, clientType))
-  } catch {
-    // Ignore storage errors during a one-off import.
-  }
-}
-
-function buildCcsEditableTexts(row: ApiKey, clientType: CcSwitchClientType, baseUrl: string) {
-  const platform = row.group?.platform || 'anthropic'
-  const options = normalizeConnectorOptions(ccsConnectorOptions.value)
-  const importConfig = resolveCcSwitchImportConfig(platform, clientType, baseUrl)
-
-  if (platform === 'openai') {
-    const files = buildOpenAIConnectorFiles({
-      baseUrl: importConfig.endpoint,
-      apiKey: row.key,
-      shell: 'windows',
-      options
-    })
-
-    return {
-      authText: files.find((file) => file.path.endsWith('auth.json'))?.content || '',
-      configText: files.find((file) => file.path.endsWith('config.toml'))?.content || ''
-    }
-  }
-
-  if (platform === 'anthropic' || (platform === 'antigravity' && clientType === 'claude')) {
-    const files = buildAnthropicConnectorFiles({
-      baseUrl: importConfig.endpoint,
-      apiKey: row.key,
-      shell: 'windows',
-      options
-    })
-
-    return {
-      authText: '',
-      configText: files.find((file) => file.path.endsWith('settings.json'))?.content || ''
-    }
-  }
-
-  return { authText: '', configText: '' }
-}
-
-function syncCcsEditableTexts(force = false) {
-  if (!pendingCcsRow.value) return
-  const baseUrl = publicSettings.value?.api_base_url || window.location.origin
-  const texts = buildCcsEditableTexts(pendingCcsRow.value, pendingCcsClientType.value, baseUrl)
-  if (force || !ccsAuthTouched.value) {
-    ccsAuthText.value = texts.authText
-  }
-  if (force || !ccsConfigTouched.value) {
-    ccsConfigText.value = texts.configText
-  }
-}
-
-function resetCcsEditableTexts() {
-  ccsAuthTouched.value = false
-  ccsConfigTouched.value = false
-  syncCcsEditableTexts(true)
-}
-
-function extractCodexModelFromToml(configText: string): string {
-  const match = configText.match(/^\s*model\s*=\s*["']([^"']+)["']/m)
-  return match?.[1]?.trim() || ''
-}
-
-async function loadCcsAvailableModels(row: ApiKey) {
-  ccsAvailableModelOptions.value = []
-  try {
-    const channels = await userChannelsAPI.getAvailable()
-    const models = extractConnectorModelOptions({
-      channels,
-      platform: row.group?.platform,
-      groupId: row.group_id,
-    })
-    ccsAvailableModelOptions.value = models
-
-    const platform = row.group?.platform
-    const options = normalizeConnectorOptions(ccsConnectorOptions.value)
-    if (platform === 'openai' && !options.codex.model && models.length > 0) {
-      ccsConnectorOptions.value = {
-        ...ccsConnectorOptions.value,
-        codex: {
-          ...ccsConnectorOptions.value.codex,
-          model: models[0].name
-        }
-      }
-    }
-  } catch {
-    ccsAvailableModelOptions.value = []
-  }
-}
-
-const openCcsImportOptions = (row: ApiKey, clientType: CcSwitchClientType) => {
-  pendingCcsRow.value = row
-  pendingCcsClientType.value = clientType
-  const savedPreference = loadCcsPreference(row, clientType)
-  ccsConnectorOptions.value = savedPreference?.options
-    ? structuredClone(savedPreference.options)
-    : structuredClone(DEFAULT_CONNECTOR_OPTIONS)
-  ccsAvailableModelOptions.value = []
-  ccsAuthText.value = savedPreference?.authText || ''
-  ccsConfigText.value = savedPreference?.configText || ''
-  ccsAuthTouched.value = Boolean(savedPreference?.authText)
-  ccsConfigTouched.value = Boolean(savedPreference?.configText)
-  ccsSaveAsDefault.value = Boolean(savedPreference)
-  showCcsImportOptions.value = true
-  if (!savedPreference) {
-    syncCcsEditableTexts(true)
-  }
-  void loadCcsAvailableModels(row)
-}
-
-function buildCcsConfigPayload(row: ApiKey, clientType: CcSwitchClientType) {
-  const platform = row.group?.platform || 'anthropic'
-  const options = normalizeConnectorOptions(ccsConnectorOptions.value)
-
-  if (platform === 'openai') {
-    const model = extractCodexModelFromToml(ccsConfigText.value) || options.codex.model.trim()
-    if (!model) {
-      appStore.showError('请先选择或填写 Codex 上游模型')
-      return null
-    }
-
-    let auth: Record<string, unknown>
-    try {
-      auth = JSON.parse(ccsAuthText.value || '{}')
-    } catch {
-      appStore.showError('Codex auth.json 不是有效 JSON')
-      return null
-    }
-
-    return {
-      model,
-      configFormat: 'json' as const,
-      config: JSON.stringify({
-        auth,
-        config: ccsConfigText.value
-      }, null, 2)
-    }
-  }
-
-  if (platform === 'anthropic' || (platform === 'antigravity' && clientType === 'claude')) {
-    try {
-      JSON.parse(ccsConfigText.value || '{}')
-    } catch {
-      appStore.showError('Claude Code settings.json 不是有效 JSON')
-      return null
-    }
-
-    return {
-      claudeModelTiers: options.claude.modelTiers,
-      configFormat: 'json' as const,
-      config: ccsConfigText.value
-    }
-  }
-
-  return {}
-}
-
-const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
-  const baseUrl = publicSettings.value?.api_base_url || window.location.origin
-  const platform = row.group?.platform || 'anthropic'
-  const connectorConfig = buildCcsConfigPayload(row, clientType)
-  if (connectorConfig === null) return
-
-  const usageScript = `({
-    request: {
-      url: "{{baseUrl}}/v1/usage",
-      method: "GET",
-      headers: { "Authorization": "Bearer {{apiKey}}" }
-    },
-    extractor: function(response) {
-      const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
-      const unit = response?.unit ?? response?.quota?.unit ?? "USD";
-      return {
-        isValid: response?.is_active ?? response?.isValid ?? true,
-        remaining,
-        unit
-      };
-    }
-  })`
-  const providerName = (publicSettings.value?.site_name || 'TokenPort').trim() || 'TokenPort'
-  const deeplink = buildCcSwitchImportDeeplink({
-    baseUrl,
-    platform,
-    clientType,
-    providerName,
-    apiKey: row.key,
-    usageScript,
-    ...connectorConfig
-  })
-
-  try {
-    window.open(deeplink, '_self')
-
-    // Check if the protocol handler worked by detecting if we're still focused
-    setTimeout(() => {
-      if (document.hasFocus()) {
-        // Still focused means the protocol handler likely failed
-        appStore.showError(t('keys.ccSwitchNotInstalled'))
-      }
-    }, 100)
-  } catch (error) {
-    appStore.showError(t('keys.ccSwitchNotInstalled'))
-  }
-}
-
-const handleCcsClientSelect = (clientType: CcSwitchClientType) => {
-  if (pendingCcsRow.value) {
-    openCcsImportOptions(pendingCcsRow.value, clientType)
-  }
-  showCcsClientSelect.value = false
-}
-
-const closeCcsClientSelect = () => {
-  showCcsClientSelect.value = false
-  pendingCcsRow.value = null
-}
-
-const confirmCcsImport = () => {
-  if (!pendingCcsRow.value) return
-  if (ccsSaveAsDefault.value) {
-    saveCcsPreference(pendingCcsRow.value, pendingCcsClientType.value)
-  } else {
-    clearCcsPreference(pendingCcsRow.value, pendingCcsClientType.value)
-  }
-  executeCcsImport(pendingCcsRow.value, pendingCcsClientType.value)
-}
-
-const closeCcsImportOptions = () => {
-  showCcsImportOptions.value = false
-  pendingCcsRow.value = null
-  pendingCcsClientType.value = 'claude'
-  ccsConnectorOptions.value = structuredClone(DEFAULT_CONNECTOR_OPTIONS)
-  ccsAvailableModelOptions.value = []
-  ccsAuthText.value = ''
-  ccsConfigText.value = ''
-  ccsAuthTouched.value = false
-  ccsConfigTouched.value = false
-  ccsSaveAsDefault.value = false
 }
 
 function formatResetTime(resetAt: string | null): string {

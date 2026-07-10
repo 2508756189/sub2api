@@ -135,14 +135,14 @@ export default {
     // Admin tour steps
     admin: {
       welcome: {
-        title: '👋 Welcome to Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API is a powerful AI service gateway platform that helps you easily manage and distribute AI services.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Create service tiers (VIP, Free Trial, etc.)</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Distribution</b> - Generate independent API Keys for users</li><li>💰 <b>Billing Control</b> - Flexible rate and quota management</li></ul><p style="color: #10b981; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
+        title: 'Welcome to TokenPort',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">TokenPort unifies model access, API keys, Token usage, and reusable AI skills for teams.</p><p style="margin-bottom: 12px;"><b>Core capabilities:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li><b>Department groups</b> - Separate teams, projects, and customers</li><li><b>Account pools</b> - Connect upstream model resources</li><li><b>Keys and budgets</b> - Control quotas and access boundaries</li><li><b>Usage accounting</b> - Track Token and model cost</li><li><b>Skill Market</b> - Deliver reusable capabilities</li></ul><p style="color: #10b981; font-weight: 600;">Complete the first operating loop in three minutes →</p></div>',
         nextBtn: 'Start Setup 🚀',
         prevBtn: 'Skip'
       },
       groupManage: {
         title: '📦 Step 1: Group Management',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core concept of Sub2API, like a "service package":</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>💰 Each group has independent billing multiplier</li><li>👥 Can be set as public or exclusive</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> You can create "VIP Premium" (high rate) and "Free Trial" (low rate) groups</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are TokenPort operating units for departments, projects, customers, or environments.</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>Each group can contain multiple upstream accounts</li><li>Each group has independent billing and quota rules</li><li>Groups can be public or assigned to selected users</li></ul><p style="margin-top: 16px; color: #10b981; font-weight: 600;">Click Group Management on the left sidebar</p></div>'
       },
       createGroup: {
         title: '➕ Create New Group',
@@ -235,8 +235,8 @@ export default {
     // User tour steps
     user: {
       welcome: {
-        title: '👋 Welcome to Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Hello! Welcome to the Sub2API AI service platform.</p><p style="margin-bottom: 12px;"><b>🎯 Quick Start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Create API Key</li><li>📋 Copy key to your application</li><li>🚀 Start using AI services</li></ul><p style="color: #10b981; font-weight: 600;">Just 1 minute, let\'s get started →</p></div>',
+        title: 'Welcome to TokenPort',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Welcome to TokenPort.</p><p style="margin-bottom: 12px;"><b>Quick start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>Create an API Key</li><li>Open the access center</li><li>Connect your AI client</li></ul><p style="color: #10b981; font-weight: 600;">Get connected in one minute →</p></div>',
         nextBtn: 'Start 🚀',
         prevBtn: 'Skip'
       },

@@ -2,173 +2,70 @@ import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
-vi.mock('vue-i18n', () => ({
-  createI18n: () => ({
-    global: {
-      t: (key: string) => key
-    }
-  }),
-  useI18n: () => ({
-    t: (key: string) => key
-  })
+vi.mock('@/api/channels', () => ({
+  default: { getAvailable: vi.fn().mockResolvedValue([]) },
 }))
 
 vi.mock('@/composables/useClipboard', () => ({
-  useClipboard: () => ({
-    copyToClipboard: vi.fn().mockResolvedValue(true)
-  })
+  useClipboard: () => ({ copyToClipboard: vi.fn().mockResolvedValue(true) }),
 }))
 
 import UseKeyModal from '../UseKeyModal.vue'
 
+const global = {
+  stubs: {
+    BaseDialog: { template: '<div><slot /><slot name="footer" /></div>' },
+    ConnectorOptions: { template: '<div data-test="connector-options" />' },
+    SkillMarketSelector: { template: '<div data-test="skill-market" />' },
+  },
+}
+
+function mountModal(platform: 'openai' | 'anthropic' | 'antigravity' = 'openai', initialMode: 'direct' | 'ccs' = 'direct') {
+  return mount(UseKeyModal, {
+    props: {
+      show: true,
+      apiKey: 'sk-test',
+      baseUrl: 'https://example.com',
+      platform,
+      initialMode,
+    },
+    global,
+  })
+}
+
 describe('UseKeyModal', () => {
-  it('renders placeholder model and goals feature when OpenAI Codex models are unavailable', () => {
-    const wrapper = mount(UseKeyModal, {
-      props: {
-        show: true,
-        apiKey: 'sk-test',
-        baseUrl: 'https://example.com/v1',
-        platform: 'openai'
-      },
-      global: {
-        stubs: {
-          BaseDialog: {
-            template: '<div><slot /><slot name="footer" /></div>'
-          },
-          Icon: {
-            template: '<span />'
-          }
-        }
-      }
-    })
-
-    const codeBlocks = wrapper.findAll('pre code').map((code) => code.text())
-    const configToml = codeBlocks.find((content) => content.includes('model_provider = "OpenAI"'))
-
-    expect(configToml).toBeDefined()
-    expect(configToml).toContain('model = "REPLACE_WITH_AVAILABLE_MODEL"')
-    expect(configToml).toContain('review_model = "REPLACE_WITH_AVAILABLE_MODEL"')
-    expect(configToml).not.toContain('model = "gpt-5.5"')
-    expect(configToml).not.toContain('model = "gpt-5.4"')
-    expect(configToml).not.toContain('model_context_window')
-    expect(configToml).not.toContain('model_auto_compact_token_limit')
-    expect(configToml).toContain('[features]\ngoals = true')
+  it('omits a model when the user has not selected one', () => {
+    const wrapper = mountModal()
+    expect(wrapper.text()).toContain('直接配置')
+    expect(wrapper.text()).toContain('model_provider = "OpenAI"')
+    expect(wrapper.text()).not.toContain('REPLACE_WITH_AVAILABLE_MODEL')
+    expect(wrapper.text()).not.toMatch(/^model\s*=/m)
   })
 
-  it('renders placeholder model and goals feature in OpenAI Codex WebSocket config', async () => {
-    const wrapper = mount(UseKeyModal, {
-      props: {
-        show: true,
-        apiKey: 'sk-test',
-        baseUrl: 'https://example.com/v1',
-        platform: 'openai'
-      },
-      global: {
-        stubs: {
-          BaseDialog: {
-            template: '<div><slot /><slot name="footer" /></div>'
-          },
-          Icon: {
-            template: '<span />'
-          }
-        }
-      }
-    })
-
-    const wsTab = wrapper.findAll('button').find((button) =>
-      button.text().includes('keys.useKeyModal.cliTabs.codexCliWs')
-    )
-
+  it('switches to the Codex WebSocket configuration', async () => {
+    const wrapper = mountModal()
+    const wsTab = wrapper.findAll('button').find((button) => button.text().includes('Codex WebSocket'))
     expect(wsTab).toBeDefined()
     await wsTab!.trigger('click')
     await nextTick()
-
-    const codeBlocks = wrapper.findAll('pre code').map((code) => code.text())
-    const configToml = codeBlocks.find((content) => content.includes('supports_websockets = true'))
-
-    expect(configToml).toBeDefined()
-    expect(configToml).toContain('model = "REPLACE_WITH_AVAILABLE_MODEL"')
-    expect(configToml).toContain('review_model = "REPLACE_WITH_AVAILABLE_MODEL"')
-    expect(configToml).not.toContain('model = "gpt-5.5"')
-    expect(configToml).not.toContain('model = "gpt-5.4"')
-    expect(configToml).not.toContain('model_context_window')
-    expect(configToml).not.toContain('model_auto_compact_token_limit')
-    expect(configToml).toContain('[features]\nresponses_websockets_v2 = true\ngoals = true')
+    expect(wrapper.text()).toContain('supports_websockets = true')
+    expect(wrapper.text()).not.toContain('REPLACE_WITH_AVAILABLE_MODEL')
   })
 
-  it('renders GPT-5.4 mini entry in OpenCode config', async () => {
-    const wrapper = mount(UseKeyModal, {
-      props: {
-        show: true,
-        apiKey: 'sk-test',
-        baseUrl: 'https://example.com/v1',
-        platform: 'openai'
-      },
-      global: {
-        stubs: {
-          BaseDialog: {
-            template: '<div><slot /><slot name="footer" /></div>'
-          },
-          Icon: {
-            template: '<span />'
-          }
-        }
-      }
-    })
-
-    const opencodeTab = wrapper.findAll('button').find((button) =>
-      button.text().includes('keys.useKeyModal.cliTabs.opencode')
-    )
-
-    expect(opencodeTab).toBeDefined()
-    await opencodeTab!.trigger('click')
+  it('generates a small OpenCode provider config without invented model catalogs', async () => {
+    const wrapper = mountModal()
+    const tab = wrapper.findAll('button').find((button) => button.text() === 'OpenCode')
+    expect(tab).toBeDefined()
+    await tab!.trigger('click')
     await nextTick()
-
-    const codeBlock = wrapper.find('pre code')
-    expect(codeBlock.exists()).toBe(true)
-    expect(codeBlock.text()).toContain('"name": "GPT-5.4 Mini"')
-    expect(codeBlock.text()).not.toContain('"name": "GPT-5.4 Nano"')
+    expect(wrapper.text()).toContain('https://example.com/v1')
+    expect(wrapper.text()).toContain('opencode.json')
+    expect(wrapper.text()).not.toContain('gpt-5.4')
   })
 
-  it('renders Claude Fable 5 OpenCode config with adaptive thinking', async () => {
-    const wrapper = mount(UseKeyModal, {
-      props: {
-        show: true,
-        apiKey: 'sk-test',
-        baseUrl: 'https://example.com/v1',
-        platform: 'antigravity'
-      },
-      global: {
-        stubs: {
-          BaseDialog: {
-            template: '<div><slot /><slot name="footer" /></div>'
-          },
-          Icon: {
-            template: '<span />'
-          }
-        }
-      }
-    })
-
-    const opencodeTab = wrapper.findAll('button').find((button) =>
-      button.text().includes('keys.useKeyModal.cliTabs.opencode')
-    )
-
-    expect(opencodeTab).toBeDefined()
-    await opencodeTab!.trigger('click')
-    await nextTick()
-
-    const claudeConfig = wrapper.findAll('pre code')
-      .map((code) => code.text())
-      .find((content) => content.includes('"antigravity-claude"'))
-
-    expect(claudeConfig).toBeDefined()
-    const parsed = JSON.parse(claudeConfig!)
-    const fable = parsed.provider['antigravity-claude'].models['claude-fable-5']
-
-    expect(fable.name).toBe('Claude Fable 5')
-    expect(fable.limit).toEqual({ context: 1048576, output: 128000 })
-    expect(fable.options.thinking).toEqual({ type: 'adaptive' })
-    expect(fable.options.thinking).not.toHaveProperty('budgetTokens')
+  it('opens directly in CCS mode without requiring a model', () => {
+    const wrapper = mountModal('anthropic', 'ccs')
+    expect(wrapper.text()).toContain('CCS 只导入客户端配置')
+    expect(wrapper.findAll('button').some((button) => button.text() === '导入 CCS')).toBe(true)
   })
 })

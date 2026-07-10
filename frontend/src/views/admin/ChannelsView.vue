@@ -430,6 +430,14 @@
                   >
                     {{ syncingPlatform === section.platform ? t('admin.channels.form.syncingModels') : t('admin.channels.form.syncLatestModels') }}
                   </button>
+                  <button
+                    type="button"
+                    @click="syncModelsFromBoundAccount(sIdx)"
+                    :disabled="syncingPlatform === section.platform"
+                    class="text-xs text-gray-500 hover:text-primary-600 disabled:opacity-50"
+                  >
+                    {{ syncingPlatform === section.platform ? t('admin.channels.form.syncingModels') : '同步账号模型' }}
+                  </button>
                   <button type="button" @click="addPricingEntry(sIdx)" class="text-xs text-primary-600 hover:text-primary-700">
                     + {{ t('common.add', 'Add') }}
                   </button>
@@ -863,6 +871,81 @@ function addPricingEntry(sectionIdx: number) {
 
 const syncingPlatform = ref<string | null>(null)
 
+function emptyPricingEntry(models: string[] = []): PricingFormEntry {
+  return {
+    models,
+    billing_mode: 'token',
+    input_price: null,
+    output_price: null,
+    cache_write_price: null,
+    cache_read_price: null,
+    image_output_price: null,
+    per_request_price: null,
+    intervals: []
+  }
+}
+
+function defaultPricingSignature(entry: PricingFormEntry): string {
+  return [
+    entry.billing_mode,
+    entry.input_price ?? '',
+    entry.output_price ?? '',
+    entry.cache_write_price ?? '',
+    entry.cache_read_price ?? '',
+    entry.image_output_price ?? '',
+    entry.per_request_price ?? '',
+  ].join('|')
+}
+
+async function buildSyncedPricingEntries(models: string[]): Promise<{
+  pricedEntries: PricingFormEntry[]
+  missingPricingModels: string[]
+}> {
+  const grouped = new Map<string, PricingFormEntry>()
+  const missingPricingModels: string[] = []
+  const results = await Promise.allSettled(
+    models.map(async (model) => ({
+      model,
+      pricing: await adminAPI.channels.getModelDefaultPricing(model),
+    })),
+  )
+
+  for (const result of results) {
+    if (result.status !== 'fulfilled' || !result.value.pricing.found) {
+      if (result.status === 'fulfilled') {
+        missingPricingModels.push(result.value.model)
+      }
+      continue
+    }
+
+    const { model, pricing } = result.value
+    const entry: PricingFormEntry = {
+      models: [model],
+      billing_mode: 'token',
+      input_price: perTokenToMTok(pricing.input_price ?? null),
+      output_price: perTokenToMTok(pricing.output_price ?? null),
+      cache_write_price: perTokenToMTok(pricing.cache_write_price ?? null),
+      cache_read_price: perTokenToMTok(pricing.cache_read_price ?? null),
+      image_output_price: perTokenToMTok(pricing.image_output_price ?? null),
+      per_request_price: null,
+      intervals: []
+    }
+
+    const signature = defaultPricingSignature(entry)
+    const existing = grouped.get(signature)
+    if (existing) {
+      existing.models.push(model)
+    } else {
+      grouped.set(signature, entry)
+    }
+  }
+
+  return {
+    pricedEntries: Array.from(grouped.values()),
+    missingPricingModels,
+  }
+}
+
 async function syncLatestModels(sectionIdx: number) {
   const platform = form.platforms[sectionIdx].platform
   if (syncingPlatform.value) return
@@ -879,21 +962,103 @@ async function syncLatestModels(sectionIdx: number) {
       appStore.showSuccess(t('admin.channels.form.syncModelsAlreadyUpToDate'))
       return
     }
-    // Add new models as a single new pricing entry (user fills in prices)
-    form.platforms[sectionIdx].model_pricing.push({
-      models: newModels,
-      billing_mode: 'token',
-      input_price: null,
-      output_price: null,
-      cache_write_price: null,
-      cache_read_price: null,
-      image_output_price: null,
-      per_request_price: null,
-      intervals: []
-    })
-    appStore.showSuccess(t('admin.channels.form.syncModelsSuccess', { count: newModels.length }))
+    const { pricedEntries, missingPricingModels } = await buildSyncedPricingEntries(newModels)
+    form.platforms[sectionIdx].model_pricing.push(...pricedEntries)
+    if (missingPricingModels.length > 0) {
+      form.platforms[sectionIdx].model_pricing.push(emptyPricingEntry(missingPricingModels))
+    }
+
+    const pricingMessage = missingPricingModels.length > 0
+      ? `，其中 ${missingPricingModels.length} 个模型未查到默认定价，已放入待补定价条目`
+      : '，默认定价已自动填充'
+    appStore.showSuccess(`${t('admin.channels.form.syncModelsSuccess', { count: newModels.length })}${pricingMessage}`)
   } catch (error) {
     appStore.showError(extractApiErrorMessage(error, t('admin.channels.form.syncModelsError')))
+  } finally {
+    syncingPlatform.value = null
+  }
+}
+
+async function syncModelsFromBoundAccount(sectionIdx: number) {
+  const section = form.platforms[sectionIdx]
+  const platform = section.platform
+  if (syncingPlatform.value) return
+  if (section.group_ids.length === 0) {
+    appStore.showError('请先给该渠道选择分组，再同步账号模型')
+    return
+  }
+
+  syncingPlatform.value = platform
+  try {
+    let selectedAccount: Awaited<ReturnType<typeof adminAPI.accounts.list>>['items'][number] | null = null
+    for (const groupId of section.group_ids) {
+      const result = await adminAPI.accounts.list(1, 20, {
+        platform,
+        status: 'active',
+        group: String(groupId),
+        sort_by: 'priority',
+        sort_order: 'desc',
+      })
+      const account = result.items.find((item) => item.status === 'active' && item.schedulable !== false)
+      if (account) {
+        selectedAccount = account
+        break
+      }
+    }
+
+    if (!selectedAccount) {
+      appStore.showError('未找到该渠道分组下可用的同平台账号')
+      return
+    }
+
+    const result = await adminAPI.accounts.syncUpstreamModels(selectedAccount.id)
+    const existingModels = new Set<string>()
+    for (const entry of section.model_pricing) {
+      for (const model of entry.models) existingModels.add(model)
+    }
+    const newModels = result.models.filter((model) => model && !existingModels.has(model))
+    if (newModels.length === 0) {
+      appStore.showSuccess('账号模型已是最新')
+      return
+    }
+
+    const currentMapping = (
+      selectedAccount.credentials?.model_mapping &&
+      typeof selectedAccount.credentials.model_mapping === 'object' &&
+      !Array.isArray(selectedAccount.credentials.model_mapping)
+    )
+      ? selectedAccount.credentials.model_mapping as Record<string, string>
+      : {}
+    const mergedMapping = { ...currentMapping }
+    let mappingChanged = false
+    for (const model of newModels) {
+      if (!mergedMapping[model]) {
+        mergedMapping[model] = model
+        mappingChanged = true
+      }
+    }
+    if (mappingChanged) {
+      await adminAPI.accounts.update(selectedAccount.id, {
+        credentials: {
+          ...selectedAccount.credentials,
+          model_mapping: mergedMapping,
+        },
+      })
+    }
+
+    const { pricedEntries, missingPricingModels } = await buildSyncedPricingEntries(newModels)
+    section.model_pricing.push(...pricedEntries)
+    if (missingPricingModels.length > 0) {
+      section.model_pricing.push(emptyPricingEntry(missingPricingModels))
+    }
+
+    const suffix = missingPricingModels.length > 0
+      ? `，其中 ${missingPricingModels.length} 个模型未匹配到默认定价，已放入待补定价条目`
+      : '，默认定价已自动填充'
+    const mappingSuffix = mappingChanged ? '，并已同步到账号模型白名单' : ''
+    appStore.showSuccess(`已同步 ${newModels.length} 个账号模型${suffix}${mappingSuffix}。上线前建议执行模型可用性验证。`)
+  } catch (error) {
+    appStore.showError(extractApiErrorMessage(error, '同步账号模型失败'))
   } finally {
     syncingPlatform.value = null
   }

@@ -45,6 +45,12 @@ export interface CodexMcpServerPreset {
   args: string[]
 }
 
+export interface CodexReasoningEffortPreset {
+  id: CodexReasoningEffort
+  label: string
+  description: string
+}
+
 export const CLAUDE_MODEL_TIERS: ClaudeModelTierPreset[] = [
   {
     id: 'haiku',
@@ -77,13 +83,35 @@ export const CLAUDE_PLUGINS: PluginPreset[] = [
   { id: 'playwright@claude-plugins-official', label: 'Playwright', default: false },
 ]
 
-export const CODEX_REASONING_EFFORTS: CodexReasoningEffort[] = [
-  'minimal',
-  'low',
-  'medium',
-  'high',
-  'xhigh',
+export const CODEX_REASONING_EFFORT_OPTIONS: CodexReasoningEffortPreset[] = [
+  {
+    id: 'low',
+    label: '速度优先',
+    description: '适合补全、轻量修改和简单问答，响应更快、推理成本更低。',
+  },
+  {
+    id: 'medium',
+    label: '日常编码（推荐）',
+    description: '适合多数开发、排查和文档任务，速度与质量比较均衡。',
+  },
+  {
+    id: 'high',
+    label: '深度分析',
+    description: '适合复杂重构、长链路排障、方案评审和关键代码修改。',
+  },
+  {
+    id: 'xhigh',
+    label: '最高强度',
+    description: '适合高风险决策和难题攻坚，质量优先，耗时和成本更高。',
+  },
+  {
+    id: 'minimal',
+    label: '最小推理',
+    description: '适合非常确定的机械操作，不建议作为默认值。',
+  },
 ]
+
+export const CODEX_REASONING_EFFORTS: CodexReasoningEffort[] = CODEX_REASONING_EFFORT_OPTIONS.map((item) => item.id)
 
 export const CODEX_MCP_SERVERS: CodexMcpServerPreset[] = [
   {
@@ -107,7 +135,7 @@ export const DEFAULT_CONNECTOR_OPTIONS: ConnectorOptions = {
   },
   codex: {
     model: '',
-    reasoningEffort: 'xhigh',
+    reasoningEffort: 'medium',
     mcpServers: [],
   },
 }
@@ -123,7 +151,7 @@ export function normalizeConnectorOptions(options?: ConnectorOptions): Normalize
     },
     codex: {
       model: options?.codex?.model || DEFAULT_CONNECTOR_OPTIONS.codex?.model || '',
-      reasoningEffort: options?.codex?.reasoningEffort || DEFAULT_CONNECTOR_OPTIONS.codex?.reasoningEffort || 'xhigh',
+      reasoningEffort: options?.codex?.reasoningEffort || DEFAULT_CONNECTOR_OPTIONS.codex?.reasoningEffort || 'medium',
       mcpServers: [...(options?.codex?.mcpServers ?? DEFAULT_CONNECTOR_OPTIONS.codex?.mcpServers ?? [])],
     },
   }

@@ -136,7 +136,7 @@ export default {
       noGroupDescription: 'This API key has not been assigned to a group. Please click the group column in the key list to assign one before viewing the configuration.',
       openai: {
         description: 'Add the following configuration files to your Codex CLI config directory.',
-        configTomlHint: 'Make sure the following content is at the beginning of the config.toml file',
+        configTomlHint: 'If you copy into config.toml manually, back up the file and keep existing [projects] or custom sections. The one-click script writes a TokenPort managed block.',
         note: 'Make sure the config directory exists. macOS/Linux users can run mkdir -p ~/.codex to create it.',
         noteWindows: 'Press Win+R and enter %userprofile%\\.codex to open the config directory. Create it manually if it does not exist.',
       },

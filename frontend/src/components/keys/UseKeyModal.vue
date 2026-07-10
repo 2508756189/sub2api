@@ -76,7 +76,7 @@
           v-model="connectorOptions"
           :platform="platform"
           :client="activeClientTab"
-          :available-models="connectorAvailableModels"
+          :available-model-options="connectorAvailableModelOptions"
         />
 
         <SkillMarketSelector
@@ -133,7 +133,18 @@
     </div>
 
     <template #footer>
-      <div class="flex justify-end">
+      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div v-if="canGenerateClientInstallScript" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+          <button
+            @click="copyClientInstallScript"
+            class="btn btn-primary"
+          >
+            {{ scriptCopied ? '已复制一键配置脚本' : '复制一键配置脚本' }}
+          </button>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            将当前选中的配置写入本机客户端目录；执行前可先检查脚本内容。
+          </span>
+        </div>
         <button
           @click="emit('close')"
           class="btn btn-secondary"
@@ -154,7 +165,11 @@ import ConnectorOptions from '@/components/keys/ConnectorOptions.vue'
 import SkillMarketSelector from '@/components/keys/SkillMarketSelector.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import type { GroupPlatform } from '@/types'
-import userChannelsAPI, { type UserAvailableChannel } from '@/api/channels'
+import userChannelsAPI from '@/api/channels'
+import {
+  extractConnectorModelOptions,
+  type ConnectorModelOption,
+} from '@/utils/connectorModelOptions'
 import type { SkillInstallSelection } from '@/api/skillMarket'
 import {
   DEFAULT_CONNECTOR_OPTIONS,
@@ -200,11 +215,12 @@ const { t } = useI18n()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
 const copiedIndex = ref<number | null>(null)
+const scriptCopied = ref(false)
 const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
 const connectorOptions = ref<ConnectorOptionsState>(structuredClone(DEFAULT_CONNECTOR_OPTIONS))
 const selectedSkills = ref<SkillInstallSelection[]>([])
-const connectorAvailableModels = ref<string[]>([])
+const connectorAvailableModelOptions = ref<ConnectorModelOption[]>([])
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
@@ -230,49 +246,39 @@ watch(activeClientTab, () => {
   activeTab.value = 'unix'
 })
 
+function resetConnectorSelections() {
+  connectorOptions.value = structuredClone(DEFAULT_CONNECTOR_OPTIONS)
+  selectedSkills.value = []
+}
+
 watch(
-  () => [props.show, props.platform, props.groupId] as const,
+  () => [props.show, props.platform, props.groupId, props.apiKey] as const,
   () => {
     if (props.show) {
+      resetConnectorSelections()
       loadConnectorAvailableModels()
     } else {
-      connectorAvailableModels.value = []
+      connectorAvailableModelOptions.value = []
+      resetConnectorSelections()
     }
   },
   { immediate: true },
 )
 
-function extractConnectorModels(channels: UserAvailableChannel[]): string[] {
-  const platform = props.platform
-  if (!platform) return []
-
-  const models = new Set<string>()
-  channels.forEach((channel) => {
-    channel.platforms
-      .filter((section) => section.platform === platform)
-      .filter((section) => {
-        if (!props.groupId) return true
-        return section.groups.some((group) => group.id === props.groupId)
-      })
-      .forEach((section) => {
-        section.supported_models.forEach((model) => {
-          if (model.name) models.add(model.name)
-        })
-      })
-  })
-  return Array.from(models).sort((a, b) => a.localeCompare(b))
-}
-
 async function loadConnectorAvailableModels() {
   if (!props.platform || !['openai', 'anthropic', 'gemini', 'antigravity'].includes(props.platform)) {
-    connectorAvailableModels.value = []
+    connectorAvailableModelOptions.value = []
     return
   }
   try {
-    connectorAvailableModels.value = extractConnectorModels(await userChannelsAPI.getAvailable())
+    connectorAvailableModelOptions.value = extractConnectorModelOptions({
+      channels: await userChannelsAPI.getAvailable(),
+      platform: props.platform,
+      groupId: props.groupId,
+    })
   } catch (error) {
     console.error('Failed to load connector available models:', error)
-    connectorAvailableModels.value = []
+    connectorAvailableModelOptions.value = []
   }
 }
 
@@ -546,6 +552,15 @@ const currentFiles = computed((): FileConfig[] => {
   }
 })
 
+const writableConfigFiles = computed(() =>
+  currentFiles.value.filter((file) => isWritableConfigPath(file.path))
+)
+
+const canGenerateClientInstallScript = computed(() =>
+  ['claude', 'codex', 'codex-ws'].includes(activeClientTab.value) &&
+  writableConfigFiles.value.length > 0
+)
+
 function generateGeminiCliContent(baseUrl: string, apiKey: string): FileConfig {
   const model = 'gemini-2.0-flash'
   const modelComment = t('keys.useKeyModal.gemini.modelComment')
@@ -589,6 +604,206 @@ ${keyword('$env:')}${variable('GEMINI_MODEL')}${operator('=')}${string(`"${model
   }
 
   return { path, content, highlighted }
+}
+
+function isWritableConfigPath(path: string): boolean {
+  const normalized = path.toLowerCase()
+  return (
+    (normalized.includes('.codex') || normalized.includes('.claude')) &&
+    (normalized.endsWith('.json') || normalized.endsWith('.toml'))
+  )
+}
+
+function isCodexTomlPath(path: string): boolean {
+  const normalized = path.toLowerCase().replace(/\\/g, '/')
+  return normalized.includes('.codex/') && normalized.endsWith('/config.toml')
+}
+
+function bashSingleQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`
+}
+
+function psSingleQuote(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`
+}
+
+function toBashTargetPath(path: string): string {
+  return path
+    .replace(/^~[\\/]/, '$HOME/')
+    .replace(/^%userprofile%[\\/]/i, '$HOME/')
+    .replace(/\\/g, '/')
+}
+
+function powerShellTargetExpression(path: string): string {
+  const normalized = path.replace(/\//g, '\\')
+  const userProfileMatch = normalized.match(/^%userprofile%\\(.+)$/i)
+  if (userProfileMatch) {
+    return `Join-Path $env:USERPROFILE ${psSingleQuote(userProfileMatch[1])}`
+  }
+  const homeMatch = normalized.match(/^~\\(.+)$/)
+  if (homeMatch) {
+    return `Join-Path $HOME ${psSingleQuote(homeMatch[1])}`
+  }
+  return psSingleQuote(normalized)
+}
+
+function base64Utf8(value: string): string {
+  const bytes = new TextEncoder().encode(value)
+  let binary = ''
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte)
+  })
+  return btoa(binary)
+}
+
+function buildPowerShellClientInstallScript(files: FileConfig[]): string {
+  const lines = [
+    '$ErrorActionPreference = "Stop"',
+    '',
+    'function Backup-TokenPortFile {',
+    '  param([string]$Target)',
+    '  if (Test-Path -LiteralPath $Target) {',
+    '    $backup = "$Target.tokenport-backup-$(Get-Date -Format yyyyMMddHHmmss)"',
+    '    Copy-Item -LiteralPath $Target -Destination $backup -Force',
+    '    Write-Host "TokenPort backup written: $backup"',
+    '  }',
+    '}',
+    '',
+    'function Write-TokenPortConfig {',
+    '  param(',
+    '    [string]$Target,',
+    '    [string]$Payload',
+    '  )',
+    '  $content = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Payload))',
+    '  $parent = Split-Path -Parent $Target',
+    '  if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }',
+    '  Backup-TokenPortFile -Target $Target',
+    '  Set-Content -LiteralPath $Target -Value $content -Encoding UTF8',
+    '  Write-Host "TokenPort config written: $Target"',
+    '}',
+    '',
+    'function Write-TokenPortTomlBlock {',
+    '  param(',
+    '    [string]$Target,',
+    '    [string]$Payload',
+    '  )',
+    '  $content = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Payload)).Trim()',
+    '  $parent = Split-Path -Parent $Target',
+    '  if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }',
+    '  Backup-TokenPortFile -Target $Target',
+    '  $begin = "# >>> TokenPort managed config >>>"',
+    '  $end = "# <<< TokenPort managed config <<<"',
+    '  $block = "$begin`n$content`n$end"',
+    '  if (Test-Path -LiteralPath $Target) {',
+    '    $existing = Get-Content -LiteralPath $Target -Raw -ErrorAction SilentlyContinue',
+    '  } else {',
+    '    $existing = ""',
+    '  }',
+    '  $pattern = "(?s)# >>> TokenPort managed config >>>.*?# <<< TokenPort managed config <<<"',
+    '  if ([regex]::IsMatch($existing, $pattern)) {',
+    '    $next = [regex]::Replace($existing, $pattern, $block)',
+    '  } elseif ([string]::IsNullOrWhiteSpace($existing)) {',
+    '    $next = $block',
+    '  } else {',
+    '    $next = $existing.TrimEnd() + "`n`n" + $block',
+    '  }',
+    '  Set-Content -LiteralPath $Target -Value $next -Encoding UTF8',
+    '  Write-Host "TokenPort config block written: $Target"',
+    '}',
+    '',
+  ]
+
+  files.forEach((file) => {
+    const writer = isCodexTomlPath(file.path) ? 'Write-TokenPortTomlBlock' : 'Write-TokenPortConfig'
+    lines.push(`${writer} -Target (${powerShellTargetExpression(file.path)}) -Payload '${base64Utf8(file.content)}'`)
+  })
+
+  return lines.join('\n')
+}
+
+function buildBashClientInstallScript(files: FileConfig[]): string {
+  const lines = [
+    'set -euo pipefail',
+    '',
+    'backup_tokenport_file() {',
+    '  target="$1"',
+    '  if [ -f "$target" ]; then',
+    '    backup="${target}.tokenport-backup-$(date +%Y%m%d%H%M%S)"',
+    '    cp "$target" "$backup"',
+    '    echo "TokenPort backup written: $backup"',
+    '  fi',
+    '}',
+    '',
+    'write_tokenport_config() {',
+    '  target="$1"',
+    '  payload="$2"',
+    '  mkdir -p "$(dirname "$target")"',
+    '  backup_tokenport_file "$target"',
+    '  if command -v base64 >/dev/null 2>&1; then',
+    '    printf "%s" "$payload" | base64 --decode > "$target" 2>/dev/null || printf "%s" "$payload" | base64 -d > "$target"',
+    '  else',
+    '    python3 - "$payload" "$target" <<\'PY\'',
+    'import base64, sys',
+    'payload, target = sys.argv[1], sys.argv[2]',
+    'open(target, "wb").write(base64.b64decode(payload))',
+    'PY',
+    '  fi',
+    '  echo "TokenPort config written: $target"',
+    '}',
+    '',
+    'write_tokenport_toml_block() {',
+    '  target="$1"',
+    '  payload="$2"',
+    '  mkdir -p "$(dirname "$target")"',
+    '  backup_tokenport_file "$target"',
+    '  python3 - "$payload" "$target" <<\'PY\'',
+    'import base64, pathlib, re, sys',
+    'payload, target = sys.argv[1], pathlib.Path(sys.argv[2])',
+    'content = base64.b64decode(payload).decode("utf-8").strip()',
+    'begin = "# >>> TokenPort managed config >>>"',
+    'end = "# <<< TokenPort managed config <<<"',
+    'block = f"{begin}\\n{content}\\n{end}"',
+    'existing = target.read_text(encoding="utf-8") if target.exists() else ""',
+    'pattern = re.compile(r"# >>> TokenPort managed config >>>.*?# <<< TokenPort managed config <<<", re.S)',
+    'if pattern.search(existing):',
+    '    next_text = pattern.sub(block, existing)',
+    'elif existing.strip():',
+    '    next_text = existing.rstrip() + "\\n\\n" + block',
+    'else:',
+    '    next_text = block',
+    'target.write_text(next_text, encoding="utf-8")',
+    'PY',
+    '  echo "TokenPort config block written: $target"',
+    '}',
+    '',
+  ]
+
+  files.forEach((file) => {
+    const writer = isCodexTomlPath(file.path) ? 'write_tokenport_toml_block' : 'write_tokenport_config'
+    lines.push(`${writer} ${bashSingleQuote(toBashTargetPath(file.path))} ${bashSingleQuote(base64Utf8(file.content))}`)
+  })
+
+  return lines.join('\n')
+}
+
+function buildClientInstallScript(): string {
+  const files = writableConfigFiles.value
+  if (!files.length) return ''
+  return activeTab.value === 'unix'
+    ? buildBashClientInstallScript(files)
+    : buildPowerShellClientInstallScript(files)
+}
+
+async function copyClientInstallScript() {
+  const script = buildClientInstallScript()
+  if (!script) return
+  const copied = await clipboardCopy(script, '一键配置脚本已复制')
+  if (copied) {
+    scriptCopied.value = true
+    setTimeout(() => {
+      scriptCopied.value = false
+    }, 2000)
+  }
 }
 
 function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: string, pathLabel?: string): FileConfig {

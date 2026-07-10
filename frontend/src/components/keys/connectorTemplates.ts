@@ -30,13 +30,6 @@ function hasClaudeOptions(options?: ConnectorOptions): boolean {
     normalized.claude.enabledPlugins.length > 0
 }
 
-function hasCodexOptions(options?: ConnectorOptions): boolean {
-  const normalized = normalizeConnectorOptions(options)
-  return Boolean(normalized.codex.model) ||
-    normalized.codex.reasoningEffort !== 'xhigh' ||
-    normalized.codex.mcpServers.length > 0
-}
-
 function unixEnvLine(name: string, value: string): string {
   return `export ${name}="${value}"`
 }
@@ -151,13 +144,15 @@ function buildSkillInstallFile(
   }
 
   const isPowerShell = shell === 'powershell' || shell === 'windows'
+  const runtimeLabel = runtime === 'claude' ? 'Claude Code' : 'Codex'
   return {
     path: isPowerShell
-      ? `Install ${runtime === 'claude' ? 'Claude Code' : 'Codex'} skills (PowerShell)`
-      : `Install ${runtime === 'claude' ? 'Claude Code' : 'Codex'} skills (Bash)`,
+      ? `Install ${runtimeLabel} skills (PowerShell)`
+      : `Install ${runtimeLabel} skills (Bash)`,
     content: isPowerShell
       ? buildPowerShellSkillInstallScript(runtime, selectedSkills)
       : buildUnixSkillInstallScript(runtime, selectedSkills),
+    hint: `技能安装脚本：复制到本机终端执行后，会下载、校验并解压到 ${runtimeLabel} 的 skills 目录；仅生成配置不会自动安装。`,
   }
 }
 
@@ -250,12 +245,10 @@ function codexConfigDir(shell: ConnectorShell): string {
 
 function buildCodexConfig(input: BuildConnectorFilesInput, webSocket: boolean): string {
   const options = normalizeConnectorOptions(input.options)
-  const model = options.codex.model || 'REPLACE_WITH_AVAILABLE_MODEL'
-  const reasoningEffort = hasCodexOptions(input.options) ? options.codex.reasoningEffort : 'xhigh'
+  const model = options.codex.model.trim()
+  const reasoningEffort = options.codex.reasoningEffort
   const lines = [
     'model_provider = "OpenAI"',
-    `model = "${model}"`,
-    `review_model = "${model}"`,
     `model_reasoning_effort = "${reasoningEffort}"`,
     'disable_response_storage = true',
     'network_access = "enabled"',
@@ -266,6 +259,10 @@ function buildCodexConfig(input: BuildConnectorFilesInput, webSocket: boolean): 
     `base_url = "${input.baseUrl}"`,
     'wire_api = "responses"',
   ]
+
+  if (model) {
+    lines.splice(1, 0, `model = "${model}"`, `review_model = "${model}"`)
+  }
 
   if (webSocket) {
     lines.push('supports_websockets = true')

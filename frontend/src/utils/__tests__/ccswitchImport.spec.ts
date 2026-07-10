@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  OPENAI_CC_SWITCH_CODEX_MODEL,
   buildCcSwitchImportDeeplink
 } from '@/utils/ccswitchImport'
 import type { GroupPlatform } from '@/types'
@@ -11,10 +10,6 @@ function paramsFromDeeplink(deeplink: string): URLSearchParams {
 }
 
 describe('ccswitchImport utils', () => {
-  it('defaults OpenAI CC Switch imports to the current Codex model', () => {
-    expect(OPENAI_CC_SWITCH_CODEX_MODEL).toBe('gpt-5.5')
-  })
-
   const baseInput = {
     baseUrl: 'https://api.example.com',
     providerName: 'Sub2API',
@@ -22,7 +17,7 @@ describe('ccswitchImport utils', () => {
     usageScript: 'return true'
   }
 
-  it('adds the Codex model parameter for OpenAI imports', () => {
+  it('does not invent a Codex model for OpenAI imports', () => {
     const params = paramsFromDeeplink(
       buildCcSwitchImportDeeplink({
         ...baseInput,
@@ -34,8 +29,29 @@ describe('ccswitchImport utils', () => {
     expect(params.get('resource')).toBe('provider')
     expect(params.get('app')).toBe('codex')
     expect(params.get('endpoint')).toBe(baseInput.baseUrl)
-    expect(params.get('model')).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
+    expect(params.has('model')).toBe(false)
     expect(atob(params.get('usageScript') || '')).toBe(baseInput.usageScript)
+  })
+
+  it('adds the selected Codex model and config payload when provided', () => {
+    const config = JSON.stringify({
+      auth: { OPENAI_API_KEY: 'sk-test' },
+      config: 'model = "deepseek-v4-pro"\nmodel_reasoning_effort = "high"'
+    })
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        ...baseInput,
+        platform: 'openai',
+        clientType: 'claude',
+        model: 'deepseek-v4-pro',
+        configFormat: 'json',
+        config
+      })
+    )
+
+    expect(params.get('model')).toBe('deepseek-v4-pro')
+    expect(params.get('configFormat')).toBe('json')
+    expect(atob(params.get('config') || '')).toBe(config)
   })
 
   it.each([
@@ -67,5 +83,23 @@ describe('ccswitchImport utils', () => {
     expect(params.get('app')).toBe('gemini')
     expect(params.get('endpoint')).toBe(`${baseInput.baseUrl}/antigravity`)
     expect(params.has('model')).toBe(false)
+  })
+
+  it('adds Claude tier model parameters when provided', () => {
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        ...baseInput,
+        platform: 'anthropic',
+        clientType: 'claude',
+        claudeModelTiers: {
+          haiku: 'claude-haiku-custom',
+          sonnet: 'claude-sonnet-custom'
+        }
+      })
+    )
+
+    expect(params.get('haikuModel')).toBe('claude-haiku-custom')
+    expect(params.get('sonnetModel')).toBe('claude-sonnet-custom')
+    expect(params.has('opusModel')).toBe(false)
   })
 })

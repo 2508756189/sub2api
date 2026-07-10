@@ -1,13 +1,12 @@
 import type { GroupPlatform } from '@/types'
-
-export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.5'
+import type { ClaudeModelTier } from '@/constants/connectorPresets'
 
 export type CcSwitchClientType = 'claude' | 'gemini'
+export type CcSwitchConfigFormat = 'json' | 'toml'
 
 export interface CcSwitchImportConfig {
   app: string
   endpoint: string
-  model?: string
 }
 
 export interface CcSwitchImportDeeplinkInput {
@@ -17,6 +16,10 @@ export interface CcSwitchImportDeeplinkInput {
   providerName: string
   apiKey: string
   usageScript: string
+  model?: string
+  claudeModelTiers?: Partial<Record<ClaudeModelTier, string>>
+  config?: string
+  configFormat?: CcSwitchConfigFormat
 }
 
 export function resolveCcSwitchImportConfig(
@@ -33,8 +36,7 @@ export function resolveCcSwitchImportConfig(
     case 'openai':
       return {
         app: 'codex',
-        endpoint: baseUrl,
-        model: OPENAI_CC_SWITCH_CODEX_MODEL
+        endpoint: baseUrl
       }
     case 'gemini':
       return {
@@ -47,6 +49,19 @@ export function resolveCcSwitchImportConfig(
         endpoint: baseUrl
       }
   }
+}
+
+function encodeBase64Utf8(value: string): string {
+  if (typeof TextEncoder !== 'undefined') {
+    const bytes = new TextEncoder().encode(value)
+    let binary = ''
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte)
+    })
+    return btoa(binary)
+  }
+
+  return btoa(unescape(encodeURIComponent(value)))
 }
 
 export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput): string {
@@ -64,8 +79,24 @@ export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput):
     ['usageAutoInterval', '30']
   ]
 
-  if (config.model) {
-    entries.splice(2, 0, ['model', config.model])
+  const model = input.model?.trim()
+  if (model) {
+    entries.splice(2, 0, ['model', model])
+  }
+
+  const tiers = input.claudeModelTiers ?? {}
+  const tierParams: Partial<Record<ClaudeModelTier, string>> = {
+    haiku: tiers.haiku?.trim(),
+    sonnet: tiers.sonnet?.trim(),
+    opus: tiers.opus?.trim()
+  }
+  if (tierParams.haiku) entries.push(['haikuModel', tierParams.haiku])
+  if (tierParams.sonnet) entries.push(['sonnetModel', tierParams.sonnet])
+  if (tierParams.opus) entries.push(['opusModel', tierParams.opus])
+
+  if (input.config) {
+    entries.push(['configFormat', input.configFormat || 'json'])
+    entries.push(['config', encodeBase64Utf8(input.config)])
   }
 
   return `ccswitch://v1/import?${new URLSearchParams(entries).toString()}`

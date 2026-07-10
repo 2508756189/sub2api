@@ -133,16 +133,16 @@ export default {
     // Admin tour steps
     admin: {
       welcome: {
-        title: '👋 欢迎使用 Sub2API',
+        title: '👋 欢迎使用 TokenPort',
         description:
-          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API 是一个强大的 AI 服务中转平台，让您轻松管理和分发 AI 服务。</p><p style="margin-bottom: 12px;"><b>🎯 核心功能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>分组管理</b> - 创建不同的服务套餐（VIP、免费试用等）</li><li>🔗 <b>账号池</b> - 连接多个上游 AI 服务商账号</li><li>🔑 <b>密钥分发</b> - 为用户生成独立的 API Key</li><li>💰 <b>计费管理</b> - 灵活的费率和配额控制</li></ul><p style="color: #10b981; font-weight: 600;">接下来，我们将用 3 分钟带您完成首次配置 →</p></div>',
-        nextBtn: '开始配置 🚀',
+          '<div class="tokenport-tour-intro"><p>TokenPort 是面向团队与部门的 AI 接入经营平台，帮助企业把模型账号、API Key、Token 用量和技能能力统一管起来。</p><p><b>核心能力：</b></p><ul><li><b>部门分组</b> - 按团队、项目或客户建立独立经营单元</li><li><b>账号池调度</b> - 统一接入多个上游模型账号，支撑稳定调用</li><li><b>密钥与预算</b> - 为用户发放 Key，并配置额度、费率和权限边界</li><li><b>用量核算</b> - 追踪 Token、模型成本和部门消耗</li><li><b>能力市场</b> - 将可复用 Skill 分发到 Codex、Claude 等客户端</li></ul><p class="tokenport-tour-emphasis">接下来，用 3 分钟完成一次可演示的经营闭环配置 →</p></div>',
+        nextBtn: '开始配置',
         prevBtn: '跳过'
       },
       groupManage: {
         title: '📦 第一步：分组管理',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组是 Sub2API 的核心概念，它就像一个"服务套餐"：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 每个分组可以包含多个上游账号</li><li>💰 每个分组有独立的计费倍率</li><li>👥 可以设置为公开或专属分组</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 示例：</b>您可以创建"VIP专线"（高倍率）和"免费试用"（低倍率）两个分组</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 点击左侧的"分组管理"开始</p></div>'
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组是 TokenPort 的经营单元，可以对应部门、项目、客户或测试环境：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>每个分组可以绑定多个上游账号</li><li>每个分组有独立的费率、额度和权限</li><li>后续报表可按分组归集 Token 和成本</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>示例：</b>可创建“软开团队”“二开团队”“市场材料”等分组，用于部门核算和预算控制。</p><p style="margin-top: 16px; color: #0f9f8f; font-weight: 600;">点击左侧的“分组管理”开始</p></div>'
       },
       createGroup: {
         title: '➕ 创建新分组',
@@ -254,10 +254,10 @@ export default {
     // User tour steps
     user: {
       welcome: {
-        title: '👋 欢迎使用 Sub2API',
+        title: '👋 欢迎使用 TokenPort',
         description:
-          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">您好！欢迎来到 Sub2API AI 服务平台。</p><p style="margin-bottom: 12px;"><b>🎯 快速开始：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 创建 API 密钥</li><li>📋 复制密钥到您的应用</li><li>🚀 开始使用 AI 服务</li></ul><p style="color: #10b981; font-weight: 600;">只需 1 分钟，让我们开始吧 →</p></div>',
-        nextBtn: '开始 🚀',
+          '<div class="tokenport-tour-intro"><p>您好，欢迎进入 TokenPort。这里可以领取 API Key、查看用量，并把接入配置导入到 Codex、Claude Code、OpenCode 等工具。</p><p><b>快速开始：</b></p><ul><li>创建或选择一个 API Key</li><li>按工具生成接入配置</li><li>按需安装 Skill 能力包</li><li>在用量页面查看 Token 消耗和成本</li></ul><p class="tokenport-tour-emphasis">只需 1 分钟，完成一次可用的客户端接入 →</p></div>',
+        nextBtn: '开始',
         prevBtn: '跳过'
       },
       keyManage: {

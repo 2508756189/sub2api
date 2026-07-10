@@ -4,6 +4,10 @@ import Icon from '@/components/icons/Icon.vue'
 import {
   DEFAULT_SKILL_MARKET_REGISTRY_URL,
   fetchSkillMarketWithSource,
+  getSkillCategoryName,
+  getSkillDisplayDescription,
+  getSkillDisplayName,
+  getSkillRiskLabel,
   type SkillMarketEntry,
   type SkillMarketRegistry,
 } from '@/api/skillMarket'
@@ -31,7 +35,9 @@ async function load() {
 
 const categoryNames = computed(() => {
   const map: Record<string, string> = { all: '全部' }
-  for (const category of registry.value?.categories ?? []) map[category.id] = category.name
+  for (const category of registry.value?.categories ?? []) {
+    map[category.id] = getSkillCategoryName(category.id, registry.value)
+  }
   return map
 })
 
@@ -41,7 +47,14 @@ const filteredSkills = computed<SkillMarketEntry[]>(() => {
     .filter((item) => activeCategory.value === 'all' || item.category === activeCategory.value)
     .filter((item) => {
       if (!q) return true
-      return [item.name, item.description, item.category, ...(item.tags ?? [])].join(' ').toLowerCase().includes(q)
+      return [
+        item.name,
+        item.description,
+        getSkillDisplayName(item),
+        getSkillDisplayDescription(item),
+        item.category,
+        ...(item.tags ?? []),
+      ].join(' ').toLowerCase().includes(q)
     })
 })
 
@@ -65,23 +78,28 @@ onMounted(load)
         <strong>TokenPort</strong>
         <small>Skill Market</small>
       </router-link>
-      <span class="sm-count" v-if="registry">{{ registry.skills.length }} skills indexed</span>
+      <span class="sm-count" v-if="registry">{{ registry.skills.length }} 个技能包</span>
     </header>
 
     <section class="sm-hero">
-      <p class="eyebrow">SKILL MARKET</p>
-      <h1>技能包目录</h1>
+      <p class="eyebrow">能力市场</p>
+      <h1>能力资产市场</h1>
       <p class="hero-copy">
-        精选的智能应用能力包。每个技能包含定义、分类、风险等级与校验信息，
-        在「使用 API 密钥」弹窗中勾选后，会生成带 SHA256 校验的一键安装脚本。
+        这里展示已经同步到平台的可复用技能包。完整安装动作在「使用 API 密钥」弹窗中完成：
+        选择 Codex 或 Claude Code 后勾选技能，平台会生成带 SHA256 校验的安装脚本。
       </p>
+
+      <div class="install-note">
+        <strong>安装方式</strong>
+        <span>复制生成的 Bash 或 PowerShell 脚本到本机终端执行，安装完成后重启 Codex 或 Claude Code 生效。</span>
+      </div>
 
       <div class="sm-controls">
         <input
           v-model="query"
           type="text"
           class="search-input"
-          placeholder="搜索技能名称、描述或标签..."
+          placeholder="搜索技能名称、使用场景或标签..."
         />
       </div>
 
@@ -98,7 +116,7 @@ onMounted(load)
           :class="['cat-tab', { active: activeCategory === category.id }]"
           @click="activeCategory = category.id"
         >
-          {{ category.name }} <i>{{ countByCategory(category.id) }}</i>
+          {{ categoryNames[category.id] || category.name }} <i>{{ countByCategory(category.id) }}</i>
         </button>
       </div>
     </section>
@@ -118,12 +136,13 @@ onMounted(load)
           class="skill-card"
         >
           <div class="card-head">
-            <h3>{{ skill.name }}</h3>
-            <span :class="['risk-pill', `risk-${skill.riskLevel}`]">{{ skill.riskLevel }}</span>
+            <h3>{{ getSkillDisplayName(skill) }}</h3>
+            <span :class="['risk-pill', `risk-${skill.riskLevel}`]">{{ getSkillRiskLabel(skill.riskLevel) }}</span>
           </div>
-          <p class="card-desc">{{ skill.description }}</p>
+          <p class="skill-id">{{ skill.id }}</p>
+          <p class="card-desc">{{ getSkillDisplayDescription(skill) }}</p>
           <div class="card-meta">
-            <span class="meta-cat">{{ categoryNames[skill.category] || skill.category }}</span>
+            <span class="meta-cat">{{ categoryNames[skill.category] || getSkillCategoryName(skill.category, registry) }}</span>
             <span v-for="tag in (skill.tags ?? []).slice(0, 3)" :key="tag" class="meta-tag">{{ tag }}</span>
           </div>
           <dl class="card-facts">
@@ -145,7 +164,7 @@ onMounted(load)
     </main>
 
     <footer class="sm-footer">
-      <span>Registry: <code>{{ registrySource }}</code></span>
+      <span>市场数据：<code>{{ registrySource }}</code></span>
       <router-link to="/home">← 返回首页</router-link>
     </footer>
   </div>
@@ -241,6 +260,26 @@ onMounted(load)
   color: rgba(244, 240, 232, 0.78);
   font-size: 15px;
   line-height: 1.7;
+}
+
+.install-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 760px;
+  margin: 20px auto 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(46, 229, 140, 0.24);
+  border-radius: 8px;
+  background: rgba(46, 229, 140, 0.08);
+  color: rgba(244, 240, 232, 0.82);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.install-note strong {
+  flex: 0 0 auto;
+  color: var(--green);
 }
 
 .sm-controls {
@@ -368,6 +407,13 @@ onMounted(load)
   color: var(--text);
   font-size: 17px;
   font-weight: 800;
+}
+
+.skill-id {
+  margin: -4px 0 0;
+  color: rgba(169, 176, 170, 0.7);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
 }
 
 .risk-pill {

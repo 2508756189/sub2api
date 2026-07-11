@@ -33,7 +33,7 @@
           <div
             class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
           >
-            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+            <img :src="siteLogo || '/ctyun-logo.svg'" alt="Logo" class="h-full w-full object-contain" />
           </div>
           <h1 class="text-gradient mb-2 text-3xl font-bold">
             {{ siteName }}
@@ -71,7 +71,7 @@ import { resolveTokenPortName, resolveTokenPortSubtitle } from '@/tokenport/bran
 const appStore = useAppStore()
 
 const siteName = computed(() => resolveTokenPortName(appStore.siteName))
-const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
+const siteLogo = computed(() => sanitizeUrl(((appStore.siteLogo && appStore.siteLogo !== '/logo.png') ? appStore.siteLogo : '/ctyun-logo.svg'), { allowRelative: true, allowDataUrl: true }))
 const siteSubtitle = computed(() => resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle))
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 

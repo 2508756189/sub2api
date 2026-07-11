@@ -7,8 +7,8 @@
     <header class="border-b border-emerald-950/10 bg-white/90">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
         <router-link to="/home" class="flex items-center gap-3">
-          <img :src="siteLogo || '/logo.png'" alt="TokenPort" class="h-9 w-9 rounded-lg object-contain" />
-          <span><b class="block text-base">{{ siteName }}</b><small class="text-xs text-gray-500">智能应用与技能接入平台</small></span>
+          <img :src="brandLogo" alt="天翼云 TokenPort" class="h-9 w-9 rounded-xl object-cover shadow-sm" />
+          <span><b class="block text-base">{{ siteName }}</b><small class="text-xs text-gray-500">{{ siteSubtitle }}</small></span>
         </router-link>
         <div class="flex items-center gap-3">
           <router-link to="/home" class="btn btn-secondary">返回首页</router-link>
@@ -29,14 +29,19 @@
 import { computed, onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { useAppStore, useAuthStore } from '@/stores'
-import { resolveTokenPortName } from '@/tokenport/brand/tokenPortBrand'
+import { resolveTokenPortName, resolveTokenPortSubtitle } from '@/tokenport/brand/tokenPortBrand'
 import SkillMarketCatalog from '@/tokenport/market/SkillMarketCatalog.vue'
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const siteName = computed(() => resolveTokenPortName(appStore.cachedPublicSettings?.site_name || appStore.siteName))
+const siteSubtitle = computed(() => resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle))
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
+const brandLogo = computed(() => {
+  const logo = siteLogo.value
+  return logo && logo !== '/logo.png' ? logo : '/ctyun-logo.svg'
+})
 const currentYear = new Date().getFullYear()
 
 onMounted(() => {

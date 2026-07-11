@@ -1,23 +1,35 @@
 <template>
   <div class="space-y-6">
-    <section class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-850">
-      <div class="grid gap-6 p-5 lg:grid-cols-[1fr_auto] lg:items-end lg:p-6">
+    <section class="overflow-hidden rounded-2xl border border-emerald-950/10 bg-gradient-to-br from-white via-[#f7fbf9] to-[#eef7f3] dark:border-dark-700 dark:from-dark-850 dark:via-dark-850 dark:to-dark-900">
+      <div class="grid gap-6 p-5 lg:grid-cols-[1fr_auto] lg:items-end lg:p-7">
         <div>
-          <p class="text-xs font-semibold text-primary-600 dark:text-primary-400">TOKENPORT SKILL MARKET</p>
-          <h1 class="mt-2 text-2xl font-bold text-gray-950 dark:text-white">可复用的智能体能力资产</h1>
-          <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
-            查看技能的适用场景、运行依赖、权限和风险信息。安装操作在 API 密钥的接入配置中心完成。
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-900/40 dark:bg-dark-900 dark:text-emerald-300">
+            <img src="/ctyun-logo.svg" alt="Tianyi Cloud" class="h-4 w-4 rounded" />
+            TOKENPORT · SKILL MARKET
+          </div>
+          <h1 class="text-3xl font-extrabold tracking-tight text-gray-950 dark:text-white">可复用的智能体能力资产</h1>
+          <p class="mt-3 max-w-3xl text-[15px] leading-7 text-gray-600 dark:text-gray-300">
+            按场景、风险和运行时筛选技能，查看版本、依赖与校验信息。安装操作在 API 密钥的接入配置中心完成。
           </p>
         </div>
-        <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="rounded-md bg-gray-50 px-4 py-3 dark:bg-dark-900"><b class="block text-lg text-gray-900 dark:text-white">{{ registry?.skills.length || 0 }}</b><span class="text-xs text-gray-500">技能</span></div>
-          <div class="rounded-md bg-gray-50 px-4 py-3 dark:bg-dark-900"><b class="block text-lg text-gray-900 dark:text-white">{{ registry?.categories.length || 0 }}</b><span class="text-xs text-gray-500">分类</span></div>
-          <div class="rounded-md bg-gray-50 px-4 py-3 dark:bg-dark-900"><b class="block text-lg text-gray-900 dark:text-white">SHA256</b><span class="text-xs text-gray-500">校验</span></div>
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="rounded-xl border border-emerald-950/8 bg-white px-4 py-3 shadow-sm dark:border-dark-600 dark:bg-dark-900">
+            <b class="block text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ registry?.skills.length || 0 }}</b>
+            <span class="text-xs font-medium text-gray-500">技能</span>
+          </div>
+          <div class="rounded-xl border border-emerald-950/8 bg-white px-4 py-3 shadow-sm dark:border-dark-600 dark:bg-dark-900">
+            <b class="block text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ registry?.categories.length || 0 }}</b>
+            <span class="text-xs font-medium text-gray-500">分类</span>
+          </div>
+          <div class="rounded-xl border border-emerald-950/8 bg-white px-4 py-3 shadow-sm dark:border-dark-600 dark:bg-dark-900">
+            <b class="block text-2xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-300">SHA256</b>
+            <span class="text-xs font-medium text-gray-500">校验</span>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-850">
+    <section class="rounded-2xl border border-emerald-950/10 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-850 lg:p-5">
       <div class="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_180px_160px_160px]">
         <div class="relative">
           <Icon name="search" size="sm" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -32,10 +44,10 @@
           v-for="category in categoryOptions"
           :key="category.value"
           type="button"
-          class="rounded-md border px-3 py-1.5 text-sm transition-colors"
+          class="rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all"
           :class="category.value === activeCategory
-            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-            : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'"
+            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-900/20 dark:text-emerald-300'
+            : 'border-gray-200 text-gray-600 hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-dark-600 dark:text-gray-300'"
           @click="activeCategory = category.value"
         >
           {{ category.label }} <span class="ml-1 text-xs opacity-70">{{ category.count }}</span>
@@ -43,27 +55,48 @@
       </div>
     </section>
 
-    <div v-if="loading" class="rounded-lg border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-850">正在加载技能市场...</div>
-    <div v-else-if="error" class="rounded-lg border border-red-200 bg-red-50 py-12 text-center text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+    <div v-if="loading" class="rounded-2xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-850">正在加载技能市场...</div>
+    <div v-else-if="error" class="rounded-2xl border border-red-200 bg-red-50 py-12 text-center text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
       {{ error }} <button class="ml-2 font-medium underline" @click="load">重试</button>
     </div>
-    <div v-else-if="!filteredSkills.length" class="rounded-lg border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-850">没有符合条件的技能。</div>
+    <div v-else-if="!filteredSkills.length" class="rounded-2xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-850">没有符合条件的技能。</div>
     <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <article v-for="skill in filteredSkills" :key="skill.id" class="flex min-h-[260px] flex-col rounded-lg border border-gray-200 bg-white p-5 transition hover:border-primary-300 hover:shadow-sm dark:border-dark-700 dark:bg-dark-850 dark:hover:border-primary-700">
+      <article
+        v-for="skill in filteredSkills"
+        :key="skill.id"
+        class="group flex min-h-[280px] flex-col rounded-2xl border border-emerald-950/10 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md dark:border-dark-700 dark:bg-dark-850 dark:hover:border-emerald-700"
+      >
         <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <h2 class="truncate text-base font-semibold text-gray-950 dark:text-white">{{ getSkillDisplayName(skill) }}</h2>
-            <p class="mt-1 truncate font-mono text-[11px] text-gray-400">{{ skill.id }}</p>
+          <div class="flex min-w-0 items-start gap-3">
+            <div class="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-sky-500 text-sm font-extrabold text-white shadow-sm">
+              {{ skillInitial(skill) }}
+            </div>
+            <div class="min-w-0">
+              <h2 class="truncate text-[15px] font-bold tracking-tight text-gray-950 dark:text-white">{{ getSkillDisplayName(skill) }}</h2>
+              <p class="mt-1 truncate text-xs text-gray-400">{{ getSkillCategoryName(skill.category, registry) }} · v{{ skill.version }}</p>
+            </div>
           </div>
-          <span :class="['flex-none rounded px-2 py-1 text-xs', riskClass(skill.riskLevel)]">{{ getSkillRiskLabel(skill.riskLevel) }}</span>
+          <span :class="['flex-none rounded-full px-2.5 py-1 text-xs font-semibold', riskClass(skill.riskLevel)]">{{ getSkillRiskLabel(skill.riskLevel) }}</span>
         </div>
         <p class="mt-4 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-300">{{ skill.detail?.summary || getSkillDisplayDescription(skill) }}</p>
         <div class="mt-4 flex flex-wrap gap-1.5">
-          <span class="rounded bg-primary-50 px-2 py-1 text-xs text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">{{ getSkillCategoryName(skill.category, registry) }}</span>
-          <span v-for="tag in (skill.tags || []).slice(0, 3)" :key="tag" class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-500 dark:bg-dark-700 dark:text-gray-300">{{ tag }}</span>
+          <span
+            v-for="tag in (skill.tags || []).slice(0, 3)"
+            :key="tag"
+            class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-dark-700 dark:text-gray-300"
+          >{{ tag }}</span>
+          <span
+            v-for="rt in (skill.runtime || []).slice(0, 2)"
+            :key="rt"
+            class="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+          >{{ rt }}</span>
         </div>
         <div class="mt-auto flex items-end justify-between gap-3 border-t border-gray-100 pt-4 dark:border-dark-700">
-          <div class="text-xs text-gray-400"><span>v{{ skill.version }}</span><span class="mx-2">·</span><span>{{ formatSize(skill.archive.size) }}</span></div>
+          <div class="text-xs text-gray-400">
+            <span>{{ formatSize(skill.archive.size) }}</span>
+            <span class="mx-2">·</span>
+            <span class="font-mono">{{ shortHash(skill.archive.sha256) }}</span>
+          </div>
           <button type="button" class="btn btn-secondary btn-sm" @click="selectedSkill = skill">查看详情</button>
         </div>
       </article>
@@ -170,8 +203,23 @@ function riskClass(level?: string) {
   return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
 }
 
-function formatSize(size?: number) { return size ? `${Math.round(size / 1024)} KB` : '—' }
-function formatGeneratedAt(value: string) { return value ? new Date(value).toLocaleString('zh-CN') : '—' }
+function formatSize(size?: number) {
+  return size ? `${Math.round(size / 1024)} KB` : '—'
+}
+
+function formatGeneratedAt(value: string) {
+  return value ? new Date(value).toLocaleString('zh-CN') : '—'
+}
+
+function skillInitial(skill: SkillMarketEntry) {
+  const name = getSkillDisplayName(skill).trim()
+  return name ? name.slice(0, 1).toUpperCase() : 'S'
+}
+
+function shortHash(hash?: string) {
+  if (!hash) return '—'
+  return `${hash.slice(0, 6)}…${hash.slice(-4)}`
+}
 
 onMounted(load)
 </script>

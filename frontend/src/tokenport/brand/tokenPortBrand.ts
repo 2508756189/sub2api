@@ -1,9 +1,10 @@
 export const TOKENPORT_BRAND = {
   name: 'TokenPort',
-  subtitle: '智能应用接入与经营平台',
+  subtitle: '天翼云智能应用接入与经营平台',
   proposition: '统一管理模型、Token 与智能体能力',
   upstreamName: 'Sub2API',
   upstreamUrl: 'https://github.com/Wei-Shaw/sub2api',
+  logo: '/ctyun-logo.svg',
 } as const
 
 export const TOKENPORT_PRODUCT = {
@@ -18,5 +19,9 @@ export function resolveTokenPortName(configuredName?: string | null): string {
 }
 
 export function resolveTokenPortSubtitle(configuredSubtitle?: string | null): string {
-  return configuredSubtitle?.trim() || TOKENPORT_BRAND.subtitle
+  const subtitle = configuredSubtitle?.trim()
+  if (!subtitle || subtitle === 'Subscription to API Conversion Platform') {
+    return TOKENPORT_BRAND.subtitle
+  }
+  return subtitle
 }

@@ -46,9 +46,8 @@ function updateFavicon(logoUrl: string) {
 watch(
   () => appStore.siteLogo,
   (newLogo) => {
-    if (newLogo) {
-      updateFavicon(newLogo)
-    }
+    const logo = newLogo && newLogo !== '/logo.png' ? newLogo : '/ctyun-logo.svg'
+    updateFavicon(logo)
   },
   { immediate: true }
 )

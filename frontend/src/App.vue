@@ -8,6 +8,7 @@ import { resolveRouteDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useAdminComplianceStore, useAdminSettingsStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
+import { resolveTokenPortLogo } from '@/tokenport/brand/tokenPortBrand'
 
 const router = useRouter()
 const route = useRoute()
@@ -46,8 +47,7 @@ function updateFavicon(logoUrl: string) {
 watch(
   () => appStore.siteLogo,
   (newLogo) => {
-    const logo = newLogo && newLogo !== '/logo.png' ? newLogo : '/ctyun-logo.svg'
-    updateFavicon(logo)
+    updateFavicon(resolveTokenPortLogo(newLogo))
   },
   { immediate: true }
 )

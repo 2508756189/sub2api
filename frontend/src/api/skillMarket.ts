@@ -50,6 +50,12 @@ export interface SkillMarketRegistry {
   skills: SkillMarketEntry[]
 }
 
+export type SkillRuntimeTarget = keyof SkillMarketEntry['installTargets']
+
+export function skillSupportsRuntime(skill: SkillMarketEntry, runtime: SkillRuntimeTarget): boolean {
+  return Boolean(skill.runtime?.includes(runtime) || skill.installTargets?.[runtime])
+}
+
 export function resolveSkillMarketAssetUrl(registryUrl: string, assetPath: string): string {
   if (/^https?:\/\//i.test(assetPath)) return assetPath
   const baseUrl = /^https?:\/\//i.test(registryUrl)

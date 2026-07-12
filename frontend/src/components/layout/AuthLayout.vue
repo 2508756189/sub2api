@@ -66,12 +66,12 @@
 import { computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
-import { resolveTokenPortName, resolveTokenPortSubtitle } from '@/tokenport/brand/tokenPortBrand'
+import { resolveTokenPortLogo, resolveTokenPortName, resolveTokenPortSubtitle } from '@/tokenport/brand/tokenPortBrand'
 
 const appStore = useAppStore()
 
 const siteName = computed(() => resolveTokenPortName(appStore.siteName))
-const siteLogo = computed(() => sanitizeUrl(((appStore.siteLogo && appStore.siteLogo !== '/logo.png') ? appStore.siteLogo : '/ctyun-logo.svg'), { allowRelative: true, allowDataUrl: true }))
+const siteLogo = computed(() => resolveTokenPortLogo(sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true })))
 const siteSubtitle = computed(() => resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle))
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 

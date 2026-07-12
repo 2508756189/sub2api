@@ -25,3 +25,7 @@ export function resolveTokenPortSubtitle(configuredSubtitle?: string | null): st
   }
   return subtitle
 }
+
+export function resolveTokenPortLogo(configuredLogo?: string | null): string {
+  return configuredLogo?.trim() || TOKENPORT_BRAND.logo
+}

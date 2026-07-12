@@ -29,7 +29,8 @@
 import { computed, onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { useAppStore, useAuthStore } from '@/stores'
-import { resolveTokenPortName, resolveTokenPortSubtitle } from '@/tokenport/brand/tokenPortBrand'
+import { sanitizeUrl } from '@/utils/url'
+import { resolveTokenPortLogo, resolveTokenPortName, resolveTokenPortSubtitle } from '@/tokenport/brand/tokenPortBrand'
 import SkillMarketCatalog from '@/tokenport/market/SkillMarketCatalog.vue'
 
 const authStore = useAuthStore()
@@ -38,10 +39,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const siteName = computed(() => resolveTokenPortName(appStore.cachedPublicSettings?.site_name || appStore.siteName))
 const siteSubtitle = computed(() => resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle))
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
-const brandLogo = computed(() => {
-  const logo = siteLogo.value
-  return logo && logo !== '/logo.png' ? logo : '/ctyun-logo.svg'
-})
+const brandLogo = computed(() => resolveTokenPortLogo(sanitizeUrl(siteLogo.value, { allowRelative: true, allowDataUrl: true })))
 const currentYear = new Date().getFullYear()
 
 onMounted(() => {

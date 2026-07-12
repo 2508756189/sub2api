@@ -197,7 +197,7 @@ import { sanitizeSvg } from '@/utils/sanitize'
 import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
-import { resolveTokenPortName } from '@/tokenport/brand/tokenPortBrand'
+import { resolveTokenPortLogo, resolveTokenPortName } from '@/tokenport/brand/tokenPortBrand'
 
 interface NavItem {
   path: string
@@ -260,7 +260,7 @@ const expandedGroups = ref<Set<string>>(new Set())
 const siteName = computed(() => resolveTokenPortName(appStore.siteName))
 const siteLogo = computed(() => {
   const raw = sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true })
-  return !raw || raw === '/logo.png' ? '/ctyun-logo.svg' : raw
+  return resolveTokenPortLogo(raw)
 })
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)

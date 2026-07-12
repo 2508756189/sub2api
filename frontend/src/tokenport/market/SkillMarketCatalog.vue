@@ -126,6 +126,7 @@ import {
   getSkillDisplayDescription,
   getSkillDisplayName,
   getSkillRiskLabel,
+  skillSupportsRuntime,
   type SkillMarketEntry,
   type SkillMarketRegistry,
 } from '@/api/skillMarket'
@@ -173,7 +174,7 @@ const filteredSkills = computed(() => {
   const riskWeight: Record<string, number> = { high: 0, medium: 1, low: 2 }
   return [...(registry.value?.skills || [])]
     .filter((skill) => activeCategory.value === 'all' || skill.category === activeCategory.value)
-    .filter((skill) => runtime.value === 'all' || skill.runtime?.includes(String(runtime.value)))
+    .filter((skill) => runtime.value === 'all' || skillSupportsRuntime(skill, String(runtime.value) as 'codex' | 'claude' | 'portable'))
     .filter((skill) => risk.value === 'all' || skill.riskLevel === risk.value)
     .filter((skill) => !needle || [skill.id, skill.name, skill.description, skill.detail?.summary, ...(skill.tags || [])].filter(Boolean).join(' ').toLowerCase().includes(needle))
     .sort((a, b) => {

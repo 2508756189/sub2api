@@ -3,7 +3,7 @@
     <div class="window-bar">
       <span class="dot red" /><span class="dot yellow" /><span class="dot green" />
       <b>TokenPort 经营控制台</b>
-      <em>交互预览 · 点击左侧菜单</em>
+      <em>功能示意 · 非当前账号数据</em>
     </div>
 
     <div class="console-body">
@@ -52,8 +52,8 @@
           </div>
           <div class="top-meta">
             <span>CN · ZH</span>
-            <span class="balance">¥ 851.67</span>
-            <span class="admin-chip">AD admin</span>
+            <span class="balance">示例环境</span>
+            <span class="admin-chip">管理员</span>
           </div>
         </header>
 
@@ -238,48 +238,48 @@ function select(id: MenuId) {
 }
 
 const kpis = [
-  { label: 'API 密钥', value: '32', hint: '12 启用' },
-  { label: '账号', value: '3', hint: '3 启用' },
-  { label: '今日请求', value: '0', hint: '总计 550' },
-  { label: '用户', value: '+0', hint: '总计 23' },
-  { label: '今日 Token', value: '0', hint: '$0.0000' },
-  { label: '总 Token', value: '6.61M', hint: '$151.92' },
-  { label: '性能指标', value: '0 RPM', hint: '0 TPM' },
-  { label: '平均响应', value: '3.21s', hint: '0 活跃用户' },
+  { label: 'API 密钥', value: '--', hint: '登录后查看' },
+  { label: '账号', value: '--', hint: '登录后查看' },
+  { label: '今日请求', value: '--', hint: '实时统计' },
+  { label: '用户', value: '--', hint: '按部门归集' },
+  { label: '今日 Token', value: '--', hint: '实时核算' },
+  { label: '总 Token', value: '--', hint: '按周期汇总' },
+  { label: '性能指标', value: '--', hint: 'RPM / TPM' },
+  { label: '平均响应', value: '--', hint: '调用质量' },
 ]
 
 const models = [
-  { name: 'claude-sonnet', share: '41%', color: '#00a878' },
-  { name: 'claude-haiku', share: '28%', color: '#5bb8ff' },
-  { name: 'gemini-flash', share: '18%', color: '#f5b942' },
-  { name: '其他', share: '13%', color: '#c5d4cd' },
+  { name: '高性能模型', share: '示例', color: '#00a878' },
+  { name: '快速模型', share: '示例', color: '#5bb8ff' },
+  { name: '多模态模型', share: '示例', color: '#f5b942' },
+  { name: '其他模型', share: '示例', color: '#c5d4cd' },
 ]
 
 const users = [
-  { name: '研发一组', role: '开发者', status: '正常', token: '1.2M' },
-  { name: '产品中心', role: '业务用户', status: '正常', token: '860K' },
-  { name: '客服坐席', role: '业务用户', status: '正常', token: '430K' },
-  { name: '平台管理员', role: 'Admin', status: '正常', token: '92K' },
+  { name: '研发部门', role: '开发者', status: '示例', token: '--' },
+  { name: '产品部门', role: '业务用户', status: '示例', token: '--' },
+  { name: '服务部门', role: '业务用户', status: '示例', token: '--' },
+  { name: '平台管理员', role: '管理员', status: '示例', token: '--' },
 ]
 
 const accounts = [
-  { name: 'Anthropic 主账号', status: '健康', statusClass: 'ok', desc: '覆盖 Claude Sonnet / Haiku，用于研发与智能体场景。', tags: ['官方协议', '高可用'] },
-  { name: 'OpenAI 兼容池', status: '健康', statusClass: 'ok', desc: 'Codex / GPT 兼容入口，支持工具调用与长上下文。', tags: ['兼容协议', '工具调用'] },
-  { name: 'Gemini 企业通道', status: '观察中', statusClass: 'warn', desc: '用于多模态与批量摘要任务，按预算轮询。', tags: ['多模态', '预算控制'] },
-  { name: '自有模型接入', status: '健康', statusClass: 'ok', desc: '企业内部模型与私有化推理资源统一纳管。', tags: ['私有化', '内网'] },
+  { name: '高性能模型池', status: '示例', statusClass: 'ok', desc: '承载复杂推理、编码和智能体任务。', tags: ['模型路由', '高可用'] },
+  { name: '通用兼容池', status: '示例', statusClass: 'ok', desc: '兼容常用 API 协议与工具调用场景。', tags: ['兼容协议', '工具调用'] },
+  { name: '多模态通道', status: '示例', statusClass: 'warn', desc: '承载图片、文档和批量处理任务。', tags: ['多模态', '预算控制'] },
+  { name: '自有模型接入', status: '示例', statusClass: 'ok', desc: '统一纳管企业内部模型与私有化推理资源。', tags: ['私有化', '内网'] },
 ]
 
 const channels = [
-  { name: 'Claude 通道', latency: '320ms', load: '68%', desc: '优先承载复杂推理与编码任务' },
-  { name: 'GPT 兼容通道', latency: '280ms', load: '54%', desc: '工具调用与通用对话均衡分流' },
-  { name: 'Gemini 通道', latency: '410ms', load: '36%', desc: '多模态与长文档摘要' },
+  { name: '高性能通道', latency: '--', load: '68%', desc: '复杂推理与编码任务示意' },
+  { name: '通用兼容通道', latency: '--', load: '54%', desc: '工具调用与通用对话示意' },
+  { name: '多模态通道', latency: '--', load: '36%', desc: '图片与长文档任务示意' },
 ]
 
 const usage = [
-  { time: '10:21', dept: '研发一组', model: 'claude-sonnet', token: '128K', cost: '¥18.4' },
-  { time: '10:08', dept: '产品中心', model: 'gemini-flash', token: '64K', cost: '¥3.2' },
-  { time: '09:56', dept: '客服坐席', model: 'claude-haiku', token: '42K', cost: '¥1.8' },
-  { time: '09:40', dept: '平台运维', model: 'gpt-compatible', token: '31K', cost: '¥2.1' },
+  { time: '--:--', dept: '研发部门', model: '高性能模型', token: '--', cost: '--' },
+  { time: '--:--', dept: '产品部门', model: '多模态模型', token: '--', cost: '--' },
+  { time: '--:--', dept: '服务部门', model: '快速模型', token: '--', cost: '--' },
+  { time: '--:--', dept: '平台运维', model: '兼容模型', token: '--', cost: '--' },
 ]
 
 const skills = [
@@ -290,9 +290,9 @@ const skills = [
 ]
 
 const keys = [
-  { name: '研发共用 Key', mask: 'sk-****-rd-01', scope: 'Claude + Codex' },
-  { name: '客服坐席 Key', mask: 'sk-****-cs-02', scope: 'Haiku 限流' },
-  { name: '演示环境 Key', mask: 'sk-****-demo', scope: '只读预算' },
+  { name: '研发共用 Key', mask: 'sk-****-example', scope: '代码模型池' },
+  { name: '服务部门 Key', mask: 'sk-****-example', scope: '快速模型池' },
+  { name: '示例环境 Key', mask: 'sk-****-example', scope: '只读预算' },
 ]
 </script>
 

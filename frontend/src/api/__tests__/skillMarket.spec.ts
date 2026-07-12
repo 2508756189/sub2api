@@ -4,6 +4,7 @@ import {
   fetchSkillMarketWithSource,
   fetchSkillDetailMarkdown,
   resolveSkillArchiveUrl,
+  skillSupportsRuntime,
   toSkillInstallSelection,
   type SkillMarketRegistry,
 } from '../skillMarket'
@@ -89,5 +90,27 @@ describe('skillMarket', () => {
 
     expect(markdown).toBe('# MarkItDown')
     expect(fetchMock.mock.calls[0][0]).toContain('/skill-market/details/markitdown.md')
+  })
+
+  it('matches Codex and Claude filters through install targets', () => {
+    const portableSkill = {
+      ...registry.skills[0],
+      runtime: ['portable'],
+    }
+
+    expect(skillSupportsRuntime(portableSkill, 'codex')).toBe(true)
+    expect(skillSupportsRuntime(portableSkill, 'claude')).toBe(true)
+    expect(skillSupportsRuntime(portableSkill, 'portable')).toBe(true)
+  })
+
+  it('does not claim support for a runtime without metadata or an install target', () => {
+    const portableOnlySkill = {
+      ...registry.skills[0],
+      runtime: ['portable'],
+      installTargets: { portable: '~/.agents/skills/markitdown' },
+    }
+
+    expect(skillSupportsRuntime(portableOnlySkill, 'codex')).toBe(false)
+    expect(skillSupportsRuntime(portableOnlySkill, 'claude')).toBe(false)
   })
 })

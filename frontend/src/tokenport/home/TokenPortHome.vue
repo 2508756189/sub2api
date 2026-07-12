@@ -232,6 +232,7 @@ import type { SkillMarketEntry } from '@/api/skillMarket'
 import {
   TOKENPORT_BRAND,
   TOKENPORT_PRODUCT,
+  resolveTokenPortLogo,
   resolveTokenPortName,
   resolveTokenPortSubtitle,
 } from '@/tokenport/brand/tokenPortBrand'
@@ -262,7 +263,7 @@ const siteSubtitle = computed(() =>
   resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle),
 )
 const siteLogo = computed(() => props.siteLogo)
-const brandLogo = computed(() => siteLogo.value || '/ctyun-logo.svg')
+const brandLogo = computed(() => resolveTokenPortLogo(siteLogo.value))
 const docUrl = computed(() => props.docUrl)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const entryPath = computed(() =>

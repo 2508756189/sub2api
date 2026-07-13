@@ -20,7 +20,10 @@ const global = {
   },
 }
 
-function mountModal(platform: 'openai' | 'anthropic' | 'antigravity' = 'openai', initialMode: 'direct' | 'ccs' = 'direct') {
+function mountModal(
+  platform: 'openai' | 'anthropic' | 'antigravity' | 'grok' = 'openai',
+  initialMode: 'direct' | 'ccs' = 'direct',
+) {
   return mount(UseKeyModal, {
     props: {
       show: true,
@@ -60,12 +63,19 @@ describe('UseKeyModal', () => {
     await nextTick()
     expect(wrapper.text()).toContain('https://example.com/v1')
     expect(wrapper.text()).toContain('opencode.json')
-    expect(wrapper.text()).not.toContain('gpt-5.4')
+    expect(wrapper.text()).not.toContain('gpt-5.5')
   })
 
   it('opens directly in CCS mode without requiring a model', () => {
     const wrapper = mountModal('anthropic', 'ccs')
     expect(wrapper.text()).toContain('CCS 只导入客户端配置')
     expect(wrapper.findAll('button').some((button) => button.text() === '导入 CCS')).toBe(true)
+  })
+
+  it('supports Grok without injecting an unverified model', () => {
+    const wrapper = mountModal('grok')
+    expect(wrapper.text()).toContain('Grok CLI')
+    expect(wrapper.text()).toContain('base_url = "https://example.com/v1"')
+    expect(wrapper.text()).not.toContain('grok-4.5')
   })
 })

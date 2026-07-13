@@ -97,6 +97,7 @@ import {
 import {
   buildClientInstallScript,
   buildGeminiFiles,
+  buildGrokFiles,
   buildOpenCodeFiles,
   ensureApiVersion,
   isSkillInstallFile,
@@ -146,6 +147,7 @@ const shellTabs: Array<{ id: ConnectorShell; label: string }> = [
 
 const defaultClient = computed(() => {
   if (props.platform === 'openai') return 'codex'
+  if (props.platform === 'grok') return 'grok'
   if (props.platform === 'gemini') return 'gemini'
   return 'claude'
 })
@@ -160,6 +162,7 @@ const clientTabs = computed(() => {
     if (props.allowMessagesDispatch) tabs.splice(2, 0, { id: 'claude', label: 'Claude Code' })
     return tabs
   }
+  if (props.platform === 'grok') return [{ id: 'grok', label: 'Grok CLI' }, { id: 'opencode', label: 'OpenCode' }]
   if (props.platform === 'gemini') return [{ id: 'gemini', label: 'Gemini CLI' }, { id: 'opencode', label: 'OpenCode' }]
   if (props.platform === 'antigravity') return [{ id: 'claude', label: 'Claude Code' }, { id: 'gemini', label: 'Gemini CLI' }, { id: 'opencode', label: 'OpenCode' }]
   return [{ id: 'claude', label: 'Claude Code' }, { id: 'opencode', label: 'OpenCode' }]
@@ -167,7 +170,7 @@ const clientTabs = computed(() => {
 
 const platformDescription = computed(() => {
   if (!props.platform) return '请先为 API Key 配置可用分组。'
-  const labels: Record<string, string> = { openai: 'OpenAI 兼容协议', anthropic: 'Anthropic 兼容协议', gemini: 'Gemini 兼容协议', antigravity: 'Gemini / Anthropic 双协议' }
+  const labels: Record<string, string> = { openai: 'OpenAI 兼容协议', anthropic: 'Anthropic 兼容协议', gemini: 'Gemini 兼容协议', antigravity: 'Gemini / Anthropic 双协议', grok: 'Grok 兼容协议' }
   return `${labels[props.platform] || props.platform} · 选择客户端、模型与能力后生成可检查的配置`
 })
 
@@ -186,6 +189,7 @@ const generatedFiles = computed<FileConfig[]>(() => {
     const endpoint = props.platform === 'antigravity' ? `${baseUrl}/antigravity` : baseUrl
     return buildGeminiFiles(endpoint, props.apiKey, activeShell.value)
   }
+  if (activeClientTab.value === 'grok') return buildGrokFiles(baseUrl, props.apiKey, activeShell.value, connectorOptions.value)
   if (activeClientTab.value === 'codex-ws') return buildOpenAIWsFiles(common)
   if (activeClientTab.value === 'codex') return buildOpenAIFiles(common)
   return buildAnthropicFiles({ ...common, baseUrl: props.platform === 'antigravity' ? `${baseUrl}/antigravity` : baseUrl })
@@ -267,6 +271,10 @@ function ccsConfig(): { config?: string; configFormat?: 'json' | 'toml' } {
     const auth = clientFiles.value.find((file) => file.path.endsWith('auth.json'))?.content || '{}'
     const config = clientFiles.value.find((file) => file.path.endsWith('config.toml'))?.content || ''
     return { config: JSON.stringify({ auth: JSON.parse(auth), config }, null, 2), configFormat: 'json' }
+  }
+  if (activeClientTab.value === 'grok') {
+    const config = clientFiles.value.find((file) => file.path.endsWith('config.toml'))?.content
+    return config ? { config, configFormat: 'toml' } : {}
   }
   const settings = clientFiles.value.find((file) => file.path.endsWith('settings.json'))?.content
   return settings ? { config: settings, configFormat: 'json' } : {}

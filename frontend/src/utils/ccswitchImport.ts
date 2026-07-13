@@ -43,6 +43,11 @@ export function resolveCcSwitchImportConfig(
         app: 'gemini',
         endpoint: baseUrl
       }
+    case 'grok':
+      return {
+        app: 'codex',
+        endpoint: baseUrl
+      }
     default:
       return {
         app: 'claude',

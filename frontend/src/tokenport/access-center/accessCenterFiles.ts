@@ -1,5 +1,6 @@
 import type { FileConfig } from '@/components/keys/connectorTemplates'
 import type { ConnectorShell } from '@/components/keys/connectorTemplates'
+import { normalizeConnectorOptions, type ConnectorOptions } from '@/constants/connectorPresets'
 
 export function ensureApiVersion(baseUrl: string, version = 'v1'): string {
   const clean = baseUrl.replace(/\/+$/, '').replace(/\/v1(?:beta)?\/?$/, '')
@@ -31,13 +32,38 @@ export function buildOpenCodeFiles(baseUrl: string, apiKey: string, provider: st
   }]
 }
 
+export function buildGrokFiles(
+  baseUrl: string,
+  apiKey: string,
+  shell: ConnectorShell,
+  options: ConnectorOptions,
+): FileConfig[] {
+  const configDir = shell === 'unix' ? '~/.grok' : '%userprofile%\\.grok'
+  const model = normalizeConnectorOptions(options).codex.model.trim()
+  const lines = [
+    `base_url = "${ensureApiVersion(baseUrl)}"`,
+    `api_key = "${apiKey}"`,
+    'api_backend = "responses"',
+  ]
+
+  if (model) {
+    lines.unshift(`model = "${model}"`)
+  }
+
+  return [{
+    path: `${configDir}/config.toml`,
+    content: lines.join('\n'),
+    hint: model ? undefined : '未指定模型，将由客户端或后续手动配置决定。',
+  }]
+}
+
 export function isSkillInstallFile(file: FileConfig): boolean {
   return file.path.startsWith('Install ') && file.path.includes(' skills ')
 }
 
 export function isWritableClientFile(file: FileConfig): boolean {
   const path = file.path.toLowerCase().replace(/\\/g, '/')
-  return (path.includes('/.codex/') || path.includes('/.claude/')) &&
+  return (path.includes('/.codex/') || path.includes('/.claude/') || path.includes('/.grok/')) &&
     (path.endsWith('.json') || path.endsWith('.toml'))
 }
 

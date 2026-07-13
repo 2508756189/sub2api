@@ -17,5 +17,5 @@ defineProps<{
   keyName?: string
 }>()
 
-const emit = defineEmits<{ (e: 'close'): void }>()
+const emit = defineEmits<{ (event: 'close'): void }>()
 </script>

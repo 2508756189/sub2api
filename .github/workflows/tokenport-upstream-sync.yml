@@ -23,35 +23,63 @@ jobs:
         run: |
           git remote add upstream https://github.com/Wei-Shaw/sub2api.git || true
           git fetch upstream main
+          git fetch origin main
+
+      - name: Update upstream mirror branch
+        shell: bash
+        run: |
+          if [ "$(git rev-parse origin/main)" = "$(git rev-parse upstream/main)" ]; then
+            echo "Fork main already matches Sub2API upstream."
+            exit 0
+          fi
+
+          if ! git merge-base --is-ancestor origin/main upstream/main; then
+            echo "origin/main is not a fast-forward ancestor of upstream/main." >&2
+            exit 1
+          fi
+
+          git push origin upstream/main:main
 
       - name: Merge upstream into a review branch
         id: merge
         shell: bash
         run: |
-          branch="sync/upstream-${GITHUB_RUN_ID}"
+          upstream_sha="$(git rev-parse upstream/main)"
+          if git merge-base --is-ancestor "$upstream_sha" HEAD; then
+            echo "TokenPort already contains upstream commit $upstream_sha."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          branch="sync/upstream-${upstream_sha:0:12}"
           git switch -c "$branch"
           if ! git merge --no-edit upstream/main; then
             git status --short > upstream-conflicts.txt
             git diff --name-only --diff-filter=U >> upstream-conflicts.txt
             exit 1
           fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node
+        if: steps.merge.outputs.has_changes == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Set up pnpm
+        if: steps.merge.outputs.has_changes == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Validate TokenPort overlay
+        if: steps.merge.outputs.has_changes == 'true'
         shell: pwsh
         run: ./scripts/check-tokenport-overlay.ps1
 
       - name: Test and build frontend
+        if: steps.merge.outputs.has_changes == 'true'
         working-directory: frontend
         run: |
           pnpm install --frozen-lockfile
@@ -60,16 +88,30 @@ jobs:
           pnpm build
 
       - name: Build runtime image
+        if: steps.merge.outputs.has_changes == 'true'
         run: docker build -t tokenport-upstream-sync:${GITHUB_SHA} .
 
       - name: Push review branch
+        if: steps.merge.outputs.has_changes == 'true'
         run: |
-          git push origin "${{ steps.merge.outputs.branch }}"
+          git push --force-with-lease origin "${{ steps.merge.outputs.branch }}"
 
       - name: Open synchronization pull request
+        if: steps.merge.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          existing_url="$(gh pr list \
+            --base tokenport/main \
+            --head "${{ steps.merge.outputs.branch }}" \
+            --state open \
+            --json url \
+            --jq '.[0].url // empty')"
+          if [ -n "$existing_url" ]; then
+            echo "Synchronization pull request already exists: $existing_url"
+            exit 0
+          fi
+
           gh pr create \
             --base tokenport/main \
             --head "${{ steps.merge.outputs.branch }}" \

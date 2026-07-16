@@ -3,7 +3,11 @@ name: TokenPort upstream sync
 on:
   workflow_dispatch:
   schedule:
-    - cron: '20 2 * * 1'
+    - cron: '20 2 * * *'
+
+concurrency:
+  group: tokenport-upstream-sync
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -21,6 +25,8 @@ jobs:
 
       - name: Fetch Sub2API upstream
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote add upstream https://github.com/Wei-Shaw/sub2api.git || true
           git fetch upstream main
           git fetch origin main
@@ -54,10 +60,23 @@ jobs:
           branch="sync/upstream-${upstream_sha:0:12}"
           git switch -c "$branch"
           if ! git merge --no-edit upstream/main; then
-            git status --short > upstream-conflicts.txt
-            git diff --name-only --diff-filter=U >> upstream-conflicts.txt
+            {
+              echo "# TokenPort upstream synchronization conflict"
+              echo
+              echo "- Product branch: tokenport/main"
+              echo "- Upstream commit: $upstream_sha"
+              echo "- Review branch: $branch"
+              echo
+              echo "## Conflicted files"
+              echo
+              echo '```text'
+              git diff --name-only --diff-filter=U
+              echo '```'
+            } > upstream-conflicts.md
+            echo "conflicted=true" >> "$GITHUB_OUTPUT"
             exit 1
           fi
+          echo "conflicted=false" >> "$GITHUB_OUTPUT"
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
@@ -71,7 +90,7 @@ jobs:
         if: steps.merge.outputs.has_changes == 'true'
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.28.2
 
       - name: Validate TokenPort overlay
         if: steps.merge.outputs.has_changes == 'true'
@@ -119,9 +138,32 @@ jobs:
             --body "Automated upstream merge. TokenPort overlay checks, frontend tests, and image build completed before this PR was opened."
 
       - name: Upload conflict report
-        if: failure()
+        if: failure() && steps.merge.outputs.conflicted == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: tokenport-upstream-conflicts
-          path: upstream-conflicts.txt
+          path: upstream-conflicts.md
           if-no-files-found: ignore
+
+      - name: Open synchronization conflict issue
+        if: failure() && steps.merge.outputs.conflicted == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          upstream_sha="$(git rev-parse upstream/main)"
+          existing_url="$(gh issue list \
+            --state open \
+            --search 'TokenPort upstream synchronization conflict in:title' \
+            --json url \
+            --jq '.[0].url // empty')"
+          if [ -n "$existing_url" ]; then
+            gh issue comment "$existing_url" --body-file upstream-conflicts.md
+            exit 0
+          fi
+          gh issue create \
+            --title "TokenPort upstream synchronization conflict" \
+            --body-file upstream-conflicts.md \
+            --label "upstream-sync" || \
+          gh issue create \
+            --title "TokenPort upstream synchronization conflict" \
+            --body-file upstream-conflicts.md

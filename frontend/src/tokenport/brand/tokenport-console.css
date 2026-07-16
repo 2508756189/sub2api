@@ -41,9 +41,9 @@
   --tp-sidebar-link: #3d5a63;
   --tp-sidebar-link-hover-bg: #e8f1f1;
   --tp-sidebar-link-hover: #0d252c;
-  --tp-sidebar-active-bg: linear-gradient(90deg, #2ad4b8 0%, #24c4ac 100%);
-  --tp-sidebar-active-fg: #05241f;
-  --tp-sidebar-active-shadow: 0 6px 16px rgb(42 212 184 / 22%);
+  --tp-sidebar-active-bg: linear-gradient(180deg, rgb(0 168 120 / 16%), rgb(0 168 120 / 10%));
+  --tp-sidebar-active-fg: #066b4c;
+  --tp-sidebar-active-shadow: inset 0 0 0 1px rgb(0 168 120 / 16%);
   --tp-sidebar-nav-border: #d0dfe2;
   --tp-sidebar-footer-border: #dce6e8;
 
@@ -558,9 +558,9 @@
   --tp-sidebar-link: #b9cdd1;
   --tp-sidebar-link-hover-bg: rgb(255 255 255 / 6%);
   --tp-sidebar-link-hover: #ffffff;
-  --tp-sidebar-active-bg: linear-gradient(90deg, #2ad4b8 0%, #24c4ac 100%);
-  --tp-sidebar-active-fg: #05241f;
-  --tp-sidebar-active-shadow: 0 10px 28px rgb(42 212 184 / 18%);
+  --tp-sidebar-active-bg: linear-gradient(180deg, rgb(42 212 184 / 18%), rgb(42 212 184 / 11%));
+  --tp-sidebar-active-fg: #7ce3d1;
+  --tp-sidebar-active-shadow: inset 0 0 0 1px rgb(76 226 176 / 24%);
   --tp-sidebar-nav-border: rgb(255 255 255 / 10%);
   --tp-sidebar-footer-border: rgb(255 255 255 / 7%);
   --tp-header-bg: rgb(7 22 27 / 82%);

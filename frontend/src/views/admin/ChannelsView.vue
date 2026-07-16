@@ -880,6 +880,7 @@ function emptyPricingEntry(models: string[] = []): PricingFormEntry {
     output_price: null,
     cache_write_price: null,
     cache_read_price: null,
+    image_input_price: null,
     image_output_price: null,
     per_request_price: null,
     intervals: []
@@ -893,6 +894,7 @@ function defaultPricingSignature(entry: PricingFormEntry): string {
     entry.output_price ?? '',
     entry.cache_write_price ?? '',
     entry.cache_read_price ?? '',
+    entry.image_input_price ?? '',
     entry.image_output_price ?? '',
     entry.per_request_price ?? '',
   ].join('|')
@@ -927,6 +929,7 @@ async function buildSyncedPricingEntries(models: string[]): Promise<{
       output_price: perTokenToMTok(pricing.output_price ?? null),
       cache_write_price: perTokenToMTok(pricing.cache_write_price ?? null),
       cache_read_price: perTokenToMTok(pricing.cache_read_price ?? null),
+      image_input_price: perTokenToMTok(pricing.image_input_price ?? null),
       image_output_price: perTokenToMTok(pricing.image_output_price ?? null),
       per_request_price: null,
       intervals: []

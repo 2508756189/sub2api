@@ -1,6 +1,6 @@
 export const TOKENPORT_BRAND = {
   name: 'TokenPort',
-  subtitle: '天翼云智能应用接入与经营平台',
+  subtitle: '天翼云智能应用与技能接入平台',
   proposition: '统一管理模型、Token 与智能体能力',
   upstreamName: 'Sub2API',
   upstreamUrl: 'https://github.com/Wei-Shaw/sub2api',
@@ -9,8 +9,8 @@ export const TOKENPORT_BRAND = {
 
 export const TOKENPORT_PRODUCT = {
   protocols: ['OpenAI', 'Anthropic', 'Gemini'],
-  clients: ['Codex CLI', 'Claude Code', 'OpenCode', 'Gemini CLI', 'CCS'],
-  capabilities: ['统一接入', '模型路由', 'Token 核算', '部门预算', 'Skill Market', '私有化部署'],
+  clients: ['ChatGPT / Codex', 'Claude Code', 'OpenCode', 'Gemini CLI', 'CCS'],
+  capabilities: ['统一接入', '模型路由', 'Token 统计', '部门预算', 'Skill Market', '私有化部署'],
 } as const
 
 export function resolveTokenPortName(configuredName?: string | null): string {

@@ -154,13 +154,13 @@ export default {
     admin: {
       welcome: {
         title: 'Welcome to TokenPort',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">TokenPort unifies model access, API keys, Token usage, and reusable AI skills for teams.</p><p style="margin-bottom: 12px;"><b>Core capabilities:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li><b>Department groups</b> - Separate teams, projects, and customers</li><li><b>Account pools</b> - Connect upstream model resources</li><li><b>Keys and budgets</b> - Control quotas and access boundaries</li><li><b>Usage accounting</b> - Track Token and model cost</li><li><b>Skill Market</b> - Deliver reusable capabilities</li></ul><p style="color: #10b981; font-weight: 600;">Complete the first operating loop in three minutes →</p></div>',
-        nextBtn: 'Start Setup 🚀',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">TokenPort helps you manage model accounts, API keys, Token usage, and Skills in one console.</p><p style="margin-bottom: 12px;"><b>What you can do:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li><b>Groups</b> - Split resources and permissions by team, project, or environment</li><li><b>Account access</b> - Connect multiple upstream model accounts for stable routing</li><li><b>Keys and quotas</b> - Issue keys and control limits, pricing, and access scope</li><li><b>Usage stats</b> - Track Tokens, cost, and team consumption</li><li><b>Skill Market</b> - Provide reusable Skills to Codex, Claude, and other clients</li></ul><p style="color: #10b981; font-weight: 600;">Next, complete the first setup in a few minutes →</p></div>',
+        nextBtn: 'Start Setup',
         prevBtn: 'Skip'
       },
       groupManage: {
         title: '📦 Step 1: Group Management',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are TokenPort operating units for departments, projects, customers, or environments.</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>Each group can contain multiple upstream accounts</li><li>Each group has independent billing and quota rules</li><li>Groups can be public or assigned to selected users</li></ul><p style="margin-top: 16px; color: #10b981; font-weight: 600;">Click Group Management on the left sidebar</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups organize resources for departments, projects, customers, or environments.</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>Each group can contain multiple upstream accounts</li><li>Each group has independent billing and quota rules</li><li>Groups can be public or assigned to selected users</li></ul><p style="margin-top: 16px; color: #10b981; font-weight: 600;">Click Group Management on the left sidebar</p></div>'
       },
       createGroup: {
         title: '➕ Create New Group',

@@ -1,8 +1,8 @@
 <template>
-  <div class="console-preview" aria-label="TokenPort 经营控制台交互预览">
+  <div class="console-preview" aria-label="TokenPort 控制台交互预览">
     <div class="window-bar">
       <span class="dot red" /><span class="dot yellow" /><span class="dot green" />
-      <b>TokenPort 经营控制台</b>
+      <b>TokenPort 控制台</b>
       <em>功能示意 · 非当前账号数据</em>
     </div>
 
@@ -122,7 +122,7 @@
 
           <template v-else-if="activeId === 'usage'">
             <div class="card">
-              <div class="card-head"><b>使用记录</b><em>按部门 / 模型归集</em></div>
+              <div class="card-head"><b>使用记录</b><em>按部门 / 模型统计</em></div>
               <table>
                 <thead><tr><th>时间</th><th>部门</th><th>模型</th><th>Token</th><th>成本</th></tr></thead>
                 <tbody>
@@ -212,7 +212,7 @@ const icon = {
 }
 
 const primaryMenus: MenuItem[] = [
-  { id: 'dashboard', label: '仪表盘', title: '经营总览', hint: '系统概览与统计数据', icon: icon.dash, points: [] },
+  { id: 'dashboard', label: '仪表盘', title: '系统总览', hint: '系统概览与统计数据', icon: icon.dash, points: [] },
   { id: 'ops', label: '运维监控', title: '运维监控', hint: '延迟、错误率与通道健康', icon: icon.ops, points: ['实时观察上游可用性', '错误率与超时阈值告警', '按渠道定位异常波动'] },
   { id: 'users', label: '用户管理', title: '用户管理', hint: '部门账号与权限边界', icon: icon.users, points: [] },
   { id: 'groups', label: '分组管理', title: '分组管理', hint: '按业务线组织资源', icon: icon.folder, points: ['按研发 / 产品 / 客服分组', '分组级预算与模型策略', '支持差异化限流配置'] },
@@ -223,7 +223,7 @@ const primaryMenus: MenuItem[] = [
 ]
 
 const accountMenus: MenuItem[] = [
-  { id: 'skills', label: 'Skill Market', title: '能力市场', hint: '可复用智能体能力', icon: icon.skill, points: [] },
+  { id: 'skills', label: 'Skill Market', title: 'Skill Market', hint: '可复用智能体能力', icon: icon.skill, points: [] },
   { id: 'keys', label: 'API 密钥', title: 'API 密钥', hint: '接入配置与密钥治理', icon: icon.key, points: [] },
 ]
 
@@ -241,8 +241,8 @@ const kpis = [
   { label: 'API 密钥', value: '--', hint: '登录后查看' },
   { label: '账号', value: '--', hint: '登录后查看' },
   { label: '今日请求', value: '--', hint: '实时统计' },
-  { label: '用户', value: '--', hint: '按部门归集' },
-  { label: '今日 Token', value: '--', hint: '实时核算' },
+  { label: '用户', value: '--', hint: '按部门查看' },
+  { label: '今日 Token', value: '--', hint: '实时统计' },
   { label: '总 Token', value: '--', hint: '按周期汇总' },
   { label: '性能指标', value: '--', hint: 'RPM / TPM' },
   { label: '平均响应', value: '--', hint: '调用质量' },

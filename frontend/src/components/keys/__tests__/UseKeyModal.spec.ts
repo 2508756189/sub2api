@@ -45,11 +45,14 @@ describe('UseKeyModal', () => {
     expect(wrapper.text()).not.toMatch(/^model\s*=/m)
   })
 
-  it('switches to the Codex WebSocket configuration', async () => {
+  it('switches the Codex client to WebSocket transport', async () => {
     const wrapper = mountModal()
-    const wsTab = wrapper.findAll('button').find((button) => button.text().includes('Codex WebSocket'))
-    expect(wsTab).toBeDefined()
-    await wsTab!.trigger('click')
+    expect(wrapper.text()).toContain('Codex')
+    expect(wrapper.text()).toContain('ChatGPT 桌面端')
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Codex CLI')).toBe(false)
+    const wsButton = wrapper.findAll('button').find((button) => button.text() === 'WebSocket')
+    expect(wsButton).toBeDefined()
+    await wsButton!.trigger('click')
     await nextTick()
     expect(wrapper.text()).toContain('supports_websockets = true')
     expect(wrapper.text()).not.toContain('REPLACE_WITH_AVAILABLE_MODEL')
@@ -72,9 +75,29 @@ describe('UseKeyModal', () => {
     expect(wrapper.findAll('button').some((button) => button.text() === '导入 CCS')).toBe(true)
   })
 
-  it('supports Grok without injecting an unverified model', () => {
+  it('offers Codex and Claude Code for Grok without injecting an unverified model', async () => {
     const wrapper = mountModal('grok')
+    expect(wrapper.text()).toContain('Codex')
+    expect(wrapper.text()).toContain('Claude Code')
     expect(wrapper.text()).toContain('Grok CLI')
+    expect(wrapper.text()).toContain('model_provider = "OpenAI"')
+    expect(wrapper.text()).toContain('~/.codex/config.toml')
+    expect(wrapper.text()).not.toContain('grok-4.5')
+
+    const claudeTab = wrapper.findAll('button').find((button) => button.text() === 'Claude Code')
+    expect(claudeTab).toBeDefined()
+    await claudeTab!.trigger('click')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('ANTHROPIC_BASE_URL')
+    expect(wrapper.text()).toContain('~/.claude/settings.json')
+    expect(wrapper.text()).not.toContain('grok-4.5')
+
+    const grokTab = wrapper.findAll('button').find((button) => button.text() === 'Grok CLI')
+    expect(grokTab).toBeDefined()
+    await grokTab!.trigger('click')
+    await nextTick()
+
     expect(wrapper.text()).toContain('base_url = "https://example.com/v1"')
     expect(wrapper.text()).not.toContain('grok-4.5')
   })

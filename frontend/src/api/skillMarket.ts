@@ -28,6 +28,7 @@ export interface SkillMarketEntry {
   source?: string
   riskLevel?: 'low' | 'medium' | 'high' | string
   detail?: {
+    displayName?: string
     summary: string
     useCases: string[]
     capabilities: string[]
@@ -109,6 +110,10 @@ const SKILL_DISPLAY_TEXT: Record<string, { name: string; description: string }> 
     name: '复合工程工作流',
     description: '用于多步骤工程任务的计划、实现、复查和验证，适合较复杂的代码交付流程。',
   },
+  dashmotion: {
+    name: '动态技术图生成器',
+    description: '将流程、系统架构或 Mermaid 输入生成带动画、可离线打开的 HTML/SVG 技术图。',
+  },
   ecc: {
     name: '跨 Agent 兼容套件',
     description: '维护 Codex、Claude Code、Gemini CLI 等不同智能体运行时之间的技能和提示兼容。',
@@ -146,11 +151,11 @@ const RISK_LEVEL_TEXT: Record<string, string> = {
 }
 
 export function getSkillDisplayName(skill: SkillMarketEntry): string {
-  return SKILL_DISPLAY_TEXT[skill.id]?.name || skill.name
+  return skill.detail?.displayName?.trim() || SKILL_DISPLAY_TEXT[skill.id]?.name || skill.name
 }
 
 export function getSkillDisplayDescription(skill: SkillMarketEntry): string {
-  return SKILL_DISPLAY_TEXT[skill.id]?.description || skill.description
+  return SKILL_DISPLAY_TEXT[skill.id]?.description || skill.detail?.summary?.trim() || skill.description
 }
 
 export function getSkillCategoryName(categoryId: string, registry?: SkillMarketRegistry | null): string {

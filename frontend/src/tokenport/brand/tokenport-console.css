@@ -1,0 +1,844 @@
+/* =========================================================
+   TokenPort Console Skin
+   Direction: Cool Mint Console —
+   light mode keeps a soft light sidebar; dark mode uses
+   deep harbor sidebar + luminous content surface.
+   Enterprise cloud aesthetic for 天翼云 TokenPort.
+   ========================================================= */
+
+.tokenport-console {
+  /* Brand core */
+  --tp-ink: #0b1f25;
+  --tp-ink-soft: #14343c;
+  --tp-ink-muted: #4f6b73;
+  --tp-mint: #2ad4b8;
+  --tp-mint-strong: #1fbfa5;
+  --tp-mint-hover: #22c3aa;
+  --tp-mint-soft: #e3faf5;
+  --tp-mint-ink: #0b6f63;
+  --tp-cyan: #1f93aa;
+  --tp-cyan-soft: #dff4f8;
+  --tp-gold: #c7983d;
+  --tp-gold-soft: #fbf3e2;
+
+  /* Surfaces */
+  --tp-line: #d7e4e6;
+  --tp-line-strong: #c0d2d5;
+  --tp-surface: #ffffff;
+  --tp-surface-muted: #f2f7f7;
+  --tp-surface-elevated: #ffffff;
+  --tp-canvas: #eef4f4;
+  --tp-canvas-glow-a: rgb(42 212 184 / 16%);
+  --tp-canvas-glow-b: rgb(31 147 170 / 10%);
+  --tp-canvas-glow-c: rgb(13 37 44 / 4%);
+
+  /* Sidebar — light mode: soft cool surface */
+  --tp-sidebar-bg: linear-gradient(180deg, #fbfcfc 0%, #f4f8f8 100%);
+  --tp-sidebar-solid: #f7fafb;
+  --tp-sidebar-border: #dce6e8;
+  --tp-sidebar-title: #0d252c;
+  --tp-sidebar-section: #6b858c;
+  --tp-sidebar-link: #3d5a63;
+  --tp-sidebar-link-hover-bg: #e8f1f1;
+  --tp-sidebar-link-hover: #0d252c;
+  --tp-sidebar-active-bg: linear-gradient(90deg, #2ad4b8 0%, #24c4ac 100%);
+  --tp-sidebar-active-fg: #05241f;
+  --tp-sidebar-active-shadow: 0 6px 16px rgb(42 212 184 / 22%);
+  --tp-sidebar-nav-border: #d0dfe2;
+  --tp-sidebar-footer-border: #dce6e8;
+
+  /* Header / chrome */
+  --tp-header-bg: rgb(255 255 255 / 78%);
+  --tp-header-border: rgb(215 228 230 / 90%);
+  --tp-header-shadow: 0 1px 0 rgb(13 37 44 / 4%), 0 8px 24px rgb(13 37 44 / 3%);
+
+  /* Cards / tables / controls */
+  --tp-card-shadow: 0 1px 2px rgb(13 37 44 / 3%), 0 8px 24px rgb(13 37 44 / 4%);
+  --tp-card-hover-border: #b5dbd6;
+  --tp-card-hover-shadow: 0 4px 8px rgb(13 37 44 / 4%), 0 16px 36px rgb(13 37 44 / 7%);
+  --tp-table-head-bg: #edf5f4;
+  --tp-table-head-fg: #36545b;
+  --tp-table-head-border: #d2e2e3;
+  --tp-table-row-border: #e7eeee;
+  --tp-table-row-hover: #f3faf8;
+  --tp-btn-secondary-bg: #ffffff;
+  --tp-btn-secondary-border: #cfdfe1;
+  --tp-btn-secondary-hover-bg: #f4faf9;
+  --tp-btn-secondary-hover-border: #a4c8c6;
+  --tp-text-primary: #122f36;
+  --tp-text-secondary: #4f6b73;
+  --tp-stat-accent: #cdeedf;
+  --tp-focus-ring: rgb(42 212 184 / 18%);
+  --tp-logo-border: #d0e4e2;
+  --tp-logo-bg: #ffffff;
+  --tp-avatar-ring: #bff0e6;
+  --tp-balance-bg: linear-gradient(135deg, #e7faf5 0%, #e8f6f8 100%);
+  --tp-balance-fg: #0b6f63;
+  --tp-radius-card: 14px;
+  --tp-radius-control: 10px;
+  --tp-radius-pill: 999px;
+
+  color: var(--tp-text-primary);
+  background:
+    radial-gradient(1100px 520px at 12% -8%, var(--tp-canvas-glow-a), transparent 58%),
+    radial-gradient(900px 480px at 92% 0%, var(--tp-canvas-glow-b), transparent 55%),
+    radial-gradient(700px 420px at 70% 100%, var(--tp-canvas-glow-c), transparent 60%),
+    var(--tp-canvas);
+  font-feature-settings: 'ss01' on, 'cv11' on;
+}
+
+.tokenport-console > .bg-mesh-gradient,
+.tokenport-console > .tp-ambient {
+  pointer-events: none;
+  background: none;
+}
+
+.tokenport-console > .tp-ambient::before,
+.tokenport-console > .tp-ambient::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(48px);
+  opacity: 0.55;
+}
+
+.tokenport-console > .tp-ambient::before {
+  top: 8%;
+  right: 8%;
+  width: 280px;
+  height: 280px;
+  background: rgb(42 212 184 / 18%);
+}
+
+.tokenport-console > .tp-ambient::after {
+  bottom: 12%;
+  left: 28%;
+  width: 340px;
+  height: 220px;
+  background: rgb(31 147 170 / 10%);
+}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.tokenport-console .sidebar {
+  border-right: 1px solid var(--tp-sidebar-border);
+  background: var(--tp-sidebar-bg);
+  box-shadow: 1px 0 0 rgb(13 37 44 / 3%);
+  color: var(--tp-sidebar-link);
+}
+
+.tokenport-console .sidebar-header {
+  border-bottom: 1px solid var(--tp-sidebar-footer-border);
+  background: transparent;
+}
+
+.tokenport-console .sidebar-logo {
+  border: 1px solid var(--tp-logo-border);
+  border-radius: 11px;
+  background: var(--tp-logo-bg);
+  box-shadow: 0 1px 3px rgb(13 37 44 / 6%);
+}
+
+.tokenport-console .sidebar-brand-title {
+  color: var(--tp-sidebar-title) !important;
+  letter-spacing: 0.01em;
+  font-weight: 700;
+}
+
+.tokenport-console .sidebar-brand-title:hover {
+  color: var(--tp-mint-ink) !important;
+}
+
+.tokenport-console .sidebar-section-title {
+  color: var(--tp-sidebar-section);
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  opacity: 0.95;
+}
+
+.tokenport-console .sidebar-link {
+  border-radius: 11px;
+  color: var(--tp-sidebar-link);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.tokenport-console .sidebar-link:hover {
+  background: var(--tp-sidebar-link-hover-bg);
+  color: var(--tp-sidebar-link-hover);
+}
+
+.tokenport-console .sidebar-link-active,
+.tokenport-console .sidebar-link-active:hover {
+  background: var(--tp-sidebar-active-bg);
+  color: var(--tp-sidebar-active-fg);
+  box-shadow: var(--tp-sidebar-active-shadow);
+  font-weight: 600;
+}
+
+.tokenport-console .sidebar-link-active svg,
+.tokenport-console .sidebar-link-active .sidebar-svg-icon {
+  color: var(--tp-sidebar-active-fg);
+}
+
+.tokenport-console .sidebar-nav .border-l {
+  border-color: var(--tp-sidebar-nav-border) !important;
+}
+
+.tokenport-console .sidebar > .mt-auto {
+  border-top-color: var(--tp-sidebar-footer-border) !important;
+  background: transparent;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+.tokenport-console header.glass {
+  border-bottom: 1px solid var(--tp-header-border);
+  background: var(--tp-header-bg);
+  box-shadow: var(--tp-header-shadow);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.tokenport-console header.glass h1 {
+  letter-spacing: -0.02em;
+  font-weight: 650;
+  color: var(--tp-text-primary);
+}
+
+.tokenport-console header.glass p {
+  color: var(--tp-text-secondary);
+}
+
+.tokenport-console main {
+  background: transparent;
+}
+
+/* Balance chip */
+.tokenport-console header .bg-primary-50,
+.tokenport-console header .dark\:bg-primary-900\/20 {
+  background: var(--tp-balance-bg) !important;
+  border: 1px solid rgb(42 212 184 / 18%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+.tokenport-console header .text-primary-700,
+.tokenport-console header .text-primary-600,
+.tokenport-console header .dark\:text-primary-300,
+.tokenport-console header .dark\:text-primary-400 {
+  color: var(--tp-balance-fg) !important;
+}
+
+.tokenport-console [aria-label='User Menu'] > div:first-child {
+  border: 2px solid var(--tp-avatar-ring);
+  border-radius: 10px;
+  background: linear-gradient(145deg, var(--tp-cyan), #167f95);
+  box-shadow: 0 4px 12px rgb(31 147 170 / 25%);
+}
+
+/* ── Surfaces / cards ────────────────────────────────── */
+.tokenport-console .card,
+.tokenport-console .glass-card,
+.tokenport-console .table-container,
+.tokenport-console .modal-content,
+.tokenport-console .dialog-container {
+  border: 1px solid var(--tp-line);
+  border-radius: var(--tp-radius-card);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 96%) 0%, var(--tp-surface) 100%);
+  box-shadow: var(--tp-card-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.tokenport-console .card-hover:hover {
+  border-color: var(--tp-card-hover-border);
+  box-shadow: var(--tp-card-hover-shadow);
+  transform: translateY(-1px);
+}
+
+.tokenport-console .card-header,
+.tokenport-console .card-footer,
+.tokenport-console .modal-header,
+.tokenport-console .modal-footer,
+.tokenport-console .dialog-header,
+.tokenport-console .dialog-footer {
+  border-color: var(--tp-line);
+}
+
+/* Keep filter bars (date pickers etc.) above following chart cards */
+.tokenport-console main .space-y-4 > .card:has(.date-picker-trigger),
+.tokenport-console main .space-y-6 > .card:has(.date-picker-trigger) {
+  position: relative;
+  z-index: 40;
+  overflow: visible;
+}
+
+/* Dashboard metric cards — slightly denser, premium feel */
+.tokenport-console main > .space-y-6 > .grid > .card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.tokenport-console main > .space-y-6 > .grid > .card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--tp-mint), rgb(31 147 170 / 55%));
+  opacity: 0.55;
+}
+
+.tokenport-console main > .space-y-6 > .grid > .card:hover {
+  border-color: var(--tp-card-hover-border);
+  box-shadow: var(--tp-card-hover-shadow);
+  transform: translateY(-2px);
+}
+
+.tokenport-console main > .space-y-6 > .grid > .card .text-xl {
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Soften rainbow icon tiles into brand-coherent tints */
+.tokenport-console .card .rounded-lg.bg-blue-100,
+.tokenport-console .card .rounded-lg.bg-purple-100,
+.tokenport-console .card .rounded-lg.bg-green-100,
+.tokenport-console .card .rounded-lg.bg-emerald-100,
+.tokenport-console .card .rounded-lg.bg-amber-100,
+.tokenport-console .card .rounded-lg.bg-indigo-100,
+.tokenport-console .card .rounded-lg.bg-violet-100,
+.tokenport-console .card .rounded-lg.bg-rose-100,
+.tokenport-console .card .rounded-lg.bg-sky-100 {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
+}
+
+.tokenport-console .card .rounded-lg.bg-blue-100 {
+  background: linear-gradient(145deg, #e7f4ff, #dceefe) !important;
+}
+.tokenport-console .card .rounded-lg.bg-purple-100 {
+  background: linear-gradient(145deg, #f1ecff, #e8e2ff) !important;
+}
+.tokenport-console .card .rounded-lg.bg-green-100,
+.tokenport-console .card .rounded-lg.bg-emerald-100 {
+  background: linear-gradient(145deg, #e4faf3, #d7f5eb) !important;
+}
+.tokenport-console .card .rounded-lg.bg-amber-100 {
+  background: linear-gradient(145deg, #fff6e5, #ffefd2) !important;
+}
+.tokenport-console .card .rounded-lg.bg-indigo-100 {
+  background: linear-gradient(145deg, #ebefff, #e0e7ff) !important;
+}
+.tokenport-console .card .rounded-lg.bg-violet-100 {
+  background: linear-gradient(145deg, #f2ecff, #ebe3ff) !important;
+}
+.tokenport-console .card .rounded-lg.bg-rose-100 {
+  background: linear-gradient(145deg, #ffeef2, #ffe4ea) !important;
+}
+.tokenport-console .card .rounded-lg.bg-sky-100 {
+  background: linear-gradient(145deg, #e8f7fc, #dcf1f9) !important;
+}
+
+/* Quick action rows */
+.tokenport-console .card .group.rounded-lg.bg-gray-50 {
+  border: 1px solid transparent;
+  border-radius: 12px !important;
+  background: linear-gradient(180deg, #f7fbfb, #f2f7f7) !important;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.tokenport-console .card .group.rounded-lg.bg-gray-50:hover {
+  border-color: rgb(42 212 184 / 28%);
+  background: linear-gradient(180deg, #f0fbf8, #e8f8f3) !important;
+  box-shadow: 0 8px 20px rgb(13 37 44 / 5%);
+  transform: translateY(-1px);
+}
+
+/* ── Controls ────────────────────────────────────────── */
+.tokenport-console .btn,
+.tokenport-console .btn-md,
+.tokenport-console .btn-lg,
+.tokenport-console .btn-icon,
+.tokenport-console .input,
+.tokenport-console .dropdown,
+.tokenport-console .tabs,
+.tokenport-console .tab,
+.tokenport-console .code-block {
+  border-radius: var(--tp-radius-control);
+}
+
+.tokenport-console .btn-primary,
+.tokenport-console .btn-success {
+  background: linear-gradient(180deg, #36dcc0 0%, var(--tp-mint-strong) 100%);
+  color: #04231e;
+  border: 1px solid rgb(8 80 70 / 8%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 35%) inset,
+    0 6px 16px rgb(42 212 184 / 26%);
+  font-weight: 600;
+}
+
+.tokenport-console .btn-primary:hover,
+.tokenport-console .btn-success:hover {
+  background: linear-gradient(180deg, #42e4c8 0%, var(--tp-mint-hover) 100%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 40%) inset,
+    0 8px 20px rgb(42 212 184 / 32%);
+}
+
+.tokenport-console .btn-secondary {
+  border-color: var(--tp-btn-secondary-border);
+  background: var(--tp-btn-secondary-bg);
+  color: var(--tp-text-primary);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 80%) inset;
+}
+
+.tokenport-console .btn-secondary:hover {
+  border-color: var(--tp-btn-secondary-hover-border);
+  background: var(--tp-btn-secondary-hover-bg);
+}
+
+.tokenport-console .btn-ghost:hover {
+  background: rgb(13 37 44 / 4%);
+}
+
+.tokenport-console .input {
+  border-color: var(--tp-line);
+  background: var(--tp-surface);
+  color: var(--tp-text-primary);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 70%) inset;
+}
+
+.tokenport-console .input:focus {
+  border-color: var(--tp-mint);
+  box-shadow:
+    0 0 0 3px var(--tp-focus-ring),
+    0 1px 0 rgb(255 255 255 / 70%) inset;
+}
+
+.tokenport-console .tabs {
+  background: var(--tp-surface-muted);
+  border: 1px solid var(--tp-line);
+}
+
+.tokenport-console .tab-active {
+  background: var(--tp-surface);
+  color: var(--tp-text-primary);
+  box-shadow: 0 1px 3px rgb(13 37 44 / 6%);
+}
+
+/* ── Table ───────────────────────────────────────────── */
+.tokenport-console .table th {
+  border-bottom-color: var(--tp-table-head-border);
+  background: var(--tp-table-head-bg);
+  color: var(--tp-table-head-fg);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.tokenport-console .table td {
+  border-bottom-color: var(--tp-table-row-border);
+  color: var(--tp-text-primary);
+}
+
+.tokenport-console .table tbody tr:hover {
+  background: var(--tp-table-row-hover);
+}
+
+/* ── Badges / stats / progress ───────────────────────── */
+.tokenport-console .badge-primary {
+  background: var(--tp-mint-soft);
+  color: var(--tp-mint-ink);
+}
+
+.tokenport-console .stat-card {
+  border-top: 3px solid var(--tp-stat-accent);
+}
+
+.tokenport-console .stat-value,
+.tokenport-console .page-title {
+  color: var(--tp-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.tokenport-console .stat-value.is-metric,
+.tokenport-console .stat-card .text-gold,
+.tokenport-console .metric-gold {
+  color: var(--tp-gold);
+}
+
+.tokenport-console .progress-bar {
+  background: linear-gradient(90deg, var(--tp-mint-strong), var(--tp-mint));
+}
+
+.tokenport-console .switch-active {
+  background: var(--tp-mint);
+}
+
+.tokenport-console .dropdown {
+  border-color: var(--tp-line);
+  box-shadow: 0 12px 36px rgb(13 37 44 / 12%);
+}
+
+.tokenport-console .empty-state-icon {
+  opacity: 0.7;
+}
+
+/* Page-level polish */
+.tokenport-console .page-header {
+  position: relative;
+}
+
+.tokenport-console .page-title {
+  font-weight: 700;
+}
+
+/* Soft selection */
+.tokenport-console ::selection {
+  background: rgb(42 212 184 / 24%);
+  color: #0b1f25;
+}
+
+/* Prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tokenport-console .card,
+  .tokenport-console .sidebar-link,
+  .tokenport-console .btn,
+  .tokenport-console main > .space-y-6 > .grid > .card {
+    transition: none !important;
+  }
+
+  .tokenport-console main > .space-y-6 > .grid > .card:hover,
+  .tokenport-console .card-hover:hover,
+  .tokenport-console .card .group.rounded-lg.bg-gray-50:hover {
+    transform: none;
+  }
+}
+
+/* =========================================================
+   Dark theme — deep monochrome harbor
+   DOM: .dark .tokenport-console
+   ========================================================= */
+.dark .tokenport-console {
+  --tp-ink: #e8f1f2;
+  --tp-ink-soft: #1a3840;
+  --tp-ink-muted: #8aa3aa;
+  --tp-mint: #2ad4b8;
+  --tp-mint-strong: #28c7ad;
+  --tp-mint-hover: #38dfc4;
+  --tp-mint-soft: #123d38;
+  --tp-mint-ink: #7ce3d1;
+  --tp-cyan: #2aa3b8;
+  --tp-cyan-soft: #12363e;
+  --tp-gold: #d4a84b;
+  --tp-gold-soft: #3a2f16;
+  --tp-line: #25434a;
+  --tp-line-strong: #315159;
+  --tp-surface: #102a31;
+  --tp-surface-muted: #0c2228;
+  --tp-surface-elevated: #13323a;
+  --tp-canvas: #07161b;
+  --tp-canvas-glow-a: rgb(42 212 184 / 10%);
+  --tp-canvas-glow-b: rgb(31 147 170 / 8%);
+  --tp-canvas-glow-c: rgb(0 0 0 / 0%);
+  --tp-sidebar-bg: linear-gradient(180deg, #08151a 0%, #061116 100%);
+  --tp-sidebar-solid: #08151a;
+  --tp-sidebar-border: rgb(255 255 255 / 6%);
+  --tp-sidebar-title: #f3f8f7;
+  --tp-sidebar-section: #6f9299;
+  --tp-sidebar-link: #b9cdd1;
+  --tp-sidebar-link-hover-bg: rgb(255 255 255 / 6%);
+  --tp-sidebar-link-hover: #ffffff;
+  --tp-sidebar-active-bg: linear-gradient(90deg, #2ad4b8 0%, #24c4ac 100%);
+  --tp-sidebar-active-fg: #05241f;
+  --tp-sidebar-active-shadow: 0 10px 28px rgb(42 212 184 / 18%);
+  --tp-sidebar-nav-border: rgb(255 255 255 / 10%);
+  --tp-sidebar-footer-border: rgb(255 255 255 / 7%);
+  --tp-header-bg: rgb(7 22 27 / 82%);
+  --tp-header-border: #1e3c43;
+  --tp-header-shadow: 0 1px 0 rgb(0 0 0 / 30%), 0 10px 28px rgb(0 0 0 / 18%);
+  --tp-card-shadow: 0 1px 2px rgb(0 0 0 / 25%), 0 10px 28px rgb(0 0 0 / 18%);
+  --tp-card-hover-border: #3a646c;
+  --tp-card-hover-shadow: 0 8px 28px rgb(0 0 0 / 28%);
+  --tp-table-head-bg: #17363d;
+  --tp-table-head-fg: #bdd0d4;
+  --tp-table-head-border: #315159;
+  --tp-table-row-border: #1e3c43;
+  --tp-table-row-hover: #17363d;
+  --tp-btn-secondary-bg: #102a31;
+  --tp-btn-secondary-border: #315159;
+  --tp-btn-secondary-hover-bg: #15343c;
+  --tp-btn-secondary-hover-border: #3f6a72;
+  --tp-text-primary: #f3f8f7;
+  --tp-text-secondary: #9bb0b6;
+  --tp-stat-accent: #1f4f4a;
+  --tp-focus-ring: rgb(42 212 184 / 22%);
+  --tp-logo-border: rgb(255 255 255 / 14%);
+  --tp-logo-bg: #ffffff;
+  --tp-avatar-ring: #1f5c54;
+  --tp-balance-bg: linear-gradient(135deg, #123d38 0%, #143a42 100%);
+  --tp-balance-fg: #7ce3d1;
+  color: var(--tp-text-primary);
+  background:
+    radial-gradient(1000px 480px at 10% -10%, var(--tp-canvas-glow-a), transparent 55%),
+    radial-gradient(800px 420px at 95% 0%, var(--tp-canvas-glow-b), transparent 50%),
+    var(--tp-canvas);
+}
+
+.dark .tokenport-console > .tp-ambient::before {
+  background: rgb(42 212 184 / 10%);
+}
+
+.dark .tokenport-console > .tp-ambient::after {
+  background: rgb(31 147 170 / 8%);
+}
+
+.dark .tokenport-console .sidebar {
+  border-right-color: var(--tp-sidebar-border);
+  background: var(--tp-sidebar-bg);
+  box-shadow: 18px 0 48px rgb(0 0 0 / 35%);
+}
+
+.dark .tokenport-console .sidebar-logo {
+  box-shadow: 0 8px 18px rgb(0 0 0 / 30%);
+}
+
+.dark .tokenport-console header.glass {
+  border-bottom-color: var(--tp-header-border);
+  background: var(--tp-header-bg);
+  box-shadow: var(--tp-header-shadow);
+}
+
+.dark .tokenport-console .card,
+.dark .tokenport-console .glass-card,
+.dark .tokenport-console .table-container,
+.dark .tokenport-console .modal-content,
+.dark .tokenport-console .dialog-container {
+  border-color: var(--tp-line);
+  background: linear-gradient(180deg, #12323a 0%, var(--tp-surface) 100%);
+  box-shadow: var(--tp-card-shadow);
+}
+
+.dark .tokenport-console .card-hover:hover,
+.dark .tokenport-console main > .space-y-6 > .grid > .card:hover {
+  border-color: var(--tp-card-hover-border);
+  box-shadow: var(--tp-card-hover-shadow);
+}
+
+.dark .tokenport-console main > .space-y-6 > .grid > .card::before {
+  opacity: 0.75;
+}
+
+.dark .tokenport-console .card .rounded-lg.bg-blue-100 {
+  background: linear-gradient(145deg, #173a4d, #143242) !important;
+}
+.dark .tokenport-console .card .rounded-lg.bg-purple-100 {
+  background: linear-gradient(145deg, #2a2448, #221d3a) !important;
+}
+.dark .tokenport-console .card .rounded-lg.bg-green-100,
+.dark .tokenport-console .card .rounded-lg.bg-emerald-100 {
+  background: linear-gradient(145deg, #143d36, #12342e) !important;
+}
+.dark .tokenport-console .card .rounded-lg.bg-amber-100 {
+  background: linear-gradient(145deg, #3a3018, #322914) !important;
+}
+.dark .tokenport-console .card .rounded-lg.bg-indigo-100 {
+  background: linear-gradient(145deg, #1e2d4d, #1a2742) !important;
+}
+.dark .tokenport-console .card .rounded-lg.bg-violet-100 {
+  background: linear-gradient(145deg, #2a2448, #221d3a) !important;
+}
+.dark .tokenport-console .card .rounded-lg.bg-rose-100 {
+  background: linear-gradient(145deg, #3a1f2a, #321a24) !important;
+}
+.dark .tokenport-console .card .rounded-lg.bg-sky-100 {
+  background: linear-gradient(145deg, #163844, #13323c) !important;
+}
+
+.dark .tokenport-console .card .group.rounded-lg.bg-gray-50 {
+  background: linear-gradient(180deg, #14343c, #102a31) !important;
+  border-color: rgb(255 255 255 / 4%);
+}
+
+.dark .tokenport-console .card .group.rounded-lg.bg-gray-50:hover {
+  border-color: rgb(42 212 184 / 22%);
+  background: linear-gradient(180deg, #164248, #12363e) !important;
+}
+
+.dark .tokenport-console .btn-primary,
+.dark .tokenport-console .btn-success {
+  background: linear-gradient(180deg, #36dcc0 0%, var(--tp-mint-strong) 100%);
+  color: #04231e;
+  box-shadow: 0 6px 16px rgb(42 212 184 / 16%);
+}
+
+.dark .tokenport-console .btn-primary:hover,
+.dark .tokenport-console .btn-success:hover {
+  background: linear-gradient(180deg, #42e4c8 0%, var(--tp-mint-hover) 100%);
+}
+
+.dark .tokenport-console .btn-secondary {
+  border-color: var(--tp-btn-secondary-border);
+  background: var(--tp-btn-secondary-bg);
+  color: var(--tp-text-primary);
+  box-shadow: none;
+}
+
+.dark .tokenport-console .btn-secondary:hover {
+  border-color: var(--tp-btn-secondary-hover-border);
+  background: var(--tp-btn-secondary-hover-bg);
+}
+
+.dark .tokenport-console .input {
+  border-color: var(--tp-line);
+  background: var(--tp-surface-muted);
+  color: var(--tp-text-primary);
+  box-shadow: none;
+}
+
+.dark .tokenport-console .input:focus {
+  border-color: var(--tp-mint);
+  box-shadow: 0 0 0 3px var(--tp-focus-ring);
+}
+
+.dark .tokenport-console .tabs {
+  background: var(--tp-surface-muted);
+  border-color: var(--tp-line);
+}
+
+.dark .tokenport-console .tab-active {
+  background: var(--tp-surface-elevated);
+  color: var(--tp-text-primary);
+}
+
+.dark .tokenport-console .table th {
+  border-bottom-color: var(--tp-table-head-border);
+  background: var(--tp-table-head-bg);
+  color: var(--tp-table-head-fg);
+}
+
+.dark .tokenport-console .table td {
+  border-bottom-color: var(--tp-table-row-border);
+  color: var(--tp-text-primary);
+}
+
+.dark .tokenport-console .table tbody tr:hover {
+  background: var(--tp-table-row-hover);
+}
+
+.dark .tokenport-console .badge-primary {
+  background: var(--tp-mint-soft);
+  color: var(--tp-mint-ink);
+}
+
+.dark .tokenport-console .stat-card {
+  border-top-color: var(--tp-stat-accent);
+}
+
+.dark .tokenport-console .stat-value,
+.dark .tokenport-console .page-title {
+  color: var(--tp-text-primary);
+}
+
+.dark .tokenport-console header .bg-primary-50,
+.dark .tokenport-console header .dark\:bg-primary-900\/20 {
+  background: var(--tp-balance-bg) !important;
+  border-color: rgb(42 212 184 / 18%);
+  box-shadow: none;
+}
+
+.dark .tokenport-console [aria-label='User Menu'] > div:first-child {
+  border-color: var(--tp-avatar-ring);
+  background: linear-gradient(145deg, var(--tp-cyan), #1a7d90);
+}
+
+.dark .tokenport-console ::selection {
+  background: rgb(42 212 184 / 28%);
+  color: #e8f1f2;
+}
+
+
+/* ── Version badge (light sidebar defaults) ──────────── */
+.tokenport-console .sidebar button.rounded-lg.bg-gray-100,
+.tokenport-console .sidebar button.bg-gray-100 {
+  background: #eef4f4 !important;
+  color: #4a6670 !important;
+  border: 1px solid #d7e4e6;
+}
+
+.tokenport-console .sidebar button.rounded-lg.bg-gray-100:hover,
+.tokenport-console .sidebar button.bg-gray-100:hover {
+  background: #e4eded !important;
+  color: #0d252c !important;
+}
+
+.tokenport-console .sidebar button.bg-amber-100 {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a;
+}
+
+/* Sidebar section divider rhythm */
+.tokenport-console .sidebar-section + .sidebar-section {
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--tp-sidebar-footer-border);
+}
+
+/* Collapsed active pill keeps mint glow */
+.tokenport-console .sidebar-link-collapsed.sidebar-link-active {
+  justify-content: center;
+}
+
+/* ── Dark-mode sidebar chrome overrides ──────────────── */
+.dark .tokenport-console .sidebar {
+  box-shadow:
+    1px 0 0 rgb(255 255 255 / 3%),
+    18px 0 48px rgb(0 0 0 / 28%);
+}
+
+.dark .tokenport-console .sidebar-header {
+  background: linear-gradient(180deg, rgb(255 255 255 / 3%), transparent);
+}
+
+.dark .tokenport-console .sidebar-logo {
+  box-shadow:
+    0 0 0 1px rgb(42 212 184 / 10%),
+    0 8px 20px rgb(0 0 0 / 28%);
+}
+
+.dark .tokenport-console .sidebar-brand-title:hover {
+  color: var(--tp-mint) !important;
+}
+
+.dark .tokenport-console .sidebar > .mt-auto {
+  background: linear-gradient(0deg, rgb(0 0 0 / 18%), transparent);
+}
+
+.dark .tokenport-console .sidebar button.rounded-lg.bg-gray-100,
+.dark .tokenport-console .sidebar button.bg-gray-100 {
+  background: rgb(255 255 255 / 8%) !important;
+  color: #c5d8dc !important;
+  border: 1px solid rgb(255 255 255 / 10%);
+}
+
+.dark .tokenport-console .sidebar button.rounded-lg.bg-gray-100:hover,
+.dark .tokenport-console .sidebar button.bg-gray-100:hover {
+  background: rgb(255 255 255 / 12%) !important;
+  color: #ffffff !important;
+}
+
+.dark .tokenport-console .sidebar button.bg-amber-100 {
+  background: rgb(245 158 11 / 18%) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgb(245 158 11 / 25%);
+}

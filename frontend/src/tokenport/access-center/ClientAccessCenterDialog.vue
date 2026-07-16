@@ -19,12 +19,33 @@
 
       <div v-else class="grid min-h-0 gap-4 lg:grid-cols-12">
         <section class="space-y-4 lg:col-span-5 lg:max-h-[66vh] lg:overflow-y-auto lg:pr-2">
-          <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-850">
+          <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800">
             <p class="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">目标客户端</p>
             <div class="flex flex-wrap gap-2">
               <button v-for="tab in clientTabs" :key="tab.id" type="button" class="rounded-lg border px-3 py-2 text-sm transition-colors" :class="activeClientTab === tab.id ? 'border-primary-400 bg-primary-50 text-primary-700 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-300' : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'" @click="activeClientTab = tab.id">
                 {{ tab.label }}
               </button>
+            </div>
+            <div v-if="activeClientTab === 'codex'" class="mt-3 rounded-md bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-500 dark:bg-dark-900/60 dark:text-gray-400">
+              Codex 配置层可用于 ChatGPT 桌面端、Codex CLI 和 IDE 扩展；本页生成的是 API Key 接入配置，ChatGPT 账号登录属于独立认证方式。
+            </div>
+            <div v-if="showCodexTransport" class="mt-3">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">连接方式</span>
+                <span class="text-xs text-gray-400">只影响 Responses API 的传输方式</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="transport in codexTransports"
+                  :key="transport.id"
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                  :class="codexTransport === transport.id ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600'"
+                  @click="codexTransport = transport.id"
+                >
+                  {{ transport.label }}
+                </button>
+              </div>
             </div>
             <div v-if="showShellTabs" class="mt-4 flex flex-wrap gap-2">
               <button v-for="tab in shellTabs" :key="tab.id" type="button" class="rounded-md px-3 py-1.5 text-xs font-medium" :class="activeShell === tab.id ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900' : 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'" @click="activeShell = tab.id">{{ tab.label }}</button>
@@ -126,6 +147,7 @@ const { copyToClipboard } = useClipboard()
 const deliveryMode = ref<DeliveryMode>(props.initialMode)
 const activeClientTab = ref('claude')
 const activeShell = ref<ConnectorShell>('unix')
+const codexTransport = ref<'responses' | 'websocket'>('responses')
 const connectorOptions = ref<ConnectorOptionsState>(structuredClone(DEFAULT_CONNECTOR_OPTIONS))
 const selectedSkills = ref<SkillInstallSelection[]>([])
 const availableModels = ref<ConnectorModelOption[]>([])
@@ -144,10 +166,14 @@ const shellTabs: Array<{ id: ConnectorShell; label: string }> = [
   { id: 'cmd', label: 'Windows CMD' },
   { id: 'powershell', label: 'PowerShell' },
 ]
+const codexTransports: Array<{ id: 'responses' | 'websocket'; label: string }> = [
+  { id: 'responses', label: '标准连接（推荐）' },
+  { id: 'websocket', label: 'WebSocket' },
+]
 
 const defaultClient = computed(() => {
   if (props.platform === 'openai') return 'codex'
-  if (props.platform === 'grok') return 'grok'
+  if (props.platform === 'grok') return 'codex'
   if (props.platform === 'gemini') return 'gemini'
   return 'claude'
 })
@@ -155,14 +181,20 @@ const defaultClient = computed(() => {
 const clientTabs = computed(() => {
   if (props.platform === 'openai') {
     const tabs = [
-      { id: 'codex', label: 'Codex CLI' },
-      { id: 'codex-ws', label: 'Codex WebSocket' },
+      { id: 'codex', label: 'Codex' },
       { id: 'opencode', label: 'OpenCode' },
     ]
     if (props.allowMessagesDispatch) tabs.splice(2, 0, { id: 'claude', label: 'Claude Code' })
     return tabs
   }
-  if (props.platform === 'grok') return [{ id: 'grok', label: 'Grok CLI' }, { id: 'opencode', label: 'OpenCode' }]
+  if (props.platform === 'grok') {
+    return [
+      { id: 'codex', label: 'Codex' },
+      { id: 'claude', label: 'Claude Code' },
+      { id: 'grok', label: 'Grok CLI' },
+      { id: 'opencode', label: 'OpenCode' },
+    ]
+  }
   if (props.platform === 'gemini') return [{ id: 'gemini', label: 'Gemini CLI' }, { id: 'opencode', label: 'OpenCode' }]
   if (props.platform === 'antigravity') return [{ id: 'claude', label: 'Claude Code' }, { id: 'gemini', label: 'Gemini CLI' }, { id: 'opencode', label: 'OpenCode' }]
   return [{ id: 'claude', label: 'Claude Code' }, { id: 'opencode', label: 'OpenCode' }]
@@ -170,11 +202,12 @@ const clientTabs = computed(() => {
 
 const platformDescription = computed(() => {
   if (!props.platform) return '请先为 API Key 配置可用分组。'
-  const labels: Record<string, string> = { openai: 'OpenAI 兼容协议', anthropic: 'Anthropic 兼容协议', gemini: 'Gemini 兼容协议', antigravity: 'Gemini / Anthropic 双协议', grok: 'Grok 兼容协议' }
+  const labels: Record<string, string> = { openai: 'OpenAI 兼容协议', anthropic: 'Anthropic 兼容协议', gemini: 'Gemini 兼容协议', antigravity: 'Gemini / Anthropic 双协议', grok: 'Grok · Responses / Messages 双协议' }
   return `${labels[props.platform] || props.platform} · 选择客户端、模型与能力后生成可检查的配置`
 })
 
 const showShellTabs = computed(() => activeClientTab.value !== 'opencode')
+const showCodexTransport = computed(() => props.platform === 'openai' && activeClientTab.value === 'codex')
 const supportsSkills = computed(() => activeClientTab.value === 'claude' || activeClientTab.value.startsWith('codex'))
 
 const generatedFiles = computed<FileConfig[]>(() => {
@@ -190,8 +223,9 @@ const generatedFiles = computed<FileConfig[]>(() => {
     return buildGeminiFiles(endpoint, props.apiKey, activeShell.value)
   }
   if (activeClientTab.value === 'grok') return buildGrokFiles(baseUrl, props.apiKey, activeShell.value, connectorOptions.value)
-  if (activeClientTab.value === 'codex-ws') return buildOpenAIWsFiles(common)
-  if (activeClientTab.value === 'codex') return buildOpenAIFiles(common)
+  if (activeClientTab.value === 'codex') {
+    return codexTransport.value === 'websocket' ? buildOpenAIWsFiles(common) : buildOpenAIFiles(common)
+  }
   return buildAnthropicFiles({ ...common, baseUrl: props.platform === 'antigravity' ? `${baseUrl}/antigravity` : baseUrl })
 })
 
@@ -212,6 +246,7 @@ watch(() => props.show, (visible) => {
   deliveryMode.value = props.initialMode
   activeClientTab.value = defaultClient.value
   activeShell.value = 'unix'
+  codexTransport.value = 'responses'
   connectorOptions.value = structuredClone(DEFAULT_CONNECTOR_OPTIONS)
   selectedSkills.value = []
   revealSecrets.value = false
@@ -263,7 +298,9 @@ async function copySkillInstallScript() {
 }
 
 function ccsClientType(): CcSwitchClientType {
-  return activeClientTab.value === 'gemini' ? 'gemini' : 'claude'
+  if (activeClientTab.value === 'gemini') return 'gemini'
+  if (activeClientTab.value === 'codex' || activeClientTab.value === 'codex-ws' || activeClientTab.value === 'grok') return 'codex'
+  return 'claude'
 }
 
 function ccsConfig(): { config?: string; configFormat?: 'json' | 'toml' } {
@@ -283,15 +320,16 @@ function ccsConfig(): { config?: string; configFormat?: 'json' | 'toml' } {
 function importToCcs() {
   const normalized = normalizeConnectorOptions(connectorOptions.value)
   const payload = ccsConfig()
+  const clientType = ccsClientType()
   const usageScript = `({ endpoint: ${JSON.stringify(props.baseUrl || window.location.origin)}, key: ${JSON.stringify(props.apiKey)} })`
   const deeplink = buildCcSwitchImportDeeplink({
     baseUrl: props.baseUrl || window.location.origin,
     platform: props.platform,
-    clientType: ccsClientType(),
+    clientType,
     providerName: 'TokenPort',
     apiKey: props.apiKey,
     usageScript,
-    model: normalized.codex.model || undefined,
+    model: clientType === 'codex' ? normalized.codex.model || undefined : undefined,
     claudeModelTiers: normalized.claude.modelTiers,
     ...payload,
   })

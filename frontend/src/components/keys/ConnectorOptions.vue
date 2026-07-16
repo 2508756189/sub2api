@@ -1,7 +1,7 @@
 <template>
   <section
     v-if="showClaudeOptions || showCodexOptions"
-    class="rounded-lg border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-850"
+    class="rounded-lg border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800"
   >
     <button
       type="button"

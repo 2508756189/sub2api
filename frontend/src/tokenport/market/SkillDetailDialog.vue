@@ -20,7 +20,7 @@
       </div>
 
       <p class="text-sm leading-6 text-gray-600 dark:text-gray-300">
-        {{ skill.detail?.summary || getSkillDisplayDescription(skill) }}
+        {{ getSkillDisplayDescription(skill) }}
       </p>
 
       <div class="grid gap-4 md:grid-cols-2">
@@ -46,7 +46,7 @@
         </a>
       </div>
 
-      <section v-if="expanded" class="rounded-lg border border-gray-200 bg-white p-5 dark:border-dark-700 dark:bg-dark-850">
+      <section v-if="expanded" class="rounded-lg border border-gray-200 bg-white p-5 dark:border-dark-700 dark:bg-dark-800">
         <div v-if="loading" class="py-8 text-center text-sm text-gray-500">正在加载完整说明...</div>
         <div v-else-if="error" class="py-8 text-center text-sm text-red-600 dark:text-red-400">{{ error }}</div>
         <article v-else-if="detailHtml" class="skill-markdown prose prose-sm max-w-none dark:prose-invert" v-html="detailHtml"></article>

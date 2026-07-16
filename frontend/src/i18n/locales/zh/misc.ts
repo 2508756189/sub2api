@@ -152,14 +152,14 @@ export default {
       welcome: {
         title: '👋 欢迎使用 TokenPort',
         description:
-          '<div class="tokenport-tour-intro"><p>TokenPort 是面向团队与部门的 AI 接入经营平台，帮助企业把模型账号、API Key、Token 用量和技能能力统一管起来。</p><p><b>核心能力：</b></p><ul><li><b>部门分组</b> - 按团队、项目或客户建立独立经营单元</li><li><b>账号池调度</b> - 统一接入多个上游模型账号，支撑稳定调用</li><li><b>密钥与预算</b> - 为用户发放 Key，并配置额度、费率和权限边界</li><li><b>用量核算</b> - 追踪 Token、模型成本和部门消耗</li><li><b>能力市场</b> - 将可复用 Skill 分发到 Codex、Claude 等客户端</li></ul><p class="tokenport-tour-emphasis">接下来，用 3 分钟完成一次可演示的经营闭环配置 →</p></div>',
+          '<div class="tokenport-tour-intro"><p>TokenPort 帮你把模型账号、API Key、Token 用量和 Skill 放在同一个控制台里管理。</p><p><b>你可以用它做什么：</b></p><ul><li><b>分组管理</b> - 按团队、项目或环境拆分资源与权限</li><li><b>账号接入</b> - 统一接入多个上游模型账号，保障调用稳定</li><li><b>密钥与额度</b> - 为用户发放 Key，并配置额度、费率和访问范围</li><li><b>用量统计</b> - 查看 Token、成本和各部门消耗</li><li><b>Skill Market</b> - 将可复用 Skill 提供给 Codex、Claude 等客户端</li></ul><p class="tokenport-tour-emphasis">接下来用几分钟完成首次配置 →</p></div>',
         nextBtn: '开始配置',
         prevBtn: '跳过'
       },
       groupManage: {
         title: '📦 第一步：分组管理',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组是 TokenPort 的经营单元，可以对应部门、项目、客户或测试环境：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>每个分组可以绑定多个上游账号</li><li>每个分组有独立的费率、额度和权限</li><li>后续报表可按分组归集 Token 和成本</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>示例：</b>可创建“软开团队”“二开团队”“市场材料”等分组，用于部门核算和预算控制。</p><p style="margin-top: 16px; color: #0f9f8f; font-weight: 600;">点击左侧的“分组管理”开始</p></div>'
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组用来组织资源，可以对应部门、项目、客户或测试环境：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>每个分组可以绑定多个上游账号</li><li>每个分组有独立的费率、额度和权限</li><li>后续可按分组查看 Token 和成本</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>示例：</b>可创建“研发团队”“测试环境”“客服助手”等分组，便于分账和预算控制。</p><p style="margin-top: 16px; color: #0f9f8f; font-weight: 600;">点击左侧的“分组管理”开始</p></div>'
       },
       createGroup: {
         title: '➕ 创建新分组',

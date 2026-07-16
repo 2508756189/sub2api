@@ -22,7 +22,7 @@ describe('ccswitchImport utils', () => {
       buildCcSwitchImportDeeplink({
         ...baseInput,
         platform: 'openai',
-        clientType: 'claude'
+        clientType: 'codex'
       })
     )
 
@@ -42,7 +42,7 @@ describe('ccswitchImport utils', () => {
       buildCcSwitchImportDeeplink({
         ...baseInput,
         platform: 'openai',
-        clientType: 'claude',
+        clientType: 'codex',
         model: 'deepseek-v4-pro',
         configFormat: 'json',
         config
@@ -69,6 +69,24 @@ describe('ccswitchImport utils', () => {
     expect(params.get('app')).toBe(app)
     expect(params.get('endpoint')).toBe(baseInput.baseUrl)
     expect(params.has('model')).toBe(false)
+  })
+
+  it.each([
+    { platform: 'openai' as GroupPlatform, clientType: 'codex' as const, app: 'codex' },
+    { platform: 'openai' as GroupPlatform, clientType: 'claude' as const, app: 'claude' },
+    { platform: 'grok' as GroupPlatform, clientType: 'codex' as const, app: 'codex' },
+    { platform: 'grok' as GroupPlatform, clientType: 'claude' as const, app: 'claude' }
+  ])('imports $platform into the selected $app client', ({ platform, clientType, app }) => {
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        ...baseInput,
+        platform,
+        clientType
+      })
+    )
+
+    expect(params.get('app')).toBe(app)
+    expect(params.get('endpoint')).toBe(baseInput.baseUrl)
   })
 
   it('keeps Antigravity imports on the selected client endpoint without a model parameter', () => {

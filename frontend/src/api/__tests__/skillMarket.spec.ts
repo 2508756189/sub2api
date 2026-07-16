@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchSkillMarketWithSource,
   fetchSkillDetailMarkdown,
+  getSkillDisplayDescription,
+  getSkillDisplayName,
   resolveSkillArchiveUrl,
   skillSupportsRuntime,
   toSkillInstallSelection,
@@ -112,5 +114,24 @@ describe('skillMarket', () => {
 
     expect(skillSupportsRuntime(portableOnlySkill, 'codex')).toBe(false)
     expect(skillSupportsRuntime(portableOnlySkill, 'claude')).toBe(false)
+  })
+
+  it('prefers registry-localized display text and keeps legacy fallback support', () => {
+    const localized = {
+      ...registry.skills[0],
+      id: 'localized-diagram-skill',
+      name: 'dashmotion',
+      description: 'Create animated technical diagrams',
+      detail: {
+        ...registry.skills[0].detail!,
+        displayName: '动态技术图生成器',
+        summary: '将流程和架构生成可离线打开的动态图。',
+      },
+    }
+
+    expect(getSkillDisplayName(localized)).toBe('动态技术图生成器')
+    expect(getSkillDisplayDescription(localized)).toBe('将流程和架构生成可离线打开的动态图。')
+    expect(getSkillDisplayName(registry.skills[0])).toBe('文档转 Markdown')
+    expect(getSkillDisplayDescription(registry.skills[0])).toBe('将 Office、PDF、图片、音频、网页和压缩包等资料转换为干净 Markdown，便于 AI 读取和加工。')
   })
 })

@@ -1,7 +1,7 @@
 import type { GroupPlatform } from '@/types'
 import type { ClaudeModelTier } from '@/constants/connectorPresets'
 
-export type CcSwitchClientType = 'claude' | 'gemini'
+export type CcSwitchClientType = 'claude' | 'codex' | 'gemini'
 export type CcSwitchConfigFormat = 'json' | 'toml'
 
 export interface CcSwitchImportConfig {
@@ -34,18 +34,14 @@ export function resolveCcSwitchImportConfig(
         endpoint: `${baseUrl}/antigravity`
       }
     case 'openai':
+    case 'grok':
       return {
-        app: 'codex',
+        app: clientType === 'claude' ? 'claude' : 'codex',
         endpoint: baseUrl
       }
     case 'gemini':
       return {
         app: 'gemini',
-        endpoint: baseUrl
-      }
-    case 'grok':
-      return {
-        app: 'codex',
         endpoint: baseUrl
       }
     default:

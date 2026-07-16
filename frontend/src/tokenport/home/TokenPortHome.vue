@@ -39,10 +39,10 @@
           </p>
           <div class="hero-actions">
             <router-link :to="entryPath" class="primary-link large">
-              {{ isAuthenticated ? '进入经营控制台' : '开始统一接入' }}
+              {{ isAuthenticated ? '进入控制台' : '开始使用' }}
               <Icon name="arrowRight" size="md" />
             </router-link>
-            <router-link to="/skill-market" class="secondary-link">浏览能力市场</router-link>
+            <router-link to="/skill-market" class="secondary-link">浏览 Skill Market</router-link>
           </div>
           <div class="chip-row" aria-label="支持协议与工具">
             <span v-for="item in TOKENPORT_PRODUCT.protocols" :key="item" class="chip">{{ item }}</span>
@@ -59,7 +59,7 @@
               <dd>{{ TOKENPORT_PRODUCT.clients.length }} 类</dd>
             </div>
             <div>
-              <dt>能力市场</dt>
+              <dt>Skill Market</dt>
               <dd>{{ skillCount }} 个 Skill</dd>
             </div>
           </dl>
@@ -73,7 +73,7 @@
       <section class="change-band">
         <div class="section-heading">
           <p class="section-label">市场变化</p>
-          <h2>企业不缺模型入口，缺的是统一经营能力</h2>
+          <h2>企业不缺模型入口，缺的是统一管理能力</h2>
         </div>
         <div class="change-grid">
           <article v-for="item in changes" :key="item.title">
@@ -88,7 +88,7 @@
         <div class="section-heading wide">
           <div>
             <p class="section-label">产品能力</p>
-            <h2>从统一接入到部门经营，形成完整闭环</h2>
+            <h2>从统一接入到用量治理，覆盖完整流程</h2>
           </div>
           <span>模型与价格来自当前可用渠道，首页不维护容易失真的静态价格表。</span>
         </div>
@@ -137,8 +137,8 @@
       <section class="market-band">
         <div class="section-heading wide">
           <div>
-            <p class="section-label">能力市场</p>
-            <h2>可复用 Skill，直接进入开发与交付流程</h2>
+            <p class="section-label">Skill Market</p>
+            <h2>可复用 Skill，直接用于开发与日常工作</h2>
           </div>
           <router-link to="/skill-market" class="text-link">
             查看全部 {{ skillCount }} 个 Skill
@@ -166,10 +166,10 @@
 
       <section class="value-band">
         <div class="value-copy">
-          <p class="section-label">经营价值</p>
-          <h2>把零散的 AI 消耗变成可核算、可优化、可交付的能力</h2>
+          <p class="section-label">使用价值</p>
+          <h2>把分散的 AI 调用变成可统计、可优化、可复用的能力</h2>
           <p>
-            统一入口减少重复配置，模型路由降低不必要的高价调用，部门报表明确成本归属，Skill 复用减少重复开发。平台既服务公司内部降本增效，也支持客户私有化部署和行业能力包交付。
+            统一入口减少重复配置，模型路由降低不必要的高价调用，部门报表明确成本归属，Skill 复用减少重复开发。既适合内部统一管理，也支持私有化部署和行业 Skill 交付。
           </p>
         </div>
         <div class="value-list">
@@ -197,7 +197,7 @@
       <section class="final-cta">
         <div>
           <p class="section-label light">TOKENPORT</p>
-          <h2>让 Token 成为可经营资产，让 Skill 成为可交付资产</h2>
+          <h2>统一管理 Token 与 Skill，让接入更简单、成本更清晰</h2>
         </div>
         <router-link :to="entryPath" class="primary-link large">
           {{ isAuthenticated ? '进入控制台' : '登录体验' }}
@@ -285,7 +285,7 @@ const changes = [
   {
     index: '03',
     title: '工具入口分散',
-    description: 'Codex、Claude Code、OpenCode、Gemini CLI 等工具需要不同配置和能力目录。',
+    description: 'ChatGPT / Codex、Claude Code、OpenCode、Gemini CLI 等工具需要不同配置和能力目录。',
   },
 ]
 
@@ -298,19 +298,19 @@ const capabilities = [
   },
   {
     number: '02',
-    title: 'Token 经营核算',
-    description: '按部门、用户、API Key 和模型归集调用量、Token、成本、额度与预算预警。',
+    title: 'Token 用量与成本',
+    description: '按部门、用户、API Key 和模型统计调用量、Token、成本、额度与预算预警。',
     points: ['部门成本归属', '预算预警', '用量审计'],
   },
   {
     number: '03',
     title: '智能工具配置',
-    description: '为 Codex、Claude Code、OpenCode、Gemini CLI 与 CCS 生成可检查、可合并的配置。',
+    description: '为 ChatGPT / Codex、Claude Code、OpenCode、Gemini CLI 与 CCS 生成可检查、可合并的配置。',
     points: ['一键配置', '诊断合并', '客户端兼容'],
   },
   {
     number: '04',
-    title: 'Skill 能力市场',
+    title: 'Skill Market',
     description: '以版本、风险、依赖、许可证和 SHA256 管理可复用智能体能力。',
     points: ['版本管理', '风险标注', '可校验交付'],
   },
@@ -327,7 +327,7 @@ const values = computed(() => [
   },
   {
     title: '效率提升',
-    description: '一处生成 Codex、Claude、OpenCode 与 CCS 接入配置',
+    description: '一处生成 ChatGPT / Codex、Claude Code、OpenCode 与 CCS 接入配置',
   },
   {
     title: '资产复用',
@@ -343,7 +343,7 @@ const deployments = [
   {
     tag: 'SaaS',
     title: '平台服务',
-    description: '企业和团队直接使用统一平台，快速获得模型接入、用量治理与能力市场。',
+    description: '企业和团队直接使用统一平台，快速获得模型接入、用量管理和 Skill Market。',
   },
   {
     tag: 'On-Prem',

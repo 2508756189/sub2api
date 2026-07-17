@@ -144,6 +144,7 @@ docs/*
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/CONNECTOR_CUSTOMIZATION_SYNC.md
 !docs/DEEPSEEK_CHANNEL_PRICING.md
+!docs/ASYNC_IMAGE_TASKS.md
 !docs/legal/
 !docs/legal/*.md
 .serena/

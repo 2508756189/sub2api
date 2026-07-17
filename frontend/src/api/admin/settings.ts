@@ -941,6 +941,42 @@ export async function updateSettings(
   return data;
 }
 
+export interface BillingModeSettings {
+  currency: "USD" | "CNY";
+  currency_name: string;
+  usd_to_cny_rate: number;
+  can_convert: boolean;
+}
+
+export interface UpdateBillingModeRequest {
+  currency: "USD" | "CNY";
+  usd_to_cny_rate?: number;
+  convert_existing: boolean;
+  confirmation?: string;
+}
+
+export interface UpdateBillingModeResponse extends BillingModeSettings {
+  rows_converted: number;
+  tables: string[];
+}
+
+export async function getBillingMode(): Promise<BillingModeSettings> {
+  const { data } = await apiClient.get<BillingModeSettings>(
+    "/admin/settings/billing-mode",
+  );
+  return data;
+}
+
+export async function updateBillingMode(
+  request: UpdateBillingModeRequest,
+): Promise<UpdateBillingModeResponse> {
+  const { data } = await apiClient.put<UpdateBillingModeResponse>(
+    "/admin/settings/billing-mode",
+    request,
+  );
+  return data;
+}
+
 /**
  * Test SMTP connection request
  */

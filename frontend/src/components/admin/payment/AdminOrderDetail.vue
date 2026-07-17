@@ -120,6 +120,7 @@ import BaseDialog from '@/components/common/BaseDialog.vue'
 import type { PaymentOrder } from '@/types/payment'
 import { statusBadgeClass, canRefund as canRefundStatus, formatOrderDateTime } from '@/components/payment/orderUtils'
 import { currencySymbol } from '@/components/payment/currency'
+import { getBillingCurrency } from '@/tokenport/billing/currency'
 
 const { t } = useI18n()
 
@@ -128,7 +129,7 @@ const props = defineProps<{
   order: PaymentOrder | null
 }>()
 
-const creditedAmountSymbol = currencySymbol('USD')
+const creditedAmountSymbol = currencySymbol(getBillingCurrency())
 
 const paymentAmountSymbol = computed(() => currencySymbol(props.order?.currency))
 

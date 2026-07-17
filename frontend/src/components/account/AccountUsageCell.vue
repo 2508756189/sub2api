@@ -370,14 +370,14 @@
               {{ formatWindowTokens(grokLocalUsage) }}
             </span>
             <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800" :title="t('usage.accountBilled')">
-              A ${{ formatWindowCost(grokLocalUsage) }}
+              A {{ billingSymbol }}{{ formatWindowCost(grokLocalUsage) }}
             </span>
             <span
               v-if="grokLocalUsage.user_cost != null"
               class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800"
               :title="t('usage.userBilled')"
             >
-              U ${{ formatWindowUserCost(grokLocalUsage) }}
+              U {{ billingSymbol }}{{ formatWindowUserCost(grokLocalUsage) }}
             </span>
           </div>
         </div>
@@ -489,14 +489,14 @@
               {{ formatKeyTokens }}
             </span>
             <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800" :title="t('usage.accountBilled')">
-              A ${{ formatKeyCost }}
+              A {{ billingSymbol }}{{ formatKeyCost }}
             </span>
             <span
               v-if="todayStats.user_cost != null"
               class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800"
               :title="t('usage.userBilled')"
             >
-              U ${{ formatKeyUserCost }}
+              U {{ billingSymbol }}{{ formatKeyUserCost }}
             </span>
           </div>
         </div>
@@ -565,14 +565,14 @@
             {{ formatKeyTokens }}
           </span>
           <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800" :title="t('usage.accountBilled')">
-            A ${{ formatKeyCost }}
+            A {{ billingSymbol }}{{ formatKeyCost }}
           </span>
           <span
             v-if="todayStats.user_cost != null"
             class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800"
             :title="t('usage.userBilled')"
           >
-            U ${{ formatKeyUserCost }}
+            U {{ billingSymbol }}{{ formatKeyUserCost }}
           </span>
         </div>
       </div>
@@ -623,6 +623,7 @@ import type { Account, AccountUsageInfo, GeminiCredentials, WindowStats } from '
 import { buildOpenAIUsageRefreshKey } from '@/utils/accountUsageRefresh'
 import { enqueueUsageRequest } from '@/utils/usageLoadQueue'
 import { formatCompactNumber, formatRelativeTime } from '@/utils/format'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import UsageProgressBar from './UsageProgressBar.vue'
 import AccountQuotaInfo from './AccountQuotaInfo.vue'
 import OpenAIQuotaResetCell from './OpenAIQuotaResetCell.vue'
@@ -649,6 +650,7 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
+const billingSymbol = getBillingCurrencySymbol()
 const desktopViewportQuery = '(min-width: 768px)'
 
 const unmounted = ref(false)

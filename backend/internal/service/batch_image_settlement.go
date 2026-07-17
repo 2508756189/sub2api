@@ -55,12 +55,13 @@ func (r *BatchImageModelPricingResolver) BatchImageUnitPrice(ctx context.Context
 }
 
 type BatchImageSettlementService struct {
-	Repo         BatchImageRepository
-	BillingRepo  UsageBillingRepository
-	UsageLogRepo UsageLogRepository
-	Pricing      BatchImagePricingResolver
-	AuthCache    APIKeyAuthCacheInvalidator
-	Config       *config.Config
+	Repo                  BatchImageRepository
+	BillingRepo           UsageBillingRepository
+	UsageLogRepo          UsageLogRepository
+	Pricing               BatchImagePricingResolver
+	AuthCache             APIKeyAuthCacheInvalidator
+	Config                *config.Config
+	BillingConfigResolver func() config.BillingConfig
 }
 
 type BatchImageSettlementResult struct {
@@ -298,6 +299,13 @@ func (s *BatchImageSettlementService) settlementUnitPrice(ctx context.Context, j
 	unitPrice, err := s.Pricing.BatchImageUnitPrice(ctx, job)
 	if err != nil {
 		return 0, err
+	}
+	if job != nil && config.NormalizeBillingCurrency(job.Currency) == config.BillingCurrencyCNY && s != nil {
+		billing := s.Config.Billing
+		if s.BillingConfigResolver != nil {
+			billing = s.BillingConfigResolver()
+		}
+		unitPrice *= billing.USDExchangeRate()
 	}
 	return unitPrice, nil
 }

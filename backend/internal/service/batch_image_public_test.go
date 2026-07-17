@@ -63,6 +63,24 @@ func TestBatchImagePublicService_Submit(t *testing.T) {
 		require.InDelta(t, 0.15, job.HoldUnitPrice, 1e-12)
 	})
 
+	t.Run("stores cny pricing snapshot when cny settlement is enabled", func(t *testing.T) {
+		svc, repo, _, _, _ := newTestBatchImagePublicService(true)
+		svc.Config.Billing = config.BillingConfig{
+			Currency:     config.BillingCurrencyCNY,
+			USDToCNYRate: 7.2,
+		}
+
+		got, err := svc.Submit(ctx, testBatchImageOwner(), validBatchImageSubmitRequest(), "")
+		require.NoError(t, err)
+		require.Equal(t, config.BillingCurrencyCNY, got.Currency)
+		require.InDelta(t, 0.25*0.5*2*7.2, got.EstimatedCost, 1e-12)
+
+		job := repo.jobs[got.ID]
+		require.Equal(t, config.BillingCurrencyCNY, job.Currency)
+		require.InDelta(t, 0.25*7.2, job.BaseUnitPrice, 1e-12)
+		require.InDelta(t, 0.25*0.5*7.2, job.BillableUnitPrice, 1e-12)
+	})
+
 	t.Run("combines user group image rate account rate discount and hold margin", func(t *testing.T) {
 		svc, repo, _, _, _ := newTestBatchImagePublicService(true)
 		groupID := int64(7)

@@ -706,6 +706,11 @@ type ProxyProbeConfig struct {
 }
 
 type BillingConfig struct {
+	// Currency is the platform settlement currency. Provider/model prices remain
+	// USD-denominated and are converted at the billing boundary.
+	Currency string `mapstructure:"currency"`
+	// USDToCNYRate is the amount of CNY charged for 1 USD of upstream cost.
+	USDToCNYRate   float64              `mapstructure:"usd_to_cny_rate"`
 	CircuitBreaker CircuitBreakerConfig `mapstructure:"circuit_breaker"`
 	// MinimumBalanceReserve is the conservative preflight floor for balance billing.
 	// Requests in balance mode are rejected when the cached balance is below this
@@ -1710,6 +1715,8 @@ func setDefaults() {
 	viper.SetDefault("security.proxy_fallback.allow_direct_on_error", false)
 
 	// Billing
+	viper.SetDefault("billing.currency", BillingCurrencyUSD)
+	viper.SetDefault("billing.usd_to_cny_rate", 1.0)
 	viper.SetDefault("billing.circuit_breaker.enabled", true)
 	viper.SetDefault("billing.circuit_breaker.failure_threshold", 5)
 	viper.SetDefault("billing.circuit_breaker.reset_timeout_seconds", 30)
@@ -2442,6 +2449,9 @@ func (c *Config) Validate() error {
 		if c.Billing.CircuitBreaker.HalfOpenRequests <= 0 {
 			return fmt.Errorf("billing.circuit_breaker.half_open_requests must be positive")
 		}
+	}
+	if err := c.Billing.ValidateCurrency(); err != nil {
+		return err
 	}
 	if c.Billing.MinimumBalanceReserve < 0 {
 		return fmt.Errorf("billing.minimum_balance_reserve must be non-negative")

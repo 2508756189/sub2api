@@ -157,6 +157,7 @@ import { affiliatesAPI, type AffiliateInviteRecord, type AffiliateRebateRecord, 
 import type { PaginatedResponse } from '@/types'
 import { extractI18nErrorMessage } from '@/utils/apiError'
 import { formatDateTime as formatDisplayDateTime } from '@/utils/format'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 
 type RecordType = 'invites' | 'rebates' | 'transfers'
 type AffiliateRecord = AffiliateInviteRecord | AffiliateRebateRecord | AffiliateTransferRecord
@@ -167,6 +168,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const billingSymbol = getBillingCurrencySymbol()
 const loading = ref(false)
 const records = ref<AffiliateRecord[]>([])
 const filters = reactive({ search: '', start_at: '', end_at: '' })
@@ -364,7 +366,7 @@ const AmountText = defineComponent({
       class: amountProps.strong
         ? 'text-sm font-semibold text-emerald-600 dark:text-emerald-400'
         : 'text-sm text-gray-900 dark:text-white',
-    }, `$${formatAmount(amountProps.value)}`)
+    }, `${billingSymbol}${formatAmount(amountProps.value)}`)
   },
 })
 

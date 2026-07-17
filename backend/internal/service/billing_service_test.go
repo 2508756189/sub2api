@@ -33,6 +33,47 @@ func newTestBillingService() *BillingService {
 	return NewBillingService(&config.Config{}, nil)
 }
 
+func newTestCNYBillingService() *BillingService {
+	return NewBillingService(&config.Config{Billing: config.BillingConfig{
+		Currency:     config.BillingCurrencyCNY,
+		USDToCNYRate: 7.2,
+	}}, nil)
+}
+
+func TestCalculateCost_CNYSettlement(t *testing.T) {
+	svc := newTestCNYBillingService()
+	cost, err := svc.CalculateCost("claude-sonnet-4", UsageTokens{
+		InputTokens:  1000,
+		OutputTokens: 500,
+	}, 1.5)
+	require.NoError(t, err)
+
+	sourceTotal := 1000*3e-6 + 500*15e-6
+	require.Equal(t, config.BillingCurrencyCNY, cost.Currency)
+	require.InDelta(t, 7.2, cost.ExchangeRate, 1e-12)
+	require.InDelta(t, sourceTotal, cost.SourceTotalCostUSD, 1e-12)
+	require.InDelta(t, sourceTotal*1.5, cost.SourceActualCostUSD, 1e-12)
+	require.InDelta(t, sourceTotal*7.2, cost.TotalCost, 1e-12)
+	require.InDelta(t, sourceTotal*1.5*7.2, cost.ActualCost, 1e-12)
+}
+
+func TestNonTokenCosts_CNYSettlement(t *testing.T) {
+	svc := newTestCNYBillingService()
+
+	image := svc.CalculateImageCost("gemini-2.5-flash-image", "1K", 2, nil, 1)
+	require.Equal(t, config.BillingCurrencyCNY, image.Currency)
+	require.InDelta(t, image.SourceTotalCostUSD*7.2, image.TotalCost, 1e-12)
+
+	video := svc.CalculateVideoCost("grok-imagine-video", "720p", 1, 10, nil, 1)
+	require.Equal(t, config.BillingCurrencyCNY, video.Currency)
+	require.InDelta(t, video.SourceTotalCostUSD*7.2, video.TotalCost, 1e-12)
+
+	search := svc.CalculateWebSearchCost(3, nil, 1)
+	require.Equal(t, config.BillingCurrencyCNY, search.Currency)
+	require.InDelta(t, 0.03, search.SourceTotalCostUSD, 1e-12)
+	require.InDelta(t, 0.03*7.2, search.TotalCost, 1e-12)
+}
+
 func TestCalculateCost_BasicComputation(t *testing.T) {
 	svc := newTestBillingService()
 
@@ -810,8 +851,8 @@ func TestComputeTokenBreakdown_GptImage2ImageEditIssue4386(t *testing.T) {
 
 	cost := svc.computeTokenBreakdown(pricing, tokens, 1.0, "", false)
 
-	wantTextInput := float64(19) * 5e-6    // 0.000095
-	wantImageInput := float64(352) * 8e-6  // 0.002816
+	wantTextInput := float64(19) * 5e-6     // 0.000095
+	wantImageInput := float64(352) * 8e-6   // 0.002816
 	wantImageOutput := float64(439) * 30e-6 // 0.013170
 	require.InDelta(t, wantTextInput, cost.InputCost, 1e-15, "InputCost 仅含文本输入")
 	require.InDelta(t, wantImageInput, cost.ImageInputCost, 1e-15, "图片输入按 $8/1M 独立计费")

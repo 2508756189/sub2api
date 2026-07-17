@@ -70,6 +70,7 @@ type SettingService struct {
 	// instance owns its own cache, no shared package-level state.
 	openAIQuotaAutoPauseSettingsCache atomic.Value // *cachedOpenAIQuotaAutoPauseSettings
 	openAIQuotaAutoPauseSettingsSF    singleflight.Group
+	billingConfigResolver             func() config.BillingConfig
 }
 
 // DefaultPlatformQuotaSetting 单 platform 三档限额（nil = 沿用上层；0 = 显式禁用；>0 = 上限）
@@ -214,6 +215,20 @@ func (s *SettingService) SetDefaultSubscriptionGroupReader(reader DefaultSubscri
 // SetProxyRepository injects a proxy repo for resolving websearch provider proxy URLs.
 func (s *SettingService) SetProxyRepository(repo ProxyRepository) {
 	s.proxyRepo = repo
+}
+
+func (s *SettingService) SetBillingConfigResolver(resolver func() config.BillingConfig) {
+	s.billingConfigResolver = resolver
+}
+
+func (s *SettingService) BillingConfig() config.BillingConfig {
+	if s != nil && s.billingConfigResolver != nil {
+		return s.billingConfigResolver()
+	}
+	if s != nil && s.cfg != nil {
+		return s.cfg.Billing
+	}
+	return config.BillingConfig{}
 }
 
 func (s *SettingService) LoadAPIKeyACLTrustForwardedIPSetting(ctx context.Context) error {

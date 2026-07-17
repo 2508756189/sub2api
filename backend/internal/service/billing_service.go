@@ -161,6 +161,10 @@ type CostBreakdown struct {
 	CacheReadCost             float64
 	TotalCost                 float64
 	ActualCost                float64 // 应用倍率后的实际费用
+	Currency                  string  // 平台结算币种
+	ExchangeRate              float64 // 1 USD 对应的平台结算币种金额
+	SourceTotalCostUSD        float64 // 换算前的 USD 原始费用
+	SourceActualCostUSD       float64 // 应用倍率后、换算前的 USD 原始费用
 	BillingMode               string  // 计费模式（"token"/"per_request"/"image"），由 CalculateCostUnified 填充
 	LongContextBillingApplied bool
 }
@@ -171,14 +175,29 @@ var ErrModelPricingUnavailable = errors.New("pricing not found")
 
 // BillingService 计费服务
 type BillingService struct {
-	cfg            *config.Config
-	pricingService *PricingService
-	fallbackPrices map[string]*ModelPricing // 硬编码回退价格
+	cfg                   *config.Config
+	pricingService        *PricingService
+	fallbackPrices        map[string]*ModelPricing // 硬编码回退价格
+	billingConfigResolver func() config.BillingConfig
 
 	// fallbackWarnSeen 记录已打过 fallback 警告日志的(已小写化)模型名,
 	// 让 "[Billing] Using fallback pricing" 每个模型每进程最多打一条,
 	// 避免热路径上每请求刷屏(issue #3394)。零值即可用,无需在构造函数初始化。
 	fallbackWarnSeen sync.Map
+}
+
+func (s *BillingService) SetBillingConfigResolver(resolver func() config.BillingConfig) {
+	s.billingConfigResolver = resolver
+}
+
+func (s *BillingService) BillingConfig() config.BillingConfig {
+	if s != nil && s.billingConfigResolver != nil {
+		return s.billingConfigResolver()
+	}
+	if s != nil && s.cfg != nil {
+		return s.cfg.Billing
+	}
+	return config.BillingConfig{}
 }
 
 // NewBillingService 创建计费服务实例
@@ -928,6 +947,7 @@ func (s *BillingService) CalculateCostUnified(input CostInput) (*CostBreakdown, 
 		if breakdown.BillingMode == "" {
 			breakdown.BillingMode = string(BillingModeToken)
 		}
+		breakdown = s.applyBillingCurrency(breakdown)
 	}
 	return breakdown, err
 }
@@ -1151,7 +1171,37 @@ func (s *BillingService) calculateCostInternalWithPolicy(
 		return nil, err
 	}
 
-	return s.computeTokenBreakdown(pricing, tokens, rateMultiplier, serviceTier, longContextBillingEnabled), nil
+	return s.applyBillingCurrency(s.computeTokenBreakdown(pricing, tokens, rateMultiplier, serviceTier, longContextBillingEnabled)), nil
+}
+
+// applyBillingCurrency converts source USD costs at the platform billing boundary.
+// Model and channel price sources stay USD-denominated for upstream compatibility.
+func (s *BillingService) applyBillingCurrency(breakdown *CostBreakdown) *CostBreakdown {
+	if breakdown == nil {
+		return nil
+	}
+	currency := config.BillingCurrencyUSD
+	rate := 1.0
+	if s != nil {
+		billing := s.BillingConfig()
+		currency = billing.CurrencyCode()
+		rate = billing.USDExchangeRate()
+	}
+	breakdown.Currency = currency
+	breakdown.ExchangeRate = rate
+	breakdown.SourceTotalCostUSD = breakdown.TotalCost
+	breakdown.SourceActualCostUSD = breakdown.ActualCost
+	if currency == config.BillingCurrencyCNY {
+		breakdown.InputCost *= rate
+		breakdown.ImageInputCost *= rate
+		breakdown.OutputCost *= rate
+		breakdown.ImageOutputCost *= rate
+		breakdown.CacheCreationCost *= rate
+		breakdown.CacheReadCost *= rate
+		breakdown.TotalCost *= rate
+		breakdown.ActualCost *= rate
+	}
+	return breakdown
 }
 
 func (s *BillingService) applyModelSpecificPricingPolicy(model string, pricing *ModelPricing) *ModelPricing {
@@ -1290,6 +1340,10 @@ func (s *BillingService) CalculateCostWithLongContext(model string, tokens Usage
 		CacheReadCost:             inRangeCost.CacheReadCost + outRangeCost.CacheReadCost,
 		TotalCost:                 inRangeCost.TotalCost + outRangeCost.TotalCost,
 		ActualCost:                inRangeCost.ActualCost + outRangeCost.ActualCost,
+		Currency:                  inRangeCost.Currency,
+		ExchangeRate:              inRangeCost.ExchangeRate,
+		SourceTotalCostUSD:        inRangeCost.SourceTotalCostUSD + outRangeCost.SourceTotalCostUSD,
+		SourceActualCostUSD:       inRangeCost.SourceActualCostUSD + outRangeCost.SourceActualCostUSD,
 		LongContextBillingApplied: outRangeCost.ActualCost > 0,
 	}, nil
 }
@@ -1388,7 +1442,7 @@ const (
 // rateMultiplier: 分组费率倍数
 func (s *BillingService) CalculateWebSearchCost(callCount int, groupPrice *float64, rateMultiplier float64) *CostBreakdown {
 	if callCount <= 0 {
-		return &CostBreakdown{}
+		return s.applyBillingCurrency(&CostBreakdown{})
 	}
 	unitPrice := defaultWebSearchPricePerCall
 	if groupPrice != nil && *groupPrice >= 0 {
@@ -1400,11 +1454,11 @@ func (s *BillingService) CalculateWebSearchCost(callCount int, groupPrice *float
 	if rateMultiplier < 0 {
 		rateMultiplier = 0
 	}
-	return &CostBreakdown{
+	return s.applyBillingCurrency(&CostBreakdown{
 		TotalCost:   totalCost,
 		ActualCost:  totalCost * rateMultiplier,
 		BillingMode: string(BillingModePerRequest),
-	}
+	})
 }
 
 // CalculateImageCost 计算图片生成费用
@@ -1415,7 +1469,7 @@ func (s *BillingService) CalculateWebSearchCost(callCount int, groupPrice *float
 // rateMultiplier: 费率倍数
 func (s *BillingService) CalculateImageCost(model string, imageSize string, imageCount int, groupConfig *ImagePriceConfig, rateMultiplier float64) *CostBreakdown {
 	if imageCount <= 0 {
-		return &CostBreakdown{}
+		return s.applyBillingCurrency(&CostBreakdown{})
 	}
 	imageSize = NormalizeImageBillingTierOrDefault(imageSize)
 
@@ -1431,11 +1485,11 @@ func (s *BillingService) CalculateImageCost(model string, imageSize string, imag
 	}
 	actualCost := totalCost * rateMultiplier
 
-	return &CostBreakdown{
+	return s.applyBillingCurrency(&CostBreakdown{
 		TotalCost:   totalCost,
 		ActualCost:  actualCost,
 		BillingMode: string(BillingModeImage),
-	}
+	})
 }
 
 // CalculateVideoCost 计算视频生成费用（按秒计费，与 xAI 口径一致）。
@@ -1447,7 +1501,7 @@ func (s *BillingService) CalculateImageCost(model string, imageSize string, imag
 // rateMultiplier: 费率倍数
 func (s *BillingService) CalculateVideoCost(model string, resolution string, videoCount int, durationSeconds int, groupConfig *VideoPriceConfig, rateMultiplier float64) *CostBreakdown {
 	if videoCount <= 0 {
-		return &CostBreakdown{}
+		return s.applyBillingCurrency(&CostBreakdown{})
 	}
 	resolution = NormalizeVideoBillingResolutionOrDefault(resolution)
 	durationSeconds = NormalizeVideoBillingDurationSecondsOrDefault(durationSeconds)
@@ -1460,11 +1514,11 @@ func (s *BillingService) CalculateVideoCost(model string, resolution string, vid
 	}
 	actualCost := totalCost * rateMultiplier
 
-	return &CostBreakdown{
+	return s.applyBillingCurrency(&CostBreakdown{
 		TotalCost:   totalCost,
 		ActualCost:  actualCost,
 		BillingMode: string(BillingModeVideo),
-	}
+	})
 }
 
 // getImageUnitPrice 获取图片单价

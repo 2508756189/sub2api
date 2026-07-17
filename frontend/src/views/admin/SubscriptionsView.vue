@@ -227,9 +227,9 @@
                     ></div>
                   </div>
                   <span class="usage-amount">
-                    ${{ row.daily_usage_usd?.toFixed(2) || '0.00' }}
+                    {{ billingSymbol }}{{ row.daily_usage_usd?.toFixed(2) || '0.00' }}
                     <span class="text-gray-400">/</span>
-                    ${{ row.group?.daily_limit_usd?.toFixed(2) }}
+                    {{ billingSymbol }}{{ row.group?.daily_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
                 <div class="reset-info" v-if="row.daily_window_start">
@@ -264,9 +264,9 @@
                     ></div>
                   </div>
                   <span class="usage-amount">
-                    ${{ row.weekly_usage_usd?.toFixed(2) || '0.00' }}
+                    {{ billingSymbol }}{{ row.weekly_usage_usd?.toFixed(2) || '0.00' }}
                     <span class="text-gray-400">/</span>
-                    ${{ row.group?.weekly_limit_usd?.toFixed(2) }}
+                    {{ billingSymbol }}{{ row.group?.weekly_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
                 <div class="reset-info" v-if="row.weekly_window_start">
@@ -301,9 +301,9 @@
                     ></div>
                   </div>
                   <span class="usage-amount">
-                    ${{ row.monthly_usage_usd?.toFixed(2) || '0.00' }}
+                    {{ billingSymbol }}{{ row.monthly_usage_usd?.toFixed(2) || '0.00' }}
                     <span class="text-gray-400">/</span>
-                    ${{ row.group?.monthly_limit_usd?.toFixed(2) }}
+                    {{ billingSymbol }}{{ row.group?.monthly_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
                 <div class="reset-info" v-if="row.monthly_window_start">
@@ -765,6 +765,7 @@ import type { UserSubscription, Group, GroupPlatform, SubscriptionType } from '@
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
 import { formatDateOnly } from '@/utils/format'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -780,6 +781,7 @@ import Icon from '@/components/icons/Icon.vue'
 import { getRemainingDurationParts, isOneTimeDailyQuota, type RemainingDurationParts } from '@/utils/subscriptionQuota'
 
 const { t } = useI18n()
+const billingSymbol = getBillingCurrencySymbol()
 const appStore = useAppStore()
 
 interface GroupOption {

@@ -121,12 +121,14 @@ import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
 import type { AdminUser, PlatformQuotaItem, PlatformQuotaPlatform, PlatformQuotaWindow } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 
 const props = defineProps<{ show: boolean; user: AdminUser | null }>()
 const emit = defineEmits(['close', 'success'])
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const billingSymbol = getBillingCurrencySymbol()
 
 const PLATFORMS: PlatformQuotaPlatform[] = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok']
 
@@ -181,7 +183,7 @@ function normalize(items: PlatformQuotaItem[]): QuotaRow[] {
 
 function formatUsage(n: number): string {
   if (n == null || Number.isNaN(n)) return '-'
-  return n.toFixed(2)
+  return `${billingSymbol}${n.toFixed(2)}`
 }
 
 async function load() {

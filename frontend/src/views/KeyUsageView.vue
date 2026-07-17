@@ -425,6 +425,7 @@ import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { buildGatewayUrl } from '@/api/client'
 import { formatDateLocalInput } from '@/utils/format'
+import { formatBillingNumber } from '@/tokenport/billing/currency'
 import { sanitizeUrl } from '@/utils/url'
 
 const { t, locale } = useI18n()
@@ -832,7 +833,7 @@ const showDailyUsage = computed(() => Boolean(resultData.value && Array.isArray(
 
 function usd(value: number | null | undefined): string {
   if (value == null || value < 0) return '-'
-  return '$' + Number(value).toFixed(2)
+  return formatBillingNumber(value, 2)
 }
 
 function fmtNum(val: number | null | undefined): string {

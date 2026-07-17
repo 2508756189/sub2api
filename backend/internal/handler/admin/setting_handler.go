@@ -59,6 +59,7 @@ type SettingHandler struct {
 	paymentService           *service.PaymentService
 	userAttributeService     *service.UserAttributeService
 	notificationEmailService *service.NotificationEmailService
+	billingModeService       *service.BillingModeService
 }
 
 // NewSettingHandler 创建系统设置处理器

@@ -3,7 +3,8 @@ name: TokenPort upstream sync
 on:
   workflow_dispatch:
   schedule:
-    - cron: '20 2 * * *'
+    # Low-frequency check: approximately once every three days.
+    - cron: '20 2 */3 * *'
 
 concurrency:
   group: tokenport-upstream-sync

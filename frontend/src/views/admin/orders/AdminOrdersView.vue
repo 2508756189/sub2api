@@ -132,6 +132,7 @@ import AdminRefundDialog from '@/components/admin/payment/AdminRefundDialog.vue'
 import OrderStatusBadge from '@/components/payment/OrderStatusBadge.vue'
 import OrderTable from '@/components/payment/OrderTable.vue'
 import { currencySymbol } from '@/components/payment/currency'
+import { getBillingCurrency } from '@/tokenport/billing/currency'
 
 interface AuditLog {
   id: number
@@ -155,7 +156,7 @@ const showRefundDialog = ref(false)
 const refundSubmitting = ref(false)
 const refundQueryingIds = ref(new Set<number>())
 const orderAuditLogs = ref<AuditLog[]>([])
-const creditedAmountSymbol = currencySymbol('USD')
+const creditedAmountSymbol = currencySymbol(getBillingCurrency())
 
 function paymentAmountSymbol(order: PaymentOrder | null | undefined): string {
   return currencySymbol(order?.currency)

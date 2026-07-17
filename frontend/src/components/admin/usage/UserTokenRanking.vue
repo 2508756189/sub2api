@@ -71,7 +71,7 @@
             <td class="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums text-gray-500 dark:text-gray-400">{{ fmtTokens(item.output_tokens) }}</td>
             <td class="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums text-gray-500 dark:text-gray-400">{{ fmtTokens(item.cache_tokens) }}</td>
             <td class="whitespace-nowrap px-4 py-3 text-right text-sm font-medium tabular-nums text-gray-900 dark:text-gray-100">{{ fmtTokens(item.total_tokens) }}</td>
-            <td class="whitespace-nowrap px-4 py-3 text-right text-sm font-medium tabular-nums text-green-600 dark:text-green-400">${{ fmtCost(item.actual_cost) }}</td>
+            <td class="whitespace-nowrap px-4 py-3 text-right text-sm font-medium tabular-nums text-green-600 dark:text-green-400">{{ billingSymbol }}{{ fmtCost(item.actual_cost) }}</td>
           </tr>
         </tbody>
       </table>
@@ -85,6 +85,7 @@ import { useI18n } from 'vue-i18n'
 import { getUserBreakdown, type UserBreakdownParams } from '@/api/admin/dashboard'
 import { formatCompactNumber, formatCostFixed } from '@/utils/format'
 import type { UserBreakdownItem } from '@/types'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import Select from '@/components/common/Select.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
@@ -98,6 +99,7 @@ const props = defineProps<{
 defineEmits<{ (e: 'select-user', userId: number, email: string): void }>()
 
 const { t } = useI18n()
+const billingSymbol = getBillingCurrencySymbol()
 
 type SortKey = NonNullable<UserBreakdownParams['sort_by']>
 const sortableColumns: { key: SortKey; label: string }[] = [

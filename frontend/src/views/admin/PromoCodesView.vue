@@ -76,7 +76,7 @@
 
           <template #cell-bonus_amount="{ value }">
             <span class="text-sm font-medium text-gray-900 dark:text-white">
-              ${{ value.toFixed(2) }}
+                {{ billingSymbol }}{{ value.toFixed(2) }}
             </span>
           </template>
 
@@ -347,7 +347,7 @@
           </div>
           <div class="text-right">
             <span class="text-sm font-medium text-green-600 dark:text-green-400">
-              +${{ usage.bonus_amount.toFixed(2) }}
+                +{{ billingSymbol }}{{ usage.bonus_amount.toFixed(2) }}
             </span>
           </div>
         </div>
@@ -403,9 +403,11 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const billingSymbol = getBillingCurrencySymbol()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
 // State

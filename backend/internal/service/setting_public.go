@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
 
@@ -280,11 +279,9 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 	if v, err := strconv.ParseFloat(settings[SettingKeyBalanceLowNotifyThreshold], 64); err == nil && v >= 0 {
 		balanceLowNotifyThreshold = v
 	}
-	billingCurrency := config.BillingCurrencyUSD
-	billingUSDToCNYRate := 1.0
 	billing := s.BillingConfig()
-	billingCurrency = billing.CurrencyCode()
-	billingUSDToCNYRate = billing.USDToCNYRate
+	billingCurrency := billing.CurrencyCode()
+	billingUSDToCNYRate := billing.USDToCNYRate
 	if billingUSDToCNYRate <= 0 {
 		billingUSDToCNYRate = 7.2
 	}

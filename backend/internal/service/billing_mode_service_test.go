@@ -79,3 +79,25 @@ func TestBillingModeRateChangeDoesNotConvertHistory(t *testing.T) {
 		t.Fatalf("rate update unexpectedly converted history: %+v %+v", repo.saved, repo.converted)
 	}
 }
+
+func TestBillingModeConversionFlushesInjectedCache(t *testing.T) {
+	repo := &billingModeRepoStub{snapshot: BillingModeSnapshot{Currency: config.BillingCurrencyCNY, USDToCNYRate: 7.2, Configured: true}}
+	flushes := 0
+	svc := NewBillingModeService(
+		repo,
+		&config.Config{Billing: config.BillingConfig{Currency: config.BillingCurrencyCNY, USDToCNYRate: 7.2}},
+		func(context.Context) error {
+			flushes++
+			return nil
+		},
+	)
+	if err := svc.Load(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Update(context.Background(), config.BillingCurrencyUSD, 7.2, true, BillingModeConfirmationUSD); err != nil {
+		t.Fatal(err)
+	}
+	if flushes != 1 {
+		t.Fatalf("cache flushes=%d, want 1", flushes)
+	}
+}

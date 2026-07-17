@@ -612,7 +612,13 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 }
 
 func ProvideBillingModeService(repo BillingModeRepository, cfg *config.Config, rdb *redis.Client) *BillingModeService {
-	svc := NewBillingModeService(repo, cfg, rdb)
+	var cacheFlush func(context.Context) error
+	if rdb != nil {
+		cacheFlush = func(ctx context.Context) error {
+			return rdb.FlushDB(ctx).Err()
+		}
+	}
+	svc := NewBillingModeService(repo, cfg, cacheFlush)
 	if err := svc.Load(context.Background()); err != nil {
 		logger.LegacyPrintf("service.billing_mode", "Warning: load billing mode failed: %v", err)
 	}

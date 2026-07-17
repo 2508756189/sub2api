@@ -8,7 +8,6 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
-	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -56,15 +55,15 @@ type BillingModeRepository interface {
 }
 
 type BillingModeService struct {
-	repo     BillingModeRepository
-	redis    *redis.Client
-	fallback config.BillingConfig
+	repo       BillingModeRepository
+	cacheFlush func(context.Context) error
+	fallback   config.BillingConfig
 
 	mu      sync.RWMutex
 	current config.BillingConfig
 }
 
-func NewBillingModeService(repo BillingModeRepository, cfg *config.Config, rdb *redis.Client) *BillingModeService {
+func NewBillingModeService(repo BillingModeRepository, cfg *config.Config, cacheFlush func(context.Context) error) *BillingModeService {
 	var fallback config.BillingConfig
 	if cfg != nil {
 		fallback = cfg.Billing
@@ -75,7 +74,7 @@ func NewBillingModeService(repo BillingModeRepository, cfg *config.Config, rdb *
 	if fallback.USDToCNYRate <= 0 {
 		fallback.USDToCNYRate = 7.2
 	}
-	return &BillingModeService{repo: repo, redis: rdb, fallback: fallback, current: fallback}
+	return &BillingModeService{repo: repo, cacheFlush: cacheFlush, fallback: fallback, current: fallback}
 }
 
 func (s *BillingModeService) Load(ctx context.Context) error {
@@ -192,10 +191,10 @@ func (s *BillingModeService) Update(ctx context.Context, currency string, usdToC
 			return BillingModeConversionResult{}, infraerrors.InternalServer("BILLING_MODE_CONVERSION_FAILED", "billing currency conversion failed").WithCause(err)
 		}
 		s.current = billingConfigAfterConversion(current, target, usdToCNYRate, factor)
-		if s.redis != nil {
+		if s.cacheFlush != nil {
 			// Balances and quota snapshots are cached in Redis. A full cache clear is
 			// intentional here: a partial clear could mix USD and CNY values.
-			_ = s.redis.FlushDB(ctx).Err()
+			_ = s.cacheFlush(ctx)
 		}
 		return result, nil
 	}

@@ -30,7 +30,7 @@ func (r *billingModeRepository) ReadBillingMode(ctx context.Context) (service.Bi
 	if err != nil {
 		return service.BillingModeSnapshot{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	values := map[string]string{}
 	for rows.Next() {
 		var key, value string
@@ -73,7 +73,7 @@ func (r *billingModeRepository) ConvertBillingMode(ctx context.Context, conversi
 	if err != nil {
 		return service.BillingModeConversionResult{}, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	if _, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(2508756189)"); err != nil {
 		return service.BillingModeConversionResult{}, err
 	}
@@ -184,7 +184,7 @@ func convertMoneySettings(ctx context.Context, tx *sql.Tx, factor float64) error
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	values := map[string]string{}
 	for rows.Next() {
 		var key, value string

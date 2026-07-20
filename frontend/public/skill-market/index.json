@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.1",
-  "generatedAt": "2026-07-16T04:01:17Z",
+  "generatedAt": "2026-07-20T01:16:04Z",
   "repository": "https://github.com/2508756189/state-of-art-skills",
   "categories": [
     {
@@ -644,6 +644,58 @@
       }
     },
     {
+      "id": "mcp-security-audit",
+      "name": "mcp-security-audit",
+      "description": "Audit MCP client and server configuration files for exposed credentials, unsafe shell launchers, unpinned package runners, insecure remote URLs, and unapproved servers. Use for Codex config.toml, Claude-style .mcp.json files, desktop MCP configuration, or repository MCP governance reviews.",
+      "category": "engineering",
+      "tags": [
+        "mcp",
+        "security",
+        "supply-chain",
+        "governance"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/mcp-security-audit",
+        "claude": "~/.claude/skills/mcp-security-audit",
+        "portable": "~/.agents/skills/mcp-security-audit"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/github/awesome-copilot/tree/e95bd8c4ba65454121f86a7ad0d3ed17ab0bcf37/skills/mcp-security-audit",
+      "riskLevel": "medium",
+      "path": "skills/mcp-security-audit",
+      "detail": {
+        "displayName": "MCP 配置安全审计",
+        "summary": "只读检查 MCP 配置中的凭证暴露、Shell 启动、未固定依赖、远程明文地址和批准清单漂移。",
+        "useCases": [
+          "Codex MCP 配置审计",
+          "Claude MCP 上线前检查",
+          "Agent 工具供应链治理"
+        ],
+        "capabilities": [
+          "JSON/TOML 解析",
+          "脱敏安全检查",
+          "批准清单核验"
+        ],
+        "requirements": [
+          "Python 3.11+",
+          "待审计的 MCP 配置文件"
+        ],
+        "permissions": [
+          "只读访问指定配置文件"
+        ],
+        "markdownPath": "details/mcp-security-audit.md"
+      },
+      "archive": {
+        "path": "dist/skills/mcp-security-audit.zip",
+        "sha256": "7b58039b64ae70b6f5ee11ef58ac0a69de32e00db60b1b449c01c0aa5e8c12de",
+        "size": 6540
+      }
+    },
+    {
       "id": "supermemory",
       "name": "supermemory",
       "description": "Supermemory is a state-of-the-art memory and context infrastructure for AI agents. Use this skill when building applications that need persistent memory, user personalization, long-term context retention, or semantic search across knowledge bases. It provides Memory API for learned user context, User Profiles for static/dynamic facts, and RAG for semantic search. Perfect for chatbots, assistants, and knowledge-intensive applications.",
@@ -743,6 +795,61 @@
         "path": "dist/skills/taste-skill.zip",
         "sha256": "272d80c719f244443ff00bf742cc8f9a8de52d36f0f2533b965197a2b16b355f",
         "size": 1165
+      }
+    },
+    {
+      "id": "unit-test-vue-pinia",
+      "name": "unit-test-vue-pinia",
+      "description": "Write and review focused unit tests for Vue 3, TypeScript, Vitest, and Pinia codebases, using behavior-first assertions and the narrowest Pinia setup that proves the scenario.",
+      "category": "engineering",
+      "tags": [
+        "vue",
+        "pinia",
+        "vitest",
+        "testing"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/unit-test-vue-pinia",
+        "claude": "~/.claude/skills/unit-test-vue-pinia",
+        "portable": "~/.agents/skills/unit-test-vue-pinia"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/github/awesome-copilot/tree/314cf968ab643bc0ad1488e98e6e7893b752004a/skills/unit-test-vue-pinia",
+      "riskLevel": "low",
+      "path": "skills/unit-test-vue-pinia",
+      "detail": {
+        "displayName": "Vue 与 Pinia 单元测试",
+        "summary": "为 Vue 3、Vitest 与 Pinia 项目编写行为优先、依赖明确且可重复运行的单元测试。",
+        "useCases": [
+          "Pinia store 测试",
+          "Vue 组件测试",
+          "Vitest 测试评审"
+        ],
+        "capabilities": [
+          "测试策略选择",
+          "Pinia 隔离",
+          "行为断言"
+        ],
+        "requirements": [
+          "Vue 3 项目",
+          "Vitest 与 Vue Test Utils",
+          "按需使用 @pinia/testing"
+        ],
+        "permissions": [
+          "读取前端源文件和测试",
+          "按任务修改测试文件",
+          "运行聚焦测试命令"
+        ],
+        "markdownPath": "details/unit-test-vue-pinia.md"
+      },
+      "archive": {
+        "path": "dist/skills/unit-test-vue-pinia.zip",
+        "sha256": "a94ccbf92cf20875d2b57b3da56f8a34526f9289c35a011ae4cdbd29382b2e80",
+        "size": 3867
       }
     }
   ]

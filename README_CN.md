@@ -9,6 +9,10 @@
 
 <div align="center">
 
+<img src="assets/logo.svg" alt="Sub2API Logo" width="128" />
+
+# Sub2API
+
 [![Go](https://img.shields.io/badge/Go-1.25.7-00ADD8.svg)](https://golang.org/)
 [![Vue](https://img.shields.io/badge/Vue-3.4+-4FC08D.svg)](https://vuejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791.svg)](https://www.postgresql.org/)

@@ -10979,7 +10979,7 @@ async function loadProviders() {
     // Normalize supported_types: backend returns null when the list is empty
     // (Go nil slice → JSON null). Without this, ProviderCard's isSelected()
     // throws TypeError on null.includes(), causing the card to vanish.
-    providers.value = (res.data || []).map((p) => ({
+    providers.value = (res.data || []).map((p: any) => ({
       ...p,
       supported_types: Array.isArray(p.supported_types)
         ? p.supported_types

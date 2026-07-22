@@ -109,7 +109,6 @@ import { currencySymbol } from '@/components/payment/currency'
 import { getBillingCurrency, getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import { hasPeakRate as groupHasPeakRate, formatPeakRateWindow, serverTimezoneLabel } from '@/utils/peak-rate'
 import { planValiditySuffix } from './validity'
-import { currencySymbol } from '@/components/payment/currency'
 import {
   platformAccentBarClass,
   platformBadgeLightClass,
@@ -154,7 +153,6 @@ const rateDisplay = computed(() => {
 })
 
 const appStore = useAppStore()
-const planCurrencySymbol = computed(() => currencySymbol(props.plan.currency || 'USD'))
 
 const hasPeakRate = computed(() => groupHasPeakRate(props.plan))
 

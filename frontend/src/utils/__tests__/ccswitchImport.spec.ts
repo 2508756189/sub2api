@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  GROK_CC_SWITCH_MODEL,
+  OPENAI_CC_SWITCH_CODEX_MODEL,
   buildCcSwitchImportDeeplink
 } from '@/utils/ccswitchImport'
 import type { GroupPlatform } from '@/types'
@@ -17,7 +19,7 @@ describe('ccswitchImport utils', () => {
     usageScript: 'return true'
   }
 
-  it('does not invent a Codex model for OpenAI imports', () => {
+  it('defaults OpenAI CC Switch imports to the current Codex model', () => {
     const params = paramsFromDeeplink(
       buildCcSwitchImportDeeplink({
         ...baseInput,
@@ -29,7 +31,7 @@ describe('ccswitchImport utils', () => {
     expect(params.get('resource')).toBe('provider')
     expect(params.get('app')).toBe('codex')
     expect(params.get('endpoint')).toBe(baseInput.baseUrl)
-    expect(params.has('model')).toBe(false)
+    expect(params.get('model')).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
     expect(atob(params.get('usageScript') || '')).toBe(baseInput.usageScript)
   })
 
@@ -51,6 +53,7 @@ describe('ccswitchImport utils', () => {
 
     expect(params.get('model')).toBe('deepseek-v4-pro')
     expect(params.get('configFormat')).toBe('json')
+    expect(params.getAll('configFormat')).toEqual(['json'])
     expect(atob(params.get('config') || '')).toBe(config)
   })
 
@@ -72,21 +75,23 @@ describe('ccswitchImport utils', () => {
   })
 
   it.each([
-    { platform: 'openai' as GroupPlatform, clientType: 'codex' as const, app: 'codex' },
-    { platform: 'openai' as GroupPlatform, clientType: 'claude' as const, app: 'claude' },
-    { platform: 'grok' as GroupPlatform, clientType: 'codex' as const, app: 'codex' },
-    { platform: 'grok' as GroupPlatform, clientType: 'claude' as const, app: 'claude' }
-  ])('imports $platform into the selected $app client', ({ platform, clientType, app }) => {
+    'https://api.example.com',
+    'https://api.example.com/',
+    'https://api.example.com/v1',
+    'https://api.example.com/v1/'
+  ])('imports Grok Build with one /v1 suffix for base URL %s', (baseUrl) => {
     const params = paramsFromDeeplink(
       buildCcSwitchImportDeeplink({
         ...baseInput,
-        platform,
-        clientType
+        baseUrl,
+        platform: 'grok',
+        clientType: 'claude'
       })
     )
 
-    expect(params.get('app')).toBe(app)
-    expect(params.get('endpoint')).toBe(baseInput.baseUrl)
+    expect(params.get('app')).toBe('grokbuild')
+    expect(params.get('endpoint')).toBe('https://api.example.com/v1')
+    expect(params.get('model')).toBe(GROK_CC_SWITCH_MODEL)
   })
 
   it('keeps Antigravity imports on the selected client endpoint without a model parameter', () => {

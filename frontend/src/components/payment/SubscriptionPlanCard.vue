@@ -106,8 +106,9 @@ import type { SubscriptionPlan } from '@/types/payment'
 import type { UserSubscription } from '@/types'
 import { useAppStore } from '@/stores/app'
 import { currencySymbol } from '@/components/payment/currency'
-import { getBillingCurrency, getBillingCurrencySymbol } from '@/tokenport/billing/currency'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import { hasPeakRate as groupHasPeakRate, formatPeakRateWindow, serverTimezoneLabel } from '@/utils/peak-rate'
+import { planValiditySuffix } from './validity'
 import {
   platformAccentBarClass,
   platformBadgeLightClass,
@@ -123,7 +124,7 @@ const props = defineProps<{ plan: SubscriptionPlan; activeSubscriptions?: UserSu
 const emit = defineEmits<{ select: [plan: SubscriptionPlan] }>()
 const { t } = useI18n()
 const billingSymbol = getBillingCurrencySymbol()
-const planCurrencySymbol = computed(() => currencySymbol(props.plan.currency || getBillingCurrency()))
+const planCurrencySymbol = computed(() => currencySymbol(props.plan.currency || 'USD'))
 
 const platform = computed(() => props.plan.group_platform || '')
 const isRenewal = computed(() =>
@@ -172,10 +173,5 @@ const modelScopeLabels = computed(() => {
   return scopes.map(s => MODEL_SCOPE_LABELS[s] || s)
 })
 
-const validitySuffix = computed(() => {
-  const u = props.plan.validity_unit || 'day'
-  if (u === 'month') return t('payment.perMonth')
-  if (u === 'year') return t('payment.perYear')
-  return `${props.plan.validity_days}${t('payment.days')}`
-})
+const validitySuffix = computed(() => planValiditySuffix(props.plan, t))
 </script>

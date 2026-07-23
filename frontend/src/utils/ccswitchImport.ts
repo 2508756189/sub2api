@@ -1,12 +1,16 @@
 import type { GroupPlatform } from '@/types'
 import type { ClaudeModelTier } from '@/constants/connectorPresets'
 
+export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.5'
+export const GROK_CC_SWITCH_MODEL = 'grok-4.5'
+
 export type CcSwitchClientType = 'claude' | 'codex' | 'gemini'
 export type CcSwitchConfigFormat = 'json' | 'toml'
 
 export interface CcSwitchImportConfig {
   app: string
   endpoint: string
+  model?: string
 }
 
 export interface CcSwitchImportDeeplinkInput {
@@ -22,6 +26,11 @@ export interface CcSwitchImportDeeplinkInput {
   configFormat?: CcSwitchConfigFormat
 }
 
+function withV1Endpoint(baseUrl: string): string {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
+  return normalizedBaseUrl.endsWith('/v1') ? normalizedBaseUrl : `${normalizedBaseUrl}/v1`
+}
+
 export function resolveCcSwitchImportConfig(
   platform: GroupPlatform | undefined | null,
   clientType: CcSwitchClientType,
@@ -34,10 +43,16 @@ export function resolveCcSwitchImportConfig(
         endpoint: `${baseUrl}/antigravity`
       }
     case 'openai':
+      return {
+        app: 'codex',
+        endpoint: baseUrl,
+        model: OPENAI_CC_SWITCH_CODEX_MODEL
+      }
     case 'grok':
       return {
-        app: clientType === 'claude' ? 'claude' : 'codex',
-        endpoint: baseUrl
+        app: 'grokbuild',
+        endpoint: withV1Endpoint(baseUrl),
+        model: GROK_CC_SWITCH_MODEL
       }
     case 'gemini':
       return {
@@ -67,6 +82,7 @@ function encodeBase64Utf8(value: string): string {
 
 export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput): string {
   const config = resolveCcSwitchImportConfig(input.platform, input.clientType, input.baseUrl)
+  const configFormat = input.config ? input.configFormat || 'json' : 'json'
   const entries: [string, string][] = [
     ['resource', 'provider'],
     ['app', config.app],
@@ -74,13 +90,13 @@ export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput):
     ['homepage', input.baseUrl],
     ['endpoint', config.endpoint],
     ['apiKey', input.apiKey],
-    ['configFormat', 'json'],
+    ['configFormat', configFormat],
     ['usageEnabled', 'true'],
     ['usageScript', btoa(input.usageScript)],
     ['usageAutoInterval', '30']
   ]
 
-  const model = input.model?.trim()
+  const model = input.model?.trim() || config.model
   if (model) {
     entries.splice(2, 0, ['model', model])
   }
@@ -96,7 +112,6 @@ export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput):
   if (tierParams.opus) entries.push(['opusModel', tierParams.opus])
 
   if (input.config) {
-    entries.push(['configFormat', input.configFormat || 'json'])
     entries.push(['config', encodeBase64Utf8(input.config)])
   }
 

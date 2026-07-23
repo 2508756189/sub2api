@@ -69,6 +69,21 @@ describe('UseKeyModal', () => {
     expect(wrapper.text()).not.toContain('gpt-5.5')
   })
 
+  it('generates TeleAgent OpenAI-compatible provider fields and exposes the Skill Market', async () => {
+    const wrapper = mountModal()
+    const tab = wrapper.findAll('button').find((button) => button.text() === 'TeleAgent')
+    expect(tab).toBeDefined()
+    await tab!.trigger('click')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('TeleAgent 使用 OpenAI Compatible 提供商字段')
+    expect(wrapper.text()).toContain('teleagent-provider-fields.json')
+    expect(wrapper.text()).toContain('"protocol": "OpenAI Compatible"')
+    expect(wrapper.text()).toContain('https://example.com/v1')
+    expect(wrapper.find('[data-test="skill-market"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('gpt-5.5')
+  })
+
   it('opens directly in CCS mode without requiring a model', () => {
     const wrapper = mountModal('anthropic', 'ccs')
     expect(wrapper.text()).toContain('CCS 只导入客户端配置')

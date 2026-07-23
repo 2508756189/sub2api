@@ -88,6 +88,7 @@
       <button
         v-if="canSyncUpstream"
         type="button"
+        data-testid="sync-upstream-models"
         @click="syncUpstreamModels"
         :disabled="isSyncingUpstream"
         class="rounded-lg border border-emerald-200 px-3 py-1.5 text-sm text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
@@ -145,6 +146,7 @@ const props = defineProps<{
   platform?: string
   platforms?: string[]
   accountId?: number
+  accountType?: string
   syncCredentials?: {
     platform: string
     type: string
@@ -182,13 +184,22 @@ const normalizedPlatforms = computed(() => {
 })
 
 const upstreamSyncPlatforms = new Set(['anthropic', 'openai', 'gemini', 'antigravity', 'grok'])
+const supportsUpstreamSync = (platform: string, accountType?: string) => {
+  const normalizedPlatform = platform.trim().toLowerCase()
+  if (!upstreamSyncPlatforms.has(normalizedPlatform)) return false
+  if (normalizedPlatform === 'grok') {
+    return accountType?.trim().toLowerCase() === 'apikey'
+  }
+  return true
+}
+
 const canSyncUpstream = computed(() => {
   if (props.accountId) {
     if (normalizedPlatforms.value.length === 0) return true
-    return normalizedPlatforms.value.some(platform => upstreamSyncPlatforms.has(platform.toLowerCase()))
+    return normalizedPlatforms.value.some(platform => supportsUpstreamSync(platform, props.accountType))
   }
   if (props.syncCredentials) {
-    return upstreamSyncPlatforms.has(props.syncCredentials.platform.toLowerCase())
+    return supportsUpstreamSync(props.syncCredentials.platform, props.syncCredentials.type)
   }
   return false
 })

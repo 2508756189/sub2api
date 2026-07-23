@@ -66,6 +66,7 @@ type StorageEndpoint struct {
 type storageConfig struct {
 	Enabled         bool              `json:"enabled"`
 	BlockingEnabled bool              `json:"blocking_enabled"`
+	SecretGuardMode SecretGuardMode   `json:"secret_guard_mode"`
 	StorePassEvents bool              `json:"store_pass_events"`
 	Strategy        string            `json:"strategy"`
 	WorkerCount     int               `json:"worker_count"`
@@ -96,6 +97,7 @@ type ActiveConfig struct {
 	RiskControlEnabled bool
 	Enabled            bool
 	BlockingEnabled    bool
+	SecretGuardMode    SecretGuardMode
 	StorePassEvents    bool
 	Strategy           string
 	WorkerCount        int
@@ -126,6 +128,7 @@ type PublicEndpoint struct {
 type PublicConfig struct {
 	Enabled         bool             `json:"enabled"`
 	BlockingEnabled bool             `json:"blocking_enabled"`
+	SecretGuardMode SecretGuardMode  `json:"secret_guard_mode"`
 	StorePassEvents bool             `json:"store_pass_events"`
 	EffectiveMode   Mode             `json:"effective_mode"`
 	Strategy        string           `json:"strategy"`
@@ -158,6 +161,7 @@ type UpdateConfigRequest struct {
 	ExpectedConfigVersion int64            `json:"expected_config_version" binding:"required"`
 	Enabled               bool             `json:"enabled"`
 	BlockingEnabled       bool             `json:"blocking_enabled"`
+	SecretGuardMode       SecretGuardMode  `json:"secret_guard_mode"`
 	StorePassEvents       bool             `json:"store_pass_events"`
 	Strategy              string           `json:"strategy"`
 	WorkerCount           int              `json:"worker_count"`
@@ -172,6 +176,7 @@ func DefaultStorageConfig() storageConfig {
 	return storageConfig{
 		Enabled:         false,
 		BlockingEnabled: false,
+		SecretGuardMode: SecretGuardModeOff,
 		StorePassEvents: false,
 		Strategy:        "priority",
 		WorkerCount:     DefaultWorkerCount,
@@ -215,6 +220,9 @@ func normalizeStorageConfig(cfg *storageConfig) {
 	if cfg.QueueCapacity == 0 {
 		cfg.QueueCapacity = DefaultQueueCapacity
 	}
+	if cfg.SecretGuardMode == "" {
+		cfg.SecretGuardMode = SecretGuardModeOff
+	}
 	if len(cfg.Scanners) == 0 {
 		cfg.Scanners = append([]string(nil), AllScannerIDs...)
 	}
@@ -250,6 +258,9 @@ func validateStorageConfig(cfg storageConfig) error {
 	}
 	if cfg.Strategy != "priority" {
 		return infraerrors.BadRequest("prompt_audit_invalid_strategy", "提示词审计策略仅支持 priority")
+	}
+	if !isValidSecretGuardMode(cfg.SecretGuardMode) {
+		return infraerrors.BadRequest("prompt_audit_invalid_secret_guard_mode", "本地密钥防护模式无效")
 	}
 	if cfg.WorkerCount < 1 || cfg.WorkerCount > MaxWorkerCount {
 		return infraerrors.BadRequest("prompt_audit_invalid_worker_count", "Worker 数量超出允许范围")
@@ -296,6 +307,9 @@ func validateStorageConfig(cfg storageConfig) error {
 }
 
 func validateUpdateConfigRequest(req UpdateConfigRequest) error {
+	if req.SecretGuardMode != "" && !isValidSecretGuardMode(req.SecretGuardMode) {
+		return infraerrors.BadRequest("prompt_audit_invalid_secret_guard_mode", "本地密钥防护模式无效")
+	}
 	if strings.TrimSpace(req.Strategy) != "priority" {
 		return infraerrors.BadRequest("prompt_audit_invalid_strategy", "提示词审计策略仅支持 priority")
 	}
@@ -383,7 +397,7 @@ func PublicFromStorage(cfg storageConfig, riskControlEnabled bool) PublicConfig 
 	}
 	active := ActiveConfig{RiskControlEnabled: riskControlEnabled, Enabled: cfg.Enabled, BlockingEnabled: cfg.BlockingEnabled}
 	return PublicConfig{
-		Enabled: cfg.Enabled, BlockingEnabled: cfg.BlockingEnabled, StorePassEvents: cfg.StorePassEvents,
+		Enabled: cfg.Enabled, BlockingEnabled: cfg.BlockingEnabled, SecretGuardMode: cfg.SecretGuardMode, StorePassEvents: cfg.StorePassEvents,
 		EffectiveMode: active.EffectiveMode(), Strategy: cfg.Strategy, WorkerCount: cfg.WorkerCount,
 		QueueCapacity: cfg.QueueCapacity, Scanners: scanners, AllGroups: cfg.AllGroups,
 		GroupIDs: groupIDs, Endpoints: endpoints, ConfigVersion: cfg.ConfigVersion,
@@ -394,6 +408,7 @@ func PublicFromStorage(cfg storageConfig, riskControlEnabled bool) PublicConfig 
 func ActiveFromStorage(cfg storageConfig, riskControlEnabled bool, encryptor SecretEncryptor) (ActiveConfig, error) {
 	active := ActiveConfig{
 		RiskControlEnabled: riskControlEnabled, Enabled: cfg.Enabled, BlockingEnabled: cfg.BlockingEnabled,
+		SecretGuardMode: cfg.SecretGuardMode,
 		StorePassEvents: cfg.StorePassEvents, Strategy: cfg.Strategy, WorkerCount: cfg.WorkerCount,
 		QueueCapacity: cfg.QueueCapacity, Scanners: append([]string(nil), cfg.Scanners...), AllGroups: cfg.AllGroups,
 		GroupIDs: append([]int64(nil), cfg.GroupIDs...), ConfigVersion: cfg.ConfigVersion,
@@ -422,15 +437,16 @@ func ActiveFromStorage(cfg storageConfig, riskControlEnabled bool, encryptor Sec
 
 func changeSummary(cfg storageConfig) string {
 	summary := struct {
-		Enabled         bool   `json:"enabled"`
-		BlockingEnabled bool   `json:"blocking_enabled"`
-		StorePassEvents bool   `json:"store_pass_events"`
-		EndpointCount   int    `json:"endpoint_count"`
-		ScannerCount    int    `json:"scanner_count"`
-		AllGroups       bool   `json:"all_groups"`
-		GroupCount      int    `json:"group_count"`
-		GroupHash       string `json:"group_hash"`
-	}{cfg.Enabled, cfg.BlockingEnabled, cfg.StorePassEvents, len(cfg.Endpoints), len(cfg.Scanners), cfg.AllGroups, len(cfg.GroupIDs), ""}
+		Enabled         bool            `json:"enabled"`
+		BlockingEnabled bool            `json:"blocking_enabled"`
+		SecretGuardMode SecretGuardMode `json:"secret_guard_mode"`
+		StorePassEvents bool            `json:"store_pass_events"`
+		EndpointCount   int             `json:"endpoint_count"`
+		ScannerCount    int             `json:"scanner_count"`
+		AllGroups       bool            `json:"all_groups"`
+		GroupCount      int             `json:"group_count"`
+		GroupHash       string          `json:"group_hash"`
+	}{cfg.Enabled, cfg.BlockingEnabled, cfg.SecretGuardMode, cfg.StorePassEvents, len(cfg.Endpoints), len(cfg.Scanners), cfg.AllGroups, len(cfg.GroupIDs), ""}
 	rawGroups, _ := json.Marshal(cfg.GroupIDs)
 	digest := sha256.Sum256(rawGroups)
 	summary.GroupHash = hex.EncodeToString(digest[:])

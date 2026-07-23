@@ -13,6 +13,7 @@ type LegacyEngine interface {
 
 type PromptEngine interface {
 	EffectiveMode() Mode
+	CheckLocalSecrets(ctx context.Context, req Request) (*PromptDecision, error)
 	Enqueue(ctx context.Context, req Request) error
 	Evaluate(ctx context.Context, req Request) (*PromptDecision, error)
 }
@@ -29,6 +30,15 @@ func NewCoordinator(legacy LegacyEngine, prompt PromptEngine) *Coordinator {
 func (c *Coordinator) Check(ctx context.Context, req Request) Decision {
 	if c == nil {
 		return allowDecision(nil, nil)
+	}
+	if c.prompt != nil {
+		local, err := c.prompt.CheckLocalSecrets(ctx, req.Clone())
+		if err != nil {
+			return prioritize(nil, unavailablePromptDecision(ErrorCodeInvalidResponse))
+		}
+		if local != nil && local.Kind == DecisionBlock {
+			return prioritize(nil, local)
+		}
 	}
 	mode := ModeOff
 	if c.prompt != nil {
@@ -111,8 +121,14 @@ func prioritize(legacy *LegacyDecision, prompt *PromptDecision) Decision {
 	}
 	switch prompt.Kind {
 	case DecisionBlock:
-		return Decision{Kind: DecisionBlock, HTTPStatus: http.StatusForbidden, ErrorCode: ErrorCodeBlocked,
-			ClientMessage: "提示词安全审计拒绝了该请求，请调整输入后重试", Legacy: legacy, Prompt: prompt}
+		code := ErrorCodeBlocked
+		message := "提示词安全审计拒绝了该请求，请调整输入后重试"
+		if prompt.ErrorCode == ErrorCodeSecretDetected {
+			code = ErrorCodeSecretDetected
+			message = "检测到疑似密钥或口令。请通过环境变量、密钥管理或平台 Key 配置传递，勿粘贴到提示词。"
+		}
+		return Decision{Kind: DecisionBlock, HTTPStatus: http.StatusForbidden, ErrorCode: code,
+			ClientMessage: message, Legacy: legacy, Prompt: prompt}
 	case DecisionInvalid:
 		return Decision{Kind: DecisionInvalid, HTTPStatus: http.StatusServiceUnavailable, ErrorCode: ErrorCodeInvalidResponse,
 			ClientMessage: "提示词安全审计暂时不可用，请稍后重试", Legacy: legacy, Prompt: prompt}

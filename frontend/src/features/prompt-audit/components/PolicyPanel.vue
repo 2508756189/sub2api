@@ -51,6 +51,24 @@
             </label>
           </div>
         </fieldset>
+
+        <fieldset class="mt-5 border-t border-gray-100 pt-5 dark:border-dark-800">
+          <legend class="text-sm font-medium text-gray-900 dark:text-white">{{ t('admin.promptAudit.policy.secretGuard') }}</legend>
+          <p class="mt-1 text-sm text-gray-500 dark:text-dark-300">{{ t('admin.promptAudit.policy.secretGuardDescription') }}</p>
+          <div class="mt-3 flex flex-wrap gap-5 text-sm text-gray-700 dark:text-dark-200">
+            <label class="flex items-center gap-2">
+              <input type="radio" name="local-secret-guard" :checked="draft.secret_guard_mode === 'off'" @change="patch({ secret_guard_mode: 'off' })" />
+              {{ t('admin.promptAudit.policy.secretGuardOff') }}
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="local-secret-guard" :checked="draft.secret_guard_mode === 'block'" @change="patch({ secret_guard_mode: 'block' })" />
+              {{ t('admin.promptAudit.policy.secretGuardBlock') }}
+            </label>
+          </div>
+          <p v-if="draft.secret_guard_mode === 'block'" class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+            {{ t('admin.promptAudit.policy.secretGuardBlockHint') }}
+          </p>
+        </fieldset>
       </div>
 
       <div class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-dark-700/60 dark:bg-dark-900/20 sm:p-5">

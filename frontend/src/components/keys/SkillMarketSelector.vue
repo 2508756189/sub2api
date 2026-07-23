@@ -8,14 +8,20 @@
       <span>
         <span class="block text-sm font-medium text-gray-900 dark:text-gray-100">Skill Market</span>
         <span class="block text-xs text-gray-500 dark:text-gray-400">
-          {{ selectedIds.length ? `已选择 ${selectedIds.length} 个技能包，将生成安装脚本` : '从已同步的 Skill Market 选择能力包' }}
+          {{ selectedIds.length ? `已选择 ${selectedIds.length} 个技能包，将生成${isTeleAgent ? '导入清单' : '安装脚本'}` : '从已同步的 Skill Market 选择能力包' }}
         </span>
       </span>
       <span class="text-sm text-gray-500">{{ expanded ? '收起' : '展开' }}</span>
     </button>
 
     <div v-if="expanded" class="space-y-3 border-t border-gray-100 dark:border-dark-700 px-4 py-4">
-      <div class="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
+      <div v-if="isTeleAgent" class="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
+        勾选后会生成 TeleAgent 兼容 ZIP 的下载地址和 SHA256。先校验文件，再通过 TeleAgent 的技能导入入口选择该包；浏览器不会写入应用安装目录。
+        <router-link to="/skill-market" class="ml-1 font-medium underline underline-offset-2">
+          查看完整市场
+        </router-link>
+      </div>
+      <div v-else class="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
         技能包不会由浏览器自动写入本机。勾选后会在下方生成 Bash/PowerShell 安装脚本，复制到终端执行后，
         才会下载 zip、校验 SHA256，并安装到 Codex 或 Claude Code 的 skills 目录。
         <router-link to="/skill-market" class="ml-1 font-medium underline underline-offset-2">
@@ -106,6 +112,7 @@ import {
 const props = defineProps<{
   modelValue?: SkillInstallSelection[]
   registryUrl?: string
+  runtime?: 'teleagent'
 }>()
 
 const emit = defineEmits<{
@@ -123,6 +130,7 @@ const selectedSkill = ref<SkillMarketEntry | null>(null)
 
 const selectedIds = computed(() => (props.modelValue || []).map((skill) => skill.id))
 const registryUrl = computed(() => props.registryUrl || DEFAULT_SKILL_MARKET_REGISTRY_URL)
+const isTeleAgent = computed(() => props.runtime === 'teleagent')
 
 const filteredSkills = computed(() => {
   const needle = query.value.trim().toLowerCase()
@@ -161,10 +169,18 @@ function toggleSkill(skill: SkillMarketEntry, checked: boolean) {
     return
   }
   if (current.some((item) => item.id === skill.id)) return
-  emit('update:modelValue', [
-    ...current,
-    toSkillInstallSelection(skill, loadedRegistryUrl.value || registryUrl.value),
-  ])
+  try {
+    emit('update:modelValue', [
+      ...current,
+      toSkillInstallSelection(
+        skill,
+        loadedRegistryUrl.value || registryUrl.value,
+        isTeleAgent.value ? 'teleagent' : undefined,
+      ),
+    ])
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '技能包准备失败'
+  }
 }
 
 function riskClass(risk?: string) {

@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { buildClientInstallScript, buildGeminiFiles, buildOpenCodeFiles } from '../accessCenterFiles'
+
+import type { SkillInstallSelection } from '@/api/skillMarket'
+import {
+  buildClientInstallScript,
+  buildGeminiFiles,
+  buildOpenCodeFiles,
+  buildTeleAgentFiles,
+} from '../accessCenterFiles'
+
+const skill: SkillInstallSelection = {
+  id: 'markitdown',
+  name: 'markitdown',
+  archiveUrl: 'https://example.com/markitdown.zip',
+  sha256: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+  installTargets: {},
+}
 
 describe('accessCenterFiles', () => {
   it('generates Gemini environment variables without inventing a model', () => {
@@ -25,5 +40,36 @@ describe('accessCenterFiles', () => {
     expect(script).toContain('TokenPort managed config')
     expect(script).toContain('current[key].update(value)')
     expect(script).toContain('tokenport-backup')
+  })
+})
+
+describe('buildTeleAgentFiles', () => {
+  it('creates OpenAI-compatible provider fields without inventing a model', () => {
+    const files = buildTeleAgentFiles('https://example.com/', 'sk-test', { codex: { model: '' } })
+
+    expect(files).toHaveLength(1)
+    expect(files[0].path).toBe('teleagent-provider-fields.json')
+    expect(files[0].content).toContain('"protocol": "OpenAI Compatible"')
+    expect(files[0].content).toContain('"baseUrl": "https://example.com/v1"')
+    expect(files[0].content).not.toContain('"model"')
+  })
+
+  it('adds selected skills as a SHA256-verified import manifest', () => {
+    const files = buildTeleAgentFiles('https://example.com', 'sk-test', { codex: { model: 'deepseek-v4-flash' } }, [skill])
+    const provider = files.find((file) => file.path === 'teleagent-provider-fields.json')
+    const manifest = files.find((file) => file.path === 'teleagent-skill-import-manifest.json')
+    const preparation = files.find((file) => file.path === 'Prepare TeleAgent skills (PowerShell)')
+
+    expect(provider).toBeDefined()
+    expect(provider!.content).toContain('deepseek-v4-flash')
+    expect(manifest).toBeDefined()
+    expect(manifest!.content).toContain('"verification": "SHA256"')
+    expect(manifest!.content).toContain(skill.archiveUrl)
+    expect(manifest!.content).toContain(skill.sha256)
+    expect(manifest!.content).toContain('teleagent-root')
+    expect(preparation).toBeDefined()
+    expect(preparation!.content).toContain('Invoke-WebRequest')
+    expect(preparation!.content).toContain('Get-FileHash')
+    expect(preparation!.content).toContain(skill.archiveUrl)
   })
 })

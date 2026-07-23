@@ -166,6 +166,45 @@ func (s *PromptService) Evaluate(ctx context.Context, req Request) (*PromptDecis
 	return s.evaluator.Evaluate(ctx, cfg, snapshot)
 }
 
+// CheckLocalSecrets runs before any optional network-backed guard. It is kept
+// local so an explicitly pasted credential cannot be sent to an audit model,
+// upstream provider, database event payload, or application log.
+func (s *PromptService) CheckLocalSecrets(ctx context.Context, req Request) (*PromptDecision, error) {
+	if s == nil || s.config == nil {
+		return &PromptDecision{Kind: DecisionAllow, AllowNextStage: true}, nil
+	}
+	cfg, ok := s.config.Active()
+	if !ok || cfg.SecretGuardMode != SecretGuardModeBlock || !cfg.IncludesGroup(req.GroupID) {
+		return &PromptDecision{Kind: DecisionAllow, AllowNextStage: true}, nil
+	}
+	snapshot, err := ExtractPromptSnapshot(req)
+	if errors.Is(err, ErrNoPromptText) {
+		return &PromptDecision{Kind: DecisionAllow, AllowNextStage: true}, nil
+	}
+	if err != nil {
+		return nil, &GuardError{Code: ErrorCodeInvalidResponse, Cause: err}
+	}
+	findings := DetectSecretFindings(snapshot.ScanText)
+	if len(findings) == 0 {
+		return &PromptDecision{Kind: DecisionAllow, AllowNextStage: true}, nil
+	}
+	result := NewSecretGuardResult(findings)
+	protected := SecretGuardSnapshot(snapshot, findings)
+	if s.repo != nil {
+		if _, recordErr := s.repo.RecordBlocking(ctx, protected, cfg.ConfigVersion, result, false); recordErr != nil {
+			LogWarn(EventSecretGuardRecordFailed, mergeLogFields(snapshotLogFields(protected), map[string]any{
+				"config_version": cfg.ConfigVersion, "finding_count": len(findings), "status": "record_failed", "error_code": "secret_guard_record_failed",
+			}))
+		}
+	}
+	LogWarn(EventSecretGuardBlocked, mergeLogFields(snapshotLogFields(protected), map[string]any{
+		"config_version": cfg.ConfigVersion, "finding_count": len(findings), "status": "blocked",
+	}))
+	return &PromptDecision{
+		Kind: DecisionBlock, ErrorCode: ErrorCodeSecretDetected, Result: result, AllowNextStage: false,
+	}, nil
+}
+
 func (s *PromptService) GetConfig() PublicConfig { return s.config.Public() }
 
 func (s *PromptService) SaveConfig(ctx context.Context, req UpdateConfigRequest, actorID int64) (PublicConfig, error) {

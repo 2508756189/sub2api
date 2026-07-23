@@ -39,6 +39,10 @@ const registry: SkillMarketRegistry = {
         path: 'dist/skills/markitdown.zip',
         sha256: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       },
+      teleagentArchive: {
+        path: 'dist/teleagent/markitdown.zip',
+        sha256: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+      },
     },
   ],
 }
@@ -82,6 +86,20 @@ describe('skillMarket', () => {
     expect(archiveUrl).toContain('/skill-market/dist/skills/markitdown.zip')
     expect(selection.archiveUrl).toContain('/skill-market/dist/skills/markitdown.zip')
     expect(selection.sha256).toBe(registry.skills[0].archive.sha256)
+  })
+
+  it('uses the TeleAgent-compatible archive when the target is TeleAgent', () => {
+    const selection = toSkillInstallSelection(registry.skills[0], '/skill-market/index.json', 'teleagent')
+
+    expect(selection.archiveUrl).toContain('/skill-market/dist/teleagent/markitdown.zip')
+    expect(selection.sha256).toBe(registry.skills[0].teleagentArchive!.sha256)
+    expect(selection.archiveLayout).toBe('teleagent-root')
+  })
+
+  it('refuses TeleAgent selection when the registry lacks a compatible archive', () => {
+    const incompatible = { ...registry.skills[0], teleagentArchive: undefined }
+    expect(() => toSkillInstallSelection(incompatible, '/skill-market/index.json', 'teleagent'))
+      .toThrow('no TeleAgent-compatible import package')
   })
 
   it('loads detail markdown relative to the active registry source', async () => {

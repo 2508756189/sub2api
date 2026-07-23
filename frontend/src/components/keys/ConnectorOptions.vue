@@ -90,9 +90,9 @@
         </div>
       </div>
 
-      <div v-if="showCodexOptions" class="grid gap-4 md:grid-cols-3">
+      <div v-if="showCodexOptions" class="grid gap-4" :class="showCodexAdvancedOptions ? 'md:grid-cols-3' : 'md:grid-cols-1'">
         <label class="space-y-1">
-          <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Codex 模型</span>
+          <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ client === 'teleagent' ? 'TeleAgent 模型' : 'Codex 模型' }}</span>
           <Select
             :model-value="codexModelSelectValue"
             :options="modelSelectOptions"
@@ -129,7 +129,7 @@
             当前模型定价：{{ selectedCodexPricingSummary }}
           </p>
           <p v-if="modelNames.length > 0" class="text-xs text-gray-500 dark:text-gray-400">
-            模型和定价来自当前 API Key 分组可用渠道；生成后仍可在 Codex 配置文件中修改 model/review_model。
+            {{ client === 'teleagent' ? '模型和定价来自当前 API Key 分组可用渠道；生成后会写入 TeleAgent 提供商字段包。' : '模型和定价来自当前 API Key 分组可用渠道；生成后仍可在 Codex 配置文件中修改 model/review_model。' }}
           </p>
           <p v-if="modelNames.length === 0" class="text-xs text-amber-600 dark:text-amber-400">
             当前分组没有可用模型数据，请先在渠道定价/模型列表中同步，或手动填写上游真实模型名。
@@ -139,7 +139,7 @@
           </p>
         </label>
 
-        <label class="space-y-1">
+        <label v-if="showCodexAdvancedOptions" class="space-y-1">
           <span class="text-xs font-medium text-gray-600 dark:text-gray-300">推理强度</span>
           <Select
             :model-value="value.codex?.reasoningEffort || 'medium'"
@@ -163,7 +163,7 @@
           </p>
         </label>
 
-        <div class="space-y-2">
+        <div v-if="showCodexAdvancedOptions" class="space-y-2">
           <div class="text-xs font-medium text-gray-600 dark:text-gray-300">MCP Servers</div>
           <label
             v-for="server in CODEX_MCP_SERVERS"
@@ -255,7 +255,8 @@ const reasoningSelectOptions = computed(() =>
   })),
 )
 const showClaudeOptions = computed(() => props.client === 'claude')
-const showCodexOptions = computed(() => props.client === 'codex' || props.client === 'codex-ws' || props.client === 'grok')
+const showCodexOptions = computed(() => props.client === 'codex' || props.client === 'codex-ws' || props.client === 'grok' || props.client === 'teleagent')
+const showCodexAdvancedOptions = computed(() => showCodexOptions.value && props.client !== 'teleagent')
 const selectedPlugins = computed(() => value.value.claude.enabledPlugins)
 const selectedMcpServers = computed(() => value.value.codex.mcpServers)
 const selectedClaudeModels = computed(() =>

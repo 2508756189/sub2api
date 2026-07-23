@@ -13,6 +13,7 @@ import {
 const config = (): PromptAuditConfig => ({
   enabled: true,
   blocking_enabled: false,
+  secret_guard_mode: 'off',
   store_pass_events: false,
   effective_mode: 'async_audit',
   strategy: 'priority',
@@ -62,6 +63,12 @@ describe('Prompt Audit view model', () => {
     expect(draftFingerprint(changed)).toBe(draftFingerprint(original))
     changed.queue_capacity += 1
     expect(draftFingerprint(changed)).not.toBe(draftFingerprint(original))
+  })
+
+  it('includes local secret guard mode in the saved configuration', () => {
+    const draft = configToDraft(config())
+    draft.secret_guard_mode = 'block'
+    expect(buildUpdateRequest(draft).secret_guard_mode).toBe('block')
   })
 
   it('requires a valid explicit range and sends canonical ISO timestamps for filter deletion', () => {

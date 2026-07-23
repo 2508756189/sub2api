@@ -41,6 +41,12 @@ export interface SkillMarketEntry {
     sha256: string
     size?: number
   }
+  /** ZIP with SKILL.md at the archive root for TeleAgent's import dialog. */
+  teleagentArchive?: {
+    path: string
+    sha256: string
+    size?: number
+  }
 }
 
 export interface SkillMarketRegistry {
@@ -70,6 +76,7 @@ export interface SkillInstallSelection {
   name: string
   archiveUrl: string
   sha256: string
+  archiveLayout?: 'standard' | 'teleagent-root'
   installTargets: {
     codex?: string
     claude?: string
@@ -186,12 +193,18 @@ export async function fetchSkillDetailMarkdown(
 export function toSkillInstallSelection(
   skill: SkillMarketEntry,
   registryUrl = DEFAULT_SKILL_MARKET_REGISTRY_URL,
+  delivery?: 'teleagent',
 ): SkillInstallSelection {
+  const archive = delivery === 'teleagent' ? skill.teleagentArchive : skill.archive
+  if (!archive?.path || !archive.sha256) {
+    throw new Error(`Skill ${skill.id} has no TeleAgent-compatible import package. Please refresh the bundled market.`)
+  }
   return {
     id: skill.id,
     name: getSkillDisplayName(skill),
-    archiveUrl: resolveSkillArchiveUrl(registryUrl, skill.archive.path),
-    sha256: skill.archive.sha256,
+    archiveUrl: resolveSkillArchiveUrl(registryUrl, archive.path),
+    sha256: archive.sha256,
+    archiveLayout: delivery === 'teleagent' ? 'teleagent-root' : 'standard',
     installTargets: skill.installTargets,
   }
 }

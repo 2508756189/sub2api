@@ -6,8 +6,8 @@
           <p class="text-sm font-medium text-gray-900 dark:text-white">{{ keyName || '当前 API Key' }}</p>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ platformDescription }}</p>
         </div>
-        <div class="inline-flex w-fit rounded-lg bg-gray-100 p-1 dark:bg-dark-800">
-          <button v-for="mode in deliveryModes" :key="mode.id" type="button" class="rounded-md px-4 py-2 text-sm font-medium transition-colors" :class="deliveryMode === mode.id ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-700 dark:text-primary-300' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'" @click="deliveryMode = mode.id">
+          <div class="inline-flex w-fit rounded-lg bg-gray-100 p-1 dark:bg-dark-800">
+          <button v-for="mode in availableDeliveryModes" :key="mode.id" type="button" class="rounded-md px-4 py-2 text-sm font-medium transition-colors" :class="deliveryMode === mode.id ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-700 dark:text-primary-300' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'" @click="deliveryMode = mode.id">
             {{ mode.label }}
           </button>
         </div>
@@ -28,6 +28,9 @@
             </div>
             <div v-if="activeClientTab === 'codex'" class="mt-3 rounded-md bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-500 dark:bg-dark-900/60 dark:text-gray-400">
               Codex 配置层可用于 ChatGPT 桌面端、Codex CLI 和 IDE 扩展；本页生成的是 API Key 接入配置，ChatGPT 账号登录属于独立认证方式。
+            </div>
+            <div v-if="activeClientTab === 'teleagent'" class="mt-3 rounded-md bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-500 dark:bg-dark-900/60 dark:text-gray-400">
+              TeleAgent 使用 OpenAI Compatible 提供商字段。此处生成名称、接口地址、脱敏 Key、授权模型和 Skill 校验信息；不会写入 TeleAgent 安装目录。
             </div>
             <div v-if="showCodexTransport" class="mt-3">
               <div class="mb-2 flex items-center justify-between gap-2">
@@ -53,7 +56,7 @@
           </div>
 
           <ConnectorOptions v-model="connectorOptions" :platform="platform" :client="activeClientTab" :available-model-options="availableModels" />
-          <SkillMarketSelector v-if="supportsSkills" v-model="selectedSkills" />
+          <SkillMarketSelector v-if="supportsSkills" v-model="selectedSkills" :runtime="activeClientTab === 'teleagent' ? 'teleagent' : undefined" />
         </section>
 
         <section class="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-950 lg:col-span-7 lg:max-h-[66vh] dark:border-dark-700">
@@ -120,6 +123,7 @@ import {
   buildGeminiFiles,
   buildGrokFiles,
   buildOpenCodeFiles,
+  buildTeleAgentFiles,
   ensureApiVersion,
   isSkillInstallFile,
 } from './accessCenterFiles'
@@ -161,6 +165,11 @@ const deliveryModes: Array<{ id: DeliveryMode; label: string }> = [
   { id: 'direct', label: '直接配置' },
   { id: 'ccs', label: '导入 CCS' },
 ]
+const availableDeliveryModes = computed(() =>
+  activeClientTab.value === 'teleagent'
+    ? deliveryModes.filter((mode) => mode.id === 'direct')
+    : deliveryModes,
+)
 const shellTabs: Array<{ id: ConnectorShell; label: string }> = [
   { id: 'unix', label: 'macOS / Linux' },
   { id: 'cmd', label: 'Windows CMD' },
@@ -182,6 +191,7 @@ const clientTabs = computed(() => {
   if (props.platform === 'openai') {
     const tabs = [
       { id: 'codex', label: 'Codex' },
+      { id: 'teleagent', label: 'TeleAgent' },
       { id: 'opencode', label: 'OpenCode' },
     ]
     if (props.allowMessagesDispatch) tabs.splice(2, 0, { id: 'claude', label: 'Claude Code' })
@@ -206,13 +216,20 @@ const platformDescription = computed(() => {
   return `${labels[props.platform] || props.platform} · 选择客户端、模型与能力后生成可检查的配置`
 })
 
-const showShellTabs = computed(() => activeClientTab.value !== 'opencode')
+const showShellTabs = computed(() => activeClientTab.value !== 'opencode' && activeClientTab.value !== 'teleagent')
 const showCodexTransport = computed(() => props.platform === 'openai' && activeClientTab.value === 'codex')
-const supportsSkills = computed(() => activeClientTab.value === 'claude' || activeClientTab.value.startsWith('codex'))
+const supportsSkills = computed(() =>
+  activeClientTab.value === 'claude' ||
+  activeClientTab.value.startsWith('codex') ||
+  activeClientTab.value === 'teleagent',
+)
 
 const generatedFiles = computed<FileConfig[]>(() => {
   const baseUrl = (props.baseUrl || window.location.origin).replace(/\/+$/, '')
   const common = { baseUrl, apiKey: props.apiKey, shell: activeShell.value, options: connectorOptions.value, selectedSkills: selectedSkills.value }
+  if (activeClientTab.value === 'teleagent') {
+    return buildTeleAgentFiles(baseUrl, props.apiKey, connectorOptions.value, selectedSkills.value)
+  }
   if (activeClientTab.value === 'opencode') {
     const provider = props.platform === 'anthropic' ? 'anthropic' : props.platform === 'gemini' ? 'google' : 'openai'
     const endpoint = props.platform === 'gemini' ? ensureApiVersion(baseUrl, 'v1beta') : ensureApiVersion(baseUrl)
@@ -258,6 +275,12 @@ watch(generatedFiles, (files) => {
   editableFiles.value = files.map((file) => file.content)
   activeFileIndex.value = Math.min(activeFileIndex.value, Math.max(files.length - 1, 0))
 }, { immediate: true })
+
+watch(activeClientTab, (client) => {
+  if (client === 'teleagent' && deliveryMode.value === 'ccs') {
+    deliveryMode.value = 'direct'
+  }
+})
 
 async function loadModels() {
   availableModels.value = []

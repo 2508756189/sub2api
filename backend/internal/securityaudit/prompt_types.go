@@ -13,6 +13,7 @@ const (
 	PayloadKeyPrefix          = "sub2api:prompt_audit:payload:"
 
 	ErrorCodeBlocked         = "prompt_guard_blocked"
+	ErrorCodeSecretDetected  = "sensitive_credential_detected"
 	ErrorCodeUnavailable     = "prompt_guard_unavailable"
 	ErrorCodeInvalidResponse = "prompt_guard_invalid_response"
 	ErrorCodeConfigConflict  = "prompt_audit_config_conflict"
@@ -27,6 +28,15 @@ const (
 	ModeOff      Mode = "off"
 	ModeAsync    Mode = "async_audit"
 	ModeBlocking Mode = "blocking"
+)
+
+// SecretGuardMode controls the local, non-network credential detector. Unlike
+// Prompt Audit, it never submits prompt text to a guard model.
+type SecretGuardMode string
+
+const (
+	SecretGuardModeOff   SecretGuardMode = "off"
+	SecretGuardModeBlock SecretGuardMode = "block"
 )
 
 type DecisionKind string

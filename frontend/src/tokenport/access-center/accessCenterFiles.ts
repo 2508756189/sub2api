@@ -1,6 +1,7 @@
 import type { FileConfig } from '@/components/keys/connectorTemplates'
 import type { ConnectorShell } from '@/components/keys/connectorTemplates'
 import { normalizeConnectorOptions, type ConnectorOptions } from '@/constants/connectorPresets'
+import type { SkillInstallSelection } from '@/api/skillMarket'
 
 export function ensureApiVersion(baseUrl: string, version = 'v1'): string {
   const clean = baseUrl.replace(/\/+$/, '').replace(/\/v1(?:beta)?\/?$/, '')
@@ -30,6 +31,89 @@ export function buildOpenCodeFiles(baseUrl: string, apiKey: string, provider: st
       },
     }, null, 2),
   }]
+}
+
+export function buildTeleAgentFiles(
+  baseUrl: string,
+  apiKey: string,
+  options: ConnectorOptions,
+  selectedSkills: SkillInstallSelection[] = [],
+): FileConfig[] {
+  const model = normalizeConnectorOptions(options).codex.model.trim()
+  const provider = {
+    name: 'TokenPort',
+    protocol: 'OpenAI Compatible',
+    baseUrl: ensureApiVersion(baseUrl),
+    apiKey,
+    ...(model ? { model } : {}),
+  }
+  const files: FileConfig[] = [{
+    path: 'teleagent-provider-fields.json',
+    content: JSON.stringify({
+      purpose: 'TeleAgent provider setup fields',
+      provider,
+    }, null, 2),
+    hint: '在 TeleAgent 的模型提供商中新增 OpenAI Compatible 提供商，按字段保存后刷新模型。TokenPort 不会写入 TeleAgent 安装目录。',
+  }]
+
+  if (selectedSkills.length) {
+    files.push({
+      path: 'teleagent-skill-import-manifest.json',
+      content: JSON.stringify({
+        purpose: 'TeleAgent compatible skill import manifest',
+        verification: 'SHA256',
+        skills: selectedSkills.map((skill) => ({
+          id: skill.id,
+          name: skill.name,
+          archiveUrl: skill.archiveUrl,
+          sha256: skill.sha256,
+          archiveLayout: skill.archiveLayout || 'teleagent-root',
+        })),
+      }, null, 2),
+      hint: '导入清单列出 TeleAgent 兼容 ZIP 的下载地址和 SHA256。该 ZIP 将 SKILL.md 放在根目录，不直接写入应用安装目录。',
+    })
+    files.push({
+      path: 'Prepare TeleAgent skills (PowerShell)',
+      content: buildTeleAgentSkillPreparationScript(selectedSkills),
+      hint: '在 PowerShell 执行后会下载并校验技能 ZIP，然后在 TeleAgent 的“技能 > 导入技能”中选择已验证文件。',
+    })
+  }
+
+  return files
+}
+
+function buildTeleAgentSkillPreparationScript(selectedSkills: SkillInstallSelection[]): string {
+  const lines = [
+    '$ErrorActionPreference = "Stop"',
+    '$downloadDir = Join-Path $HOME "Downloads\\TokenPort-TeleAgent-Skills"',
+    'New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null',
+    '',
+    'function Get-TokenPortTeleAgentSkill {',
+    '  param(',
+    '    [string]$SkillId,',
+    '    [string]$ArchiveUrl,',
+    '    [string]$ExpectedSha',
+    '  )',
+    '  $archivePath = Join-Path $downloadDir "$SkillId.zip"',
+    '  Invoke-WebRequest -Uri $ArchiveUrl -OutFile $archivePath',
+    '  $actualSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()',
+    '  if ($actualSha -ne $ExpectedSha.ToLowerInvariant()) {',
+    '    Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue',
+    '    throw "SHA256 mismatch for $SkillId: $actualSha"',
+    '  }',
+    '  Write-Host "Verified $SkillId: $archivePath"',
+    '}',
+    '',
+  ]
+
+  selectedSkills.forEach((skill) => {
+    lines.push(
+      `Get-TokenPortTeleAgentSkill -SkillId '${psQuote(skill.id)}' -ArchiveUrl '${psQuote(skill.archiveUrl)}' -ExpectedSha '${psQuote(skill.sha256)}'`,
+    )
+  })
+
+  lines.push('', 'Write-Host "Open TeleAgent > 技能 > 导入技能, then select the verified ZIP file above."')
+  return lines.join('\n')
 }
 
 export function buildGrokFiles(

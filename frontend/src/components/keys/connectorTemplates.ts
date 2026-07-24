@@ -42,6 +42,11 @@ function powershellEnvLine(name: string, value: string): string {
   return `$env:${name}="${value}"`
 }
 
+function ensureOpenAIBaseUrl(baseUrl: string): string {
+  const clean = baseUrl.replace(/\/+$/, '')
+  return /\/v1$/i.test(clean) ? clean : `${clean}/v1`
+}
+
 function normalizeHomeTarget(target: string | undefined, runtime: 'claude' | 'codex', shell: ConnectorShell): string {
   const fallback = runtime === 'claude' ? `~/.claude/skills` : `~/.codex/skills`
   const source = target || fallback
@@ -247,6 +252,7 @@ function buildCodexConfig(input: BuildConnectorFilesInput, webSocket: boolean): 
   const options = normalizeConnectorOptions(input.options)
   const model = options.codex.model.trim()
   const reasoningEffort = options.codex.reasoningEffort
+  const baseUrl = ensureOpenAIBaseUrl(input.baseUrl)
   const lines = [
     'model_provider = "OpenAI"',
     `model_reasoning_effort = "${reasoningEffort}"`,
@@ -256,7 +262,7 @@ function buildCodexConfig(input: BuildConnectorFilesInput, webSocket: boolean): 
     '',
     '[model_providers.OpenAI]',
     'name = "OpenAI"',
-    `base_url = "${input.baseUrl}"`,
+    `base_url = "${baseUrl}"`,
     'wire_api = "responses"',
   ]
 

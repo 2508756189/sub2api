@@ -88,8 +88,21 @@ export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`)
     expect(files[0].content).toContain('model = "gpt-5.2"')
     expect(files[0].content).toContain('review_model = "gpt-5.2"')
     expect(files[0].content).toContain('model_reasoning_effort = "high"')
+    expect(files[0].content).toContain('base_url = "http://127.0.0.1:8080/v1"')
     expect(files[0].content).toContain('[mcp_servers.context7]')
     expect(files[0].content).toContain('command = "npx"')
+  })
+
+  it('keeps an existing OpenAI API version without duplicating it', () => {
+    const files = buildOpenAIFiles({
+      baseUrl: 'http://127.0.0.1:8080/v1/',
+      apiKey: 'sk-test',
+      shell: 'unix',
+      selectedSkills: [],
+    })
+
+    expect(files[0].content).toContain('base_url = "http://127.0.0.1:8080/v1"')
+    expect(files[0].content).not.toContain('/v1/v1')
   })
 
   it('generates Claude Code skill install scripts with checksum verification', () => {

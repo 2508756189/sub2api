@@ -4,6 +4,7 @@ import type { SkillInstallSelection } from '@/api/skillMarket'
 import {
   buildClientInstallScript,
   buildGeminiFiles,
+  buildGrokFiles,
   buildOpenCodeFiles,
   buildTeleAgentFiles,
 } from '../accessCenterFiles'
@@ -71,5 +72,32 @@ describe('buildTeleAgentFiles', () => {
     expect(preparation!.content).toContain('Invoke-WebRequest')
     expect(preparation!.content).toContain('Get-FileHash')
     expect(preparation!.content).toContain(skill.archiveUrl)
+  })
+})
+
+describe('buildGrokFiles', () => {
+  it('builds the current Grok Build model profile schema', () => {
+    const [file] = buildGrokFiles('https://example.com/', 'sk-test', 'powershell', {
+      codex: { model: 'grok-4.5', reasoningEffort: 'medium', mcpServers: [] },
+    })
+
+    expect(file.path).toBe('%userprofile%\\.grok/config.toml')
+    expect(file.content).toContain('[models]\ndefault = "grok-4.5"')
+    expect(file.content).toContain('[model."grok-4.5"]')
+    expect(file.content).toContain('model = "grok-4.5"')
+    expect(file.content).toContain('base_url = "https://example.com/v1"')
+    expect(file.content).toContain('api_key = "sk-test"')
+    expect(file.content).toContain('api_backend = "responses"')
+    expect(file.content).toContain('context_window = 500000')
+  })
+
+  it('does not create an invalid Grok Build profile when no model is selected', () => {
+    const [file] = buildGrokFiles('https://example.com', 'sk-test', 'unix', {
+      codex: { model: '', reasoningEffort: 'medium', mcpServers: [] },
+    })
+
+    expect(file.path).toBe('Grok Build 配置说明.txt')
+    expect(file.content).toContain('必须指定一个模型')
+    expect(file.content).not.toContain('grok-4.5')
   })
 })

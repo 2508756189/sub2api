@@ -124,20 +124,31 @@ export function buildGrokFiles(
 ): FileConfig[] {
   const configDir = shell === 'unix' ? '~/.grok' : '%userprofile%\\.grok'
   const model = normalizeConnectorOptions(options).codex.model.trim()
-  const lines = [
-    `base_url = "${ensureApiVersion(baseUrl)}"`,
-    `api_key = "${apiKey}"`,
-    'api_backend = "responses"',
-  ]
-
-  if (model) {
-    lines.unshift(`model = "${model}"`)
+  if (!model) {
+    return [{
+      path: 'Grok Build 配置说明.txt',
+      content: 'Grok Build 的 config.toml 必须指定一个模型。请先从上游可用模型中选择模型，再生成或导入配置。',
+      hint: '未选择模型时不会生成无效配置，也不会自动填入未经验证的模型。',
+    }]
   }
+
+  const tomlString = (value: string) => JSON.stringify(value)
+  const lines = [
+    '[models]',
+    `default = ${tomlString(model)}`,
+    '',
+    `[model.${tomlString(model)}]`,
+    `model = ${tomlString(model)}`,
+    `base_url = ${tomlString(ensureApiVersion(baseUrl))}`,
+    'name = "TokenPort"',
+    `api_key = ${tomlString(apiKey)}`,
+    'api_backend = "responses"',
+    'context_window = 500000',
+  ]
 
   return [{
     path: `${configDir}/config.toml`,
     content: lines.join('\n'),
-    hint: model ? undefined : '未指定模型，将由客户端或后续手动配置决定。',
   }]
 }
 

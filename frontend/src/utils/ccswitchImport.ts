@@ -1,9 +1,6 @@
 import type { GroupPlatform } from '@/types'
 import type { ClaudeModelTier } from '@/constants/connectorPresets'
 
-export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.5'
-export const GROK_CC_SWITCH_MODEL = 'grok-4.5'
-
 export type CcSwitchClientType = 'claude' | 'codex' | 'gemini'
 export type CcSwitchConfigFormat = 'json' | 'toml'
 
@@ -45,14 +42,12 @@ export function resolveCcSwitchImportConfig(
     case 'openai':
       return {
         app: 'codex',
-        endpoint: baseUrl,
-        model: OPENAI_CC_SWITCH_CODEX_MODEL
+        endpoint: baseUrl
       }
     case 'grok':
       return {
         app: 'grokbuild',
-        endpoint: withV1Endpoint(baseUrl),
-        model: GROK_CC_SWITCH_MODEL
+        endpoint: withV1Endpoint(baseUrl)
       }
     case 'gemini':
       return {

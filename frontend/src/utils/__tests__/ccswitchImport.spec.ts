@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  GROK_CC_SWITCH_MODEL,
-  OPENAI_CC_SWITCH_CODEX_MODEL,
   buildCcSwitchImportDeeplink
 } from '@/utils/ccswitchImport'
 import type { GroupPlatform } from '@/types'
@@ -19,7 +17,7 @@ describe('ccswitchImport utils', () => {
     usageScript: 'return true'
   }
 
-  it('defaults OpenAI CC Switch imports to the current Codex model', () => {
+  it('does not invent a model for OpenAI CC Switch imports', () => {
     const params = paramsFromDeeplink(
       buildCcSwitchImportDeeplink({
         ...baseInput,
@@ -31,7 +29,7 @@ describe('ccswitchImport utils', () => {
     expect(params.get('resource')).toBe('provider')
     expect(params.get('app')).toBe('codex')
     expect(params.get('endpoint')).toBe(baseInput.baseUrl)
-    expect(params.get('model')).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
+    expect(params.has('model')).toBe(false)
     expect(atob(params.get('usageScript') || '')).toBe(baseInput.usageScript)
   })
 
@@ -91,7 +89,7 @@ describe('ccswitchImport utils', () => {
 
     expect(params.get('app')).toBe('grokbuild')
     expect(params.get('endpoint')).toBe('https://api.example.com/v1')
-    expect(params.get('model')).toBe(GROK_CC_SWITCH_MODEL)
+    expect(params.has('model')).toBe(false)
   })
 
   it('keeps Antigravity imports on the selected client endpoint without a model parameter', () => {

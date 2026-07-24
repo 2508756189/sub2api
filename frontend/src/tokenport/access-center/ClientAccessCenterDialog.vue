@@ -80,7 +80,7 @@
             <div class="flex flex-wrap gap-2">
               <button type="button" class="btn btn-secondary" :disabled="!activeFile" @click="downloadActiveFile">下载当前文件</button>
               <button type="button" class="btn btn-secondary" :disabled="!activeFile" @click="copyActiveFile">复制当前文件</button>
-              <button v-if="deliveryMode === 'ccs'" type="button" class="btn btn-primary" @click="importToCcs">导入 CCS</button>
+              <button v-if="deliveryMode === 'ccs'" type="button" class="btn btn-primary" :disabled="!ccsImportReady" :title="ccsImportHint" @click="importToCcs">{{ ccsImportReady ? '导入 CCS' : '请先选择模型' }}</button>
             </div>
           </div>
         </section>
@@ -258,6 +258,8 @@ const clientFiles = computed(() => currentFiles.value.filter((file) => !isSkillI
 const skillInstallFile = computed(() => currentFiles.value.find(isSkillInstallFile) || null)
 const clientInstallScript = computed(() => buildClientInstallScript(clientFiles.value, activeShell.value))
 const skillInstallScript = computed(() => skillInstallFile.value?.content || '')
+const ccsImportReady = computed(() => activeClientTab.value !== 'grok' || Boolean(normalizeConnectorOptions(connectorOptions.value).codex.model.trim()))
+const ccsImportHint = computed(() => ccsImportReady.value ? '' : 'Grok Build 的 CCS 配置必须指定一个已验证可用的模型。')
 
 watch(() => props.show, (visible) => {
   if (!visible) return
@@ -335,13 +337,14 @@ function ccsConfig(): { config?: string; configFormat?: 'json' | 'toml' } {
   }
   if (activeClientTab.value === 'grok') {
     const config = clientFiles.value.find((file) => file.path.endsWith('config.toml'))?.content
-    return config ? { config, configFormat: 'toml' } : {}
+    return config ? { config: JSON.stringify({ config }, null, 2), configFormat: 'json' } : {}
   }
   const settings = clientFiles.value.find((file) => file.path.endsWith('settings.json'))?.content
   return settings ? { config: settings, configFormat: 'json' } : {}
 }
 
 function importToCcs() {
+  if (!ccsImportReady.value) return
   const normalized = normalizeConnectorOptions(connectorOptions.value)
   const payload = ccsConfig()
   const clientType = ccsClientType()

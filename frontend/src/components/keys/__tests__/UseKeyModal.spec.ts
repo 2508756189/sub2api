@@ -114,7 +114,7 @@ describe('UseKeyModal', () => {
     await grokTab!.trigger('click')
     await nextTick()
 
-    expect(wrapper.text()).toContain('base_url = "https://example.com/v1"')
+    expect(wrapper.text()).toContain('Grok Build 的 config.toml 必须指定一个模型')
     expect(wrapper.text()).not.toContain('grok-4.5')
 
     const teleAgentTab = wrapper.findAll('button').find((button) => button.text() === 'TeleAgent')

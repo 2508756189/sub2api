@@ -29,6 +29,11 @@ type handlerPromptEngine struct {
 }
 
 func (e *handlerPromptEngine) EffectiveMode() securityaudit.Mode { return e.mode }
+
+func (e *handlerPromptEngine) CheckLocalSecrets(_ context.Context, _ securityaudit.Request) (*securityaudit.PromptDecision, error) {
+	return nil, nil
+}
+
 func (e *handlerPromptEngine) Enqueue(_ context.Context, req securityaudit.Request) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

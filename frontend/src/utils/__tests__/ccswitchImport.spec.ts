@@ -28,7 +28,7 @@ describe('ccswitchImport utils', () => {
 
     expect(params.get('resource')).toBe('provider')
     expect(params.get('app')).toBe('codex')
-    expect(params.get('endpoint')).toBe(baseInput.baseUrl)
+    expect(params.get('endpoint')).toBe(`${baseInput.baseUrl}/v1`)
     expect(params.has('model')).toBe(false)
     expect(atob(params.get('usageScript') || '')).toBe(baseInput.usageScript)
   })
@@ -83,13 +83,31 @@ describe('ccswitchImport utils', () => {
         ...baseInput,
         baseUrl,
         platform: 'grok',
-        clientType: 'claude'
+        clientType: 'grokbuild'
       })
     )
 
     expect(params.get('app')).toBe('grokbuild')
     expect(params.get('endpoint')).toBe('https://api.example.com/v1')
     expect(params.has('model')).toBe(false)
+  })
+
+  it.each([
+    { clientType: 'codex' as const, app: 'codex', endpoint: 'https://api.example.com/v1' },
+    { clientType: 'claude' as const, app: 'claude', endpoint: 'https://api.example.com' },
+    { clientType: 'grokbuild' as const, app: 'grokbuild', endpoint: 'https://api.example.com/v1' },
+    { clientType: 'opencode' as const, app: 'opencode', endpoint: 'https://api.example.com/v1' }
+  ])('uses target client $clientType instead of the Grok upstream platform', ({ clientType, app, endpoint }) => {
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        ...baseInput,
+        platform: 'grok',
+        clientType
+      })
+    )
+
+    expect(params.get('app')).toBe(app)
+    expect(params.get('endpoint')).toBe(endpoint)
   })
 
   it('keeps Antigravity imports on the selected client endpoint without a model parameter', () => {

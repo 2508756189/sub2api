@@ -1,7 +1,7 @@
 import type { GroupPlatform } from '@/types'
 import type { ClaudeModelTier } from '@/constants/connectorPresets'
 
-export type CcSwitchClientType = 'claude' | 'codex' | 'gemini'
+export type CcSwitchClientType = 'claude' | 'codex' | 'gemini' | 'grokbuild' | 'opencode'
 export type CcSwitchConfigFormat = 'json' | 'toml'
 
 export interface CcSwitchImportConfig {
@@ -33,32 +33,28 @@ export function resolveCcSwitchImportConfig(
   clientType: CcSwitchClientType,
   baseUrl: string
 ): CcSwitchImportConfig {
-  switch (platform || 'anthropic') {
-    case 'antigravity':
-      return {
-        app: clientType === 'gemini' ? 'gemini' : 'claude',
-        endpoint: `${baseUrl}/antigravity`
-      }
-    case 'openai':
-      return {
-        app: 'codex',
-        endpoint: baseUrl
-      }
-    case 'grok':
-      return {
-        app: 'grokbuild',
-        endpoint: withV1Endpoint(baseUrl)
-      }
-    case 'gemini':
-      return {
-        app: 'gemini',
-        endpoint: baseUrl
-      }
-    default:
-      return {
-        app: 'claude',
-        endpoint: baseUrl
-      }
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
+  if (clientType === 'grokbuild') {
+    return { app: 'grokbuild', endpoint: withV1Endpoint(cleanBaseUrl) }
+  }
+  if (clientType === 'codex') {
+    return { app: 'codex', endpoint: withV1Endpoint(cleanBaseUrl) }
+  }
+  if (clientType === 'opencode') {
+    const endpoint = platform === 'gemini'
+      ? `${cleanBaseUrl}/v1beta`
+      : withV1Endpoint(cleanBaseUrl)
+    return { app: 'opencode', endpoint }
+  }
+  if (clientType === 'gemini') {
+    return {
+      app: 'gemini',
+      endpoint: platform === 'antigravity' ? `${cleanBaseUrl}/antigravity` : cleanBaseUrl
+    }
+  }
+  return {
+    app: 'claude',
+    endpoint: platform === 'antigravity' ? `${cleanBaseUrl}/antigravity` : cleanBaseUrl
   }
 }
 

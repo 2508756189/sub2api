@@ -90,6 +90,15 @@ describe('UseKeyModal', () => {
     expect(wrapper.findAll('button').some((button) => button.text() === '导入 CCS')).toBe(true)
   })
 
+  it('prevents a Grok-backed Codex CCS import until a real model is selected', () => {
+    const wrapper = mountModal('grok', 'ccs')
+    const importButton = wrapper.findAll('button').find((button) => button.text() === '请先选择模型')
+
+    expect(importButton).toBeDefined()
+    expect(importButton!.attributes('disabled')).toBeDefined()
+    expect(importButton!.attributes('title')).toContain('Codex 和 Grok Build')
+  })
+
   it('offers Codex, Claude Code, Grok CLI, and TeleAgent for Grok without injecting an unverified model', async () => {
     const wrapper = mountModal('grok')
     expect(wrapper.text()).toContain('Codex')

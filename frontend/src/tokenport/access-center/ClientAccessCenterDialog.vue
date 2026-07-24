@@ -258,8 +258,9 @@ const clientFiles = computed(() => currentFiles.value.filter((file) => !isSkillI
 const skillInstallFile = computed(() => currentFiles.value.find(isSkillInstallFile) || null)
 const clientInstallScript = computed(() => buildClientInstallScript(clientFiles.value, activeShell.value))
 const skillInstallScript = computed(() => skillInstallFile.value?.content || '')
-const ccsImportReady = computed(() => activeClientTab.value !== 'grok' || Boolean(normalizeConnectorOptions(connectorOptions.value).codex.model.trim()))
-const ccsImportHint = computed(() => ccsImportReady.value ? '' : 'Grok Build 的 CCS 配置必须指定一个已验证可用的模型。')
+const ccsRequiresModel = computed(() => activeClientTab.value === 'codex' || activeClientTab.value === 'codex-ws' || activeClientTab.value === 'grok')
+const ccsImportReady = computed(() => !ccsRequiresModel.value || Boolean(normalizeConnectorOptions(connectorOptions.value).codex.model.trim()))
+const ccsImportHint = computed(() => ccsImportReady.value ? '' : 'Codex 和 Grok Build 的 CCS 配置必须指定一个已验证可用的模型。')
 
 watch(() => props.show, (visible) => {
   if (!visible) return
@@ -325,7 +326,9 @@ async function copySkillInstallScript() {
 
 function ccsClientType(): CcSwitchClientType {
   if (activeClientTab.value === 'gemini') return 'gemini'
-  if (activeClientTab.value === 'codex' || activeClientTab.value === 'codex-ws' || activeClientTab.value === 'grok') return 'codex'
+  if (activeClientTab.value === 'grok') return 'grokbuild'
+  if (activeClientTab.value === 'opencode') return 'opencode'
+  if (activeClientTab.value === 'codex' || activeClientTab.value === 'codex-ws') return 'codex'
   return 'claude'
 }
 

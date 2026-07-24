@@ -90,11 +90,12 @@ describe('UseKeyModal', () => {
     expect(wrapper.findAll('button').some((button) => button.text() === '导入 CCS')).toBe(true)
   })
 
-  it('offers Codex and Claude Code for Grok without injecting an unverified model', async () => {
+  it('offers Codex, Claude Code, Grok CLI, and TeleAgent for Grok without injecting an unverified model', async () => {
     const wrapper = mountModal('grok')
     expect(wrapper.text()).toContain('Codex')
     expect(wrapper.text()).toContain('Claude Code')
     expect(wrapper.text()).toContain('Grok CLI')
+    expect(wrapper.text()).toContain('TeleAgent')
     expect(wrapper.text()).toContain('model_provider = "OpenAI"')
     expect(wrapper.text()).toContain('~/.codex/config.toml')
     expect(wrapper.text()).not.toContain('grok-4.5')
@@ -114,6 +115,17 @@ describe('UseKeyModal', () => {
     await nextTick()
 
     expect(wrapper.text()).toContain('base_url = "https://example.com/v1"')
+    expect(wrapper.text()).not.toContain('grok-4.5')
+
+    const teleAgentTab = wrapper.findAll('button').find((button) => button.text() === 'TeleAgent')
+    expect(teleAgentTab).toBeDefined()
+    await teleAgentTab!.trigger('click')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('teleagent-provider-fields.json')
+    expect(wrapper.text()).toContain('"protocol": "OpenAI Compatible"')
+    expect(wrapper.text()).toContain('"baseUrl": "https://example.com/v1"')
+    expect(wrapper.find('[data-test="skill-market"]').exists()).toBe(true)
     expect(wrapper.text()).not.toContain('grok-4.5')
   })
 })

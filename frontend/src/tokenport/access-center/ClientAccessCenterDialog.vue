@@ -202,6 +202,7 @@ const clientTabs = computed(() => {
       { id: 'codex', label: 'Codex' },
       { id: 'claude', label: 'Claude Code' },
       { id: 'grok', label: 'Grok CLI' },
+      { id: 'teleagent', label: 'TeleAgent' },
       { id: 'opencode', label: 'OpenCode' },
     ]
   }

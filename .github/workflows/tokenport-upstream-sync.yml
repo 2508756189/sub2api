@@ -146,25 +146,19 @@ jobs:
           path: upstream-conflicts.md
           if-no-files-found: ignore
 
-      - name: Open synchronization conflict issue
+      - name: Publish conflict summary
+        # 仓库已关闭 Issues，冲突只写入 Actions 摘要与 artifact，避免 createIssue 二次失败。
         if: failure() && steps.merge.outputs.conflicted == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          upstream_sha="$(git rev-parse upstream/main)"
-          existing_url="$(gh issue list \
-            --state open \
-            --search 'TokenPort upstream synchronization conflict in:title' \
-            --json url \
-            --jq '.[0].url // empty')"
-          if [ -n "$existing_url" ]; then
-            gh issue comment "$existing_url" --body-file upstream-conflicts.md
-            exit 0
+          if [ -f upstream-conflicts.md ]; then
+            {
+              echo '## TokenPort upstream synchronization conflict'
+              echo
+              cat upstream-conflicts.md
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo 'Conflict report appended to job summary. Artifact upload remains available for download.'
+          else
+            echo 'upstream-conflicts.md missing; merge conflict step did not produce a report.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
-          gh issue create \
-            --title "TokenPort upstream synchronization conflict" \
-            --body-file upstream-conflicts.md \
-            --label "upstream-sync" || \
-          gh issue create \
-            --title "TokenPort upstream synchronization conflict" \
-            --body-file upstream-conflicts.md

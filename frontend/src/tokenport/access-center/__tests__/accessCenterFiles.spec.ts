@@ -42,6 +42,35 @@ describe('accessCenterFiles', () => {
     expect(script).toContain('current[key].update(value)')
     expect(script).toContain('tokenport-backup')
   })
+
+  it('expands $HOME in the bash install script instead of quoting it literally', () => {
+    const files = [
+      { path: '~/.codex/config.toml', content: 'model_provider = "OpenAI"' },
+      { path: '~/.claude/settings.json', content: '{"env":{}}' },
+    ]
+    const script = buildClientInstallScript(files, 'unix')
+
+    expect(script).toContain(`merge_tokenport_file "$HOME"/'.codex/config.toml'`)
+    expect(script).toContain(`merge_tokenport_file "$HOME"/'.claude/settings.json'`)
+    // 单引号内 POSIX shell 不做参数展开，配置会落到当前目录下一个名为 $HOME 的文件夹。
+    expect(script).not.toMatch(/'\$HOME/)
+  })
+
+  it('keeps the PowerShell install script compatible with Windows PowerShell 5.1', () => {
+    const files = [
+      { path: '%userprofile%\\.codex\\config.toml', content: 'model_provider = "OpenAI"' },
+      { path: '%userprofile%\\.codex\\auth.json', content: '{"OPENAI_API_KEY":"sk-test"}' },
+    ]
+    const script = buildClientInstallScript(files, 'powershell')
+
+    // ConvertFrom-Json -AsHashtable 只有 PowerShell 6+ 才有，5.1 会直接终止脚本。
+    expect(script).not.toContain('-AsHashtable')
+    expect(script).toContain('function ConvertTo-TokenPortMap($Value) {')
+    expect(script).toContain('$Value.PSObject.Properties')
+    // 目标文件存在但为空时不能崩在 ConvertFrom-Json 上。
+    expect(script).toContain('if ([string]::IsNullOrWhiteSpace($raw)) { return @{} }')
+    expect(script).toContain(`Merge-TokenPortJson -Target (Join-Path $HOME '.codex\\auth.json')`)
+  })
 })
 
 describe('buildTeleAgentFiles', () => {

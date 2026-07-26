@@ -51,9 +51,15 @@ function normalizeHomeTarget(target: string | undefined, runtime: 'claude' | 'co
   const fallback = runtime === 'claude' ? `~/.claude/skills` : `~/.codex/skills`
   const source = target || fallback
   if (shell === 'powershell' || shell === 'windows') {
-    return source.replace(/^~\//, '$HOME\\').replace(/\//g, '\\')
+    return source.replace(/\//g, '\\')
   }
   return source.replace(/^~\//, '$HOME/')
+}
+
+// PowerShell 单引号是字面量，$HOME 必须以 Join-Path 表达式给出，否则技能会解压到当前目录。
+function powershellHomeTarget(target: string): string {
+  const relative = target.match(/^(?:~|%userprofile%)\\(.+)$/i)?.[1]
+  return relative ? `Join-Path $HOME '${psQuote(relative)}'` : `'${psQuote(target)}'`
 }
 
 function shellQuote(value: string): string {
@@ -120,7 +126,8 @@ function buildPowerShellSkillInstallScript(runtime: 'claude' | 'codex', selected
     '  Invoke-WebRequest -Uri $ArchiveUrl -OutFile $zipPath',
     '  $actualSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()',
     '  if ($actualSha -ne $ExpectedSha.ToLowerInvariant()) {',
-    '    throw "SHA256 mismatch for $SkillId: $actualSha"',
+    // ${} 必不可少：PowerShell 会把 "$SkillId:" 当成驱动器限定变量，整个脚本在解析期就失败。
+    '    throw "SHA256 mismatch for ${SkillId}: $actualSha"',
     '  }',
     '  if (Test-Path -LiteralPath $Target) { Remove-Item -LiteralPath $Target -Recurse -Force }',
     '  Expand-Archive -LiteralPath $zipPath -DestinationPath (Split-Path -Parent $Target) -Force',
@@ -130,9 +137,9 @@ function buildPowerShellSkillInstallScript(runtime: 'claude' | 'codex', selected
   ]
 
   selectedSkills.forEach((skill) => {
-    const target = normalizeHomeTarget(skill.installTargets[runtime], runtime, 'powershell')
+    const target = powershellHomeTarget(normalizeHomeTarget(skill.installTargets[runtime], runtime, 'powershell'))
     lines.push(
-      `Install-Skill -SkillId '${psQuote(skill.id)}' -ArchiveUrl '${psQuote(skill.archiveUrl)}' -ExpectedSha '${psQuote(skill.sha256)}' -Target '${psQuote(target)}'`,
+      `Install-Skill -SkillId '${psQuote(skill.id)}' -ArchiveUrl '${psQuote(skill.archiveUrl)}' -ExpectedSha '${psQuote(skill.sha256)}' -Target (${target})`,
     )
   })
 

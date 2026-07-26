@@ -99,9 +99,10 @@ function buildTeleAgentSkillPreparationScript(selectedSkills: SkillInstallSelect
     '  $actualSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()',
     '  if ($actualSha -ne $ExpectedSha.ToLowerInvariant()) {',
     '    Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue',
-    '    throw "SHA256 mismatch for $SkillId: $actualSha"',
+    // ${} 必不可少：PowerShell 会把 "$SkillId:" 当成驱动器限定变量，整个脚本在解析期就失败。
+    '    throw "SHA256 mismatch for ${SkillId}: $actualSha"',
     '  }',
-    '  Write-Host "Verified $SkillId: $archivePath"',
+    '  Write-Host "Verified ${SkillId}: $archivePath"',
     '}',
     '',
   ]
@@ -177,8 +178,11 @@ function psQuote(value: string): string {
   return `'${value.replace(/'/g, "''")}'`
 }
 
-function bashPath(path: string): string {
-  return path.replace(/^~[\\/]/, '$HOME/').replace(/^%userprofile%[\\/]/i, '$HOME/').replace(/\\/g, '/')
+// $HOME 必须留在单引号外，否则 POSIX shell 不做参数展开，配置会落到当前目录下一个名为 $HOME 的文件夹。
+function bashTarget(path: string): string {
+  const normalized = path.replace(/\\/g, '/')
+  const relative = normalized.match(/^(?:%userprofile%|~)\/(.+)$/i)?.[1]
+  return relative ? `"$HOME"/${bashQuote(relative)}` : bashQuote(normalized)
 }
 
 function powershellPath(path: string): string {
@@ -205,11 +209,38 @@ function buildPowerShellInstallScript(files: FileConfig[]): string {
     '  }',
     '}',
     '',
+    // ConvertFrom-Json -AsHashtable 需要 PowerShell 6+，Windows 自带的 5.1 没有该参数。
+    'function ConvertTo-TokenPortMap($Value) {',
+    '  if ($null -eq $Value) { return $null }',
+    '  if ($Value -is [System.Collections.IDictionary]) {',
+    '    $map = @{}',
+    '    foreach ($key in @($Value.Keys)) { $map[$key] = ConvertTo-TokenPortMap $Value[$key] }',
+    '    return $map',
+    '  }',
+    '  if ($Value -is [System.Management.Automation.PSCustomObject]) {',
+    '    $map = @{}',
+    '    foreach ($property in $Value.PSObject.Properties) { $map[$property.Name] = ConvertTo-TokenPortMap $property.Value }',
+    '    return $map',
+    '  }',
+    '  if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {',
+    '    $items = @()',
+    '    foreach ($item in $Value) { $items += ,(ConvertTo-TokenPortMap $item) }',
+    '    return ,$items',
+    '  }',
+    '  return $Value',
+    '}',
+    '',
+    'function Read-TokenPortJson([string]$Target) {',
+    '  if (-not (Test-Path -LiteralPath $Target)) { return @{} }',
+    '  $raw = Get-Content -LiteralPath $Target -Raw',
+    '  if ([string]::IsNullOrWhiteSpace($raw)) { return @{} }',
+    '  return ConvertTo-TokenPortMap ($raw | ConvertFrom-Json)',
+    '}',
+    '',
     'function Merge-TokenPortJson([string]$Target, [string]$Payload) {',
-    '  $incoming = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)) | ConvertFrom-Json -AsHashtable',
-    '  $current = @{}',
-    '  if (Test-Path -LiteralPath $Target) { $current = Get-Content -LiteralPath $Target -Raw | ConvertFrom-Json -AsHashtable }',
-    '  foreach ($key in $incoming.Keys) {',
+    '  $incoming = ConvertTo-TokenPortMap ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)) | ConvertFrom-Json)',
+    '  $current = Read-TokenPortJson $Target',
+    '  foreach ($key in @($incoming.Keys)) {',
     '    if ($incoming[$key] -is [hashtable] -and $current[$key] -is [hashtable]) {',
     '      foreach ($child in $incoming[$key].Keys) { $current[$key][$child] = $incoming[$key][$child] }',
     '    } else { $current[$key] = $incoming[$key] }',
@@ -271,7 +302,7 @@ function buildBashInstallScript(files: FileConfig[]): string {
   ]
   files.forEach((file) => {
     const kind = file.path.toLowerCase().endsWith('.toml') ? 'toml' : 'json'
-    lines.push(`merge_tokenport_file ${bashQuote(bashPath(file.path))} ${bashQuote(encodeBase64Utf8(file.content))} ${kind}`)
+    lines.push(`merge_tokenport_file ${bashTarget(file.path)} ${bashQuote(encodeBase64Utf8(file.content))} ${kind}`)
   })
   return lines.join('\n')
 }

@@ -139,7 +139,12 @@ export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`)
     expect(installScript!.content).toContain('Invoke-WebRequest')
     expect(installScript!.content).toContain('Get-FileHash')
     expect(installScript!.content).toContain('Expand-Archive')
-    expect(installScript!.content).toContain('$HOME\\.claude\\skills\\markitdown')
+    expect(installScript!.content).toContain("-Target (Join-Path $HOME '.claude\\skills\\markitdown')")
+    // $HOME 在 PowerShell 单引号里不展开，技能会被解压到当前目录。
+    expect(installScript!.content).not.toMatch(/'\$HOME/)
+    // "$Var:" 会被当成驱动器限定变量，整个脚本在解析期就失败。
+    expect(installScript!.content).toContain('throw "SHA256 mismatch for ${SkillId}: $actualSha"')
+    expect(installScript!.content).not.toContain('$SkillId:')
   })
 
   it('adds selected skills to Codex install script and keeps WebSocket settings', () => {

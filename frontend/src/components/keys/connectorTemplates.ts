@@ -62,8 +62,15 @@ function powershellHomeTarget(target: string): string {
   return relative ? `Join-Path $HOME '${psQuote(relative)}'` : `'${psQuote(target)}'`
 }
 
-function shellQuote(value: string): string {
-  return value.replace(/"/g, '\\"')
+// registry 值只允许进单引号：双引号里的 $()、反引号、\ 会在用户终端展开执行。
+function bashArg(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`
+}
+
+// $HOME 必须留在引号外由 shell 展开，其余路径段单引号防注入。
+function bashTargetArg(target: string): string {
+  const relative = target.match(/^\$HOME\/(.+)$/)?.[1]
+  return relative ? `"$HOME"/${bashArg(relative)}` : bashArg(target)
 }
 
 function psQuote(value: string): string {
@@ -102,7 +109,7 @@ function buildUnixSkillInstallScript(runtime: 'claude' | 'codex', selectedSkills
   selectedSkills.forEach((skill) => {
     const target = normalizeHomeTarget(skill.installTargets[runtime], runtime, 'unix')
     lines.push(
-      `install_skill "${shellQuote(skill.id)}" "${shellQuote(skill.archiveUrl)}" "${shellQuote(skill.sha256)}" "${shellQuote(target)}"`,
+      `install_skill ${bashArg(skill.id)} ${bashArg(skill.archiveUrl)} ${bashArg(skill.sha256)} ${bashTargetArg(target)}`,
     )
   })
 

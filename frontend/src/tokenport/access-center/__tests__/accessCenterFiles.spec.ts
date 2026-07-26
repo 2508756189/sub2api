@@ -39,7 +39,10 @@ describe('accessCenterFiles', () => {
     ]
     const script = buildClientInstallScript(files, 'unix')
     expect(script).toContain('TokenPort managed config')
-    expect(script).toContain('current[key].update(value)')
+    // 数组必须做并集而不是整体覆盖，否则用户已有的 enabledPlugins 会被删掉，
+    // 与「保留已有项目设置」的文案相反。
+    expect(script).toContain('def merge_arrays(cur, inc):')
+    expect(script).not.toContain('current[key].update(value)')
     expect(script).toContain('tokenport-backup')
   })
 
@@ -70,6 +73,11 @@ describe('accessCenterFiles', () => {
     // 目标文件存在但为空时不能崩在 ConvertFrom-Json 上。
     expect(script).toContain('if ([string]::IsNullOrWhiteSpace($raw)) { return @{} }')
     expect(script).toContain(`Merge-TokenPortJson -Target (Join-Path $HOME '.codex\\auth.json')`)
+    // PS 5.1 的 Set-Content -Encoding UTF8 会写 BOM，Grok/Codex 的 TOML/JSON 解析会失败。
+    expect(script).not.toContain('Set-Content')
+    expect(script).toContain('New-Object System.Text.UTF8Encoding($false)')
+    // 0 字节文件 Get-Content -Raw 返回 $null，后续 .Trim()/IsMatch 会崩。
+    expect(script).toContain('if ($null -eq $existing) { $existing = "" }')
   })
 })
 
@@ -100,7 +108,14 @@ describe('buildTeleAgentFiles', () => {
     expect(preparation).toBeDefined()
     expect(preparation!.content).toContain('Invoke-WebRequest')
     expect(preparation!.content).toContain('Get-FileHash')
-    expect(preparation!.content).toContain(skill.archiveUrl)
+    // psQuote 自带外层单引号，模板再包一层会得到 ''markitdown''，
+    // PowerShell 里三个参数全部绑定为空串，下载目录里只剩一个空文件夹。
+    expect(preparation!.content).toContain("-SkillId 'markitdown'")
+    expect(preparation!.content).toContain("-ArchiveUrl 'https://example.com/markitdown.zip'")
+    expect(preparation!.content).toContain(
+      "-ExpectedSha '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'",
+    )
+    expect(preparation!.content).not.toContain("''markitdown''")
   })
 })
 

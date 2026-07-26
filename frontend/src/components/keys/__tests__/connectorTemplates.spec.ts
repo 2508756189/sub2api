@@ -122,7 +122,13 @@ export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`)
     expect(installScript!.content).toContain('sha256sum')
     expect(installScript!.content).toContain('shasum -a 256')
     expect(installScript!.content).toContain('unzip -o -q')
-    expect(installScript!.content).toContain('$HOME/.claude/skills/markitdown')
+    // registry 值不能落进 bash 双引号（$()、反引号会在用户终端执行），
+    // 参数一律单引号，只有 $HOME 留在引号外展开。
+    expect(installScript!.content).toContain(
+      "install_skill 'markitdown' 'https://cdn.jsdelivr.net/gh/2508756189/state-of-art-skills@main/dist/skills/markitdown.zip'",
+    )
+    expect(installScript!.content).toContain(`"$HOME"/'.claude/skills/markitdown'`)
+    expect(installScript!.content).not.toMatch(/install_skill "/)
   })
 
   it('generates PowerShell skill install scripts with checksum verification', () => {
@@ -161,7 +167,7 @@ export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`)
     expect(config!.content).toContain('supports_websockets = true')
     expect(config!.content).toContain('responses_websockets_v2 = true')
     expect(installScript).toBeDefined()
-    expect(installScript!.content).toContain('$HOME/.codex/skills/markitdown')
+    expect(installScript!.content).toContain(`"$HOME"/'.codex/skills/markitdown'`)
     expect(installScript!.content).toContain('unzip -o -q')
   })
 })

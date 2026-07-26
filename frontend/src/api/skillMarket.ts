@@ -190,6 +190,34 @@ export async function fetchSkillDetailMarkdown(
   return response.text()
 }
 
+// registry 内容会被拼进安装脚本并在用户终端执行，字段必须先过白名单校验，
+// 防止被篡改的 registry 通过 id/路径/URL 注入命令或穿越目录（审计 H5）。
+const SKILL_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/
+const SHA256_PATTERN = /^[0-9a-f]{64}$/i
+const INSTALL_TARGET_PATTERN = /^~\/\.[A-Za-z0-9._/-]+$/
+
+function assertSafeSkillSelection(skill: SkillMarketEntry, archiveUrl: string, sha256: string): void {
+  const problems: string[] = []
+  if (!SKILL_ID_PATTERN.test(skill.id)) {
+    problems.push('技能 ID 只允许小写字母、数字、点、下划线和连字符')
+  }
+  if (!SHA256_PATTERN.test(sha256)) {
+    problems.push('sha256 必须是 64 位十六进制串')
+  }
+  if (!/^https?:\/\//i.test(archiveUrl)) {
+    problems.push('归档地址必须是 http(s) URL')
+  }
+  for (const [runtime, target] of Object.entries(skill.installTargets || {})) {
+    if (!target) continue
+    if (!INSTALL_TARGET_PATTERN.test(target) || target.includes('..')) {
+      problems.push(`安装路径非法（${runtime}）：必须位于 ~/. 下且不含 ..`)
+    }
+  }
+  if (problems.length) {
+    throw new Error(`技能条目校验失败（${skill.id}）：${problems.join('；')}`)
+  }
+}
+
 export function toSkillInstallSelection(
   skill: SkillMarketEntry,
   registryUrl = DEFAULT_SKILL_MARKET_REGISTRY_URL,
@@ -199,10 +227,12 @@ export function toSkillInstallSelection(
   if (!archive?.path || !archive.sha256) {
     throw new Error(`Skill ${skill.id} has no TeleAgent-compatible import package. Please refresh the bundled market.`)
   }
+  const archiveUrl = resolveSkillArchiveUrl(registryUrl, archive.path)
+  assertSafeSkillSelection(skill, archiveUrl, archive.sha256)
   return {
     id: skill.id,
     name: getSkillDisplayName(skill),
-    archiveUrl: resolveSkillArchiveUrl(registryUrl, archive.path),
+    archiveUrl,
     sha256: archive.sha256,
     archiveLayout: delivery === 'teleagent' ? 'teleagent-root' : 'standard',
     installTargets: skill.installTargets,

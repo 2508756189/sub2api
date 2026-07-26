@@ -28,21 +28,30 @@
 
 ## 4. P2 反馈补齐（frontend-feedback）
 
-- [ ] 4.1 盘点 showError-only 的 mutation 路径，按 D5 补 `showSuccess` 或记录豁免
-- [ ] 4.2 ConfirmDialog 覆盖盘点：57 个 Modal/Dialog 文件逐一确认破坏性操作是否有确认，无则补
-- [ ] 4.3 `WechatCallbackView` / `OidcCallbackView` / `DingTalkCallbackView` 加载态补齐（与 `OAuthCallbackView` 的 spinner 对齐；上游文件按 D9 加性插入）
-- [ ] 4.4 空态收敛：DataTable 内置空态与 `EmptyState` 视觉 token 对齐（D6）
+- [x] 4.1 盘点 showError-only 的 mutation 路径（588 对 try/catch 全量过一遍，326 处 catch 有 showError，判定 25 处属写操作缺反馈）。已补 9 处开关型写操作的 `showSuccess`：余额通知开关、Ollama 自动刷新、支付渠道启用/退款开关、支付渠道支持类型、套餐上下架、渠道监控启用、错误透传规则启用、渠道状态、账号可调度。**反馈来源是 Pinia store（`stores/app.ts:137/146` 的 `appStore.showSuccess/showError`），不是 composable**——后续搜索按 `appStore.showSuccess` 而非 `showSuccess(`
+  - 复核改判：`BackupView` 恢复备份**不缺反馈**——成功提示在它启动的轮询里（`BackupView.vue:501` `restoreSuccess`），初始审计只看了 try 块
+  - 待续（本批未动，均为「有行内状态变化但无成功语义」，按 D5 属可豁免的边界情形）：支付渠道拖拽排序、上游计费探测 snapshot 为空分支、通知邮箱启停、批量图片导出、验证码已发送、取消支付订单三处（`PaymentQRDialog` / `StripePaymentInline` / `PaymentStatusPanel`；注意 `PaymentQRCodeView:176` 同为取消订单却走路由跳转，口径不一致需统一）
+- [x] 4.2 ConfirmDialog 覆盖盘点：57 个 Modal/Dialog 文件全量扫描，**5 处无确认的破坏性操作已补**（沿用各文件既有写法，均为 `window.confirm` + 新增中英文案）：
+  - `GroupRPMOverridesModal.vue` 清空分组全部专属 RPM（服务端立即生效不可撤销）
+  - `AccountsView.vue` 重置账号配额（顺带补了缺失的 `showError`，原先只有 `console.error`）
+  - `ProfileIdentityBindingsSection.vue` 解绑第三方登录（可能失去唯一登录途径；配套加了「取消则不调接口」的回归用例）
+  - `ProfileBalanceNotifyCard.vue` 移除已验证通知邮箱
+  - `RiskControlView.vue` 删除风控哈希（其同块的 `clearFlaggedHashes` 早有 confirm，此处缺失属明显不一致）
+  - 遗留问题（不阻塞，另行收敛）：全仓三套确认机制并存——ConfirmDialog 40 处、`window.confirm` 27 处、TOTP step-up；且 `AccountsView`/`SettingsView` 内部混用，裸 `confirm(t('common.confirm'))` 的文案不含被删对象名
+  - 仍无 `showError` 的破坏性操作（catch 只有 `console.error`）：`AccountsView.vue:2025` 删除账号、`:1494` 批量删除
+- [x] 4.3 三个回调页补 spinner（复核改判：它们**有**处理中文案，走 i18n 所以初始 grep 漏判；详见 frontend-feedback spec 的实现期复核修正）
+- [x] 4.4 空态收敛：DataTable 两处内置空态与 `EmptyState` 视觉 token 对齐（D6）
 - [ ] 4.5 技能卡头像：现为首字母（`skillInitial`），可改按技能语义取图标。来源为 2026-07-22 的 stash `user-ui-enhancements`（已丢弃，其 emoji 映射表针对旧版生物信息学技能目录，对当前 28 个技能仅命中 1 个）。重做时映射 MUST 由 registry 字段驱动（category 或新增 icon 字段），MUST NOT 再硬编码 id→emoji 表
 
 ## 5. P2 导航与可达性（frontend-navigation / frontend-a11y）
 
-- [ ] 5.1 `TokenPortHome.vue:1189-1193` 移动端导航改为精简保留（D4：市场 + 主题切换 + 登录）
-- [ ] 5.2 技能市场未登录壳头部加主题切换，与首页头部结构对齐
-- [ ] 5.3 「模型与渠道」等门控链接加提示，登录后回跳原目标
-- [ ] 5.4 `BaseDialog` 补 Tab 循环圈定；自建 `fixed inset-0` 遮罩的约 18 个文件迁移或跟进
-- [ ] 5.5 style.css 全局 `:focus-visible`；基类 `focus:` → `focus-visible:`
-- [ ] 5.6 图标按钮 aria-label 本地化（密码可见性切换、"Close modal"）
-- [ ] 5.7 移动端触控目标 ≥40px（技能卡「查看详情」30px 起步）
+- [x] 5.1 移动端导航改为精简保留（D4）：≤720px 只隐藏 `.nav-link-optional`（模型与渠道 / Docs），保留 Skill Market、主题切换与登录
+- [x] 5.2 技能市场未登录壳头部加主题切换；顺带抽出 `composables/useThemeToggle.ts`，两个门面页共用（全仓原有 5 份复制实现，上游那 3 份按 D9 不动，本次未新增第 6 份）
+- [x] 5.3 门控链接加锁形标识与说明。复核发现**回跳本来就通**——路由守卫 `router/index.ts:836` 已写 `?redirect=`，`LoginView.vue:502/536` 已消费，缺的只是点击前的预示
+- [x] 5.4 `BaseDialog` 补 Tab 循环圈定（排除 disabled/不可见元素；焦点不在本弹窗内时不介入，避免嵌套弹窗互抢）。自建 `fixed inset-0` 遮罩的约 18 个文件**未迁移**，留待后续批次
+- [x] 5.5 style.css 全局 `:focus-visible` 兜底规则；`.btn` 焦点环改 `focus-visible:`；`.input` 保留 `focus:border`（点击需可见)但环改 `focus-visible:`
+- [x] 5.6 图标按钮 aria-label 本地化（`BaseDialog` 关闭按钮原为硬编码 "Close modal"、登录页密码可见性切换原无可访问名；新增 `common.showPassword/hidePassword` 中英各一）
+- [x] 5.7 技能卡「查看详情」移动端 `min-h-[40px]`，桌面端保持 btn-sm 紧凑尺度
 
 ## 6. 跨仓与交叉引用（不在本 change 实现）
 

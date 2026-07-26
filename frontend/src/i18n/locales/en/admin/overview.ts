@@ -919,6 +919,7 @@ export default {
       addUserRpm: 'Add User RPM Override',
       noRpmOverrides: 'No users have an RPM override yet',
       rpmSaved: 'RPM overrides saved',
+      clearRpmOverridesConfirm: 'Clear per-user RPM overrides for every user in this group? They fall back to the group default. This takes effect immediately and cannot be undone.',
       groupRpmDefault: 'Group default RPM',
       searchUserPlaceholder: 'Search user email...',
       noRateMultipliers: 'No user rate multipliers configured',

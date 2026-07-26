@@ -370,6 +370,8 @@ const removeLocal = (userId: number) => {
 const clearing = ref(false)
 const clearAllLocal = async () => {
   if (!props.group || clearing.value) return
+  // 服务端立即生效且不可撤销,清空前必须确认(frontend-feedback R2)。
+  if (!window.confirm(t('admin.groups.clearRpmOverridesConfirm'))) return
   clearing.value = true
   try {
     await adminAPI.groups.clearGroupRPMOverrides(props.group.id)

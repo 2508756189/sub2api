@@ -296,6 +296,7 @@ export default {
       deleteFlaggedHash: 'Delete hash',
       clearFlaggedHashes: 'Clear all',
       clearFlaggedHashesConfirm: 'Clear all risk input hashes? This does not delete audit records, but removes all historical hash blocks.',
+      deleteFlaggedHashConfirm: 'Delete this risk input hash? The input will no longer be blocked.',
       flaggedHashDeleted: 'Risk hash deleted',
       flaggedHashNotFound: 'Risk hash not found',
       flaggedHashDeleteFailed: 'Failed to delete risk hash',

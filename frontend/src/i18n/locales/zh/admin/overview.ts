@@ -930,6 +930,7 @@ export default {
       addUserRpm: '添加用户专属 RPM',
       noRpmOverrides: '暂无用户设置了专属 RPM',
       rpmSaved: '专属 RPM 已保存',
+      clearRpmOverridesConfirm: '确定要清空本分组下全部用户的专属 RPM 吗？清空后这些用户将回到分组默认 RPM，且操作立即生效、无法撤销。',
       groupRpmDefault: '分组默认 RPM',
       searchUserPlaceholder: '搜索用户邮箱...',
       noRateMultipliers: '暂无用户设置了专属倍率',

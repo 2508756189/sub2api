@@ -1946,13 +1946,16 @@ const handleRecoverState = async (a: Account) => {
   }
 }
 const handleResetQuota = async (a: Account) => {
+  // 已用量归零不可恢复,先确认(frontend-feedback R2)。
+  if (!window.confirm(t('admin.accounts.resetQuotaConfirm', { name: a.name }))) return
   try {
     const updated = await adminAPI.accounts.resetAccountQuota(a.id)
     patchAccountInList(updated)
     enterAutoRefreshSilentWindow()
     appStore.showSuccess(t('common.success'))
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to reset quota:', error)
+    appStore.showError(error?.message || t('admin.accounts.resetQuotaFailed'))
   }
 }
 
@@ -2030,6 +2033,7 @@ const handleToggleSchedulable = async (a: Account) => {
     const updated = await adminAPI.accounts.setSchedulable(a.id, nextSchedulable)
     updateSchedulableInList([a.id], updated?.schedulable ?? nextSchedulable)
     enterAutoRefreshSilentWindow()
+    appStore.showSuccess(t('common.saved'))
   } catch (error) {
     console.error('Failed to toggle schedulable:', error)
     appStore.showError(t('admin.accounts.failedToToggleSchedulable'))

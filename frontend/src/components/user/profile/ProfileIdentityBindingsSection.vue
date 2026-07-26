@@ -568,6 +568,8 @@ function applyUpdatedUser(user: User): void {
 }
 
 async function handleUnbind(provider: BindableProvider, providerLabel: string): Promise<void> {
+  // 解绑后可能失去唯一登录途径,先确认(frontend-feedback R2)。
+  if (!window.confirm(t('profile.authBindings.unbindConfirm', { providerName: providerLabel }))) return
   unbindingProvider.value = provider
   try {
     const user = await unbindAuthIdentity(provider)

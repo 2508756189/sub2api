@@ -11230,6 +11230,7 @@ async function handleToggleField(
   try {
     await adminAPI.payment.updateProvider(provider.id, payload);
     await loadProviders();
+    appStore.showSuccess(t("common.saved"));
   } catch (err: unknown) {
     appStore.showError(extractI18nErrorMessage(err, t, "payment.errors", t("common.error")));
   }
@@ -11258,6 +11259,7 @@ async function handleToggleType(provider: ProviderInstance, type: string) {
       supported_types: updated,
     } as any);
     await loadProviders();
+    appStore.showSuccess(t("common.saved"));
   } catch (err: unknown) {
     appStore.showError(extractI18nErrorMessage(err, t, "payment.errors", t("common.error")));
   }

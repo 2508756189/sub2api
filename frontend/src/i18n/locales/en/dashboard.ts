@@ -717,6 +717,7 @@ export default {
       verifySuccess: 'Email added successfully',
       removeEmail: 'Remove',
       removeSuccess: 'Email removed',
+      removeConfirm: 'Remove notification email {email}? You will need to verify it again to add it back.',
       emailDuplicate: 'This email already exists',
       maxEmailsReached: 'Maximum number of notification emails reached',
       unverified: 'Unverified',
@@ -755,6 +756,7 @@ export default {
       replaceSuccess: 'Primary email updated',
       unbindAction: 'Unbind',
       unbindSuccess: '{providerName} unbound',
+      unbindConfirm: 'Unbind {providerName}? You will no longer be able to sign in with it - make sure you have another way in.',
       boundCount: '{count} linked records',
       status: {
         bound: 'Bound',

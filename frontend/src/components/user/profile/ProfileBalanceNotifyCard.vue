@@ -232,6 +232,7 @@ const handleToggle = async () => {
   try {
     const updated = await userAPI.updateProfile({ balance_notify_enabled: notifyEnabled.value })
     authStore.user = updated
+    appStore.showSuccess(t('common.saved'))
   } catch (err: unknown) {
     appStore.showError(extractApiErrorMessage(err, t('common.error')))
     notifyEnabled.value = !notifyEnabled.value
@@ -320,6 +321,8 @@ async function verifyPending(idx: number) {
 }
 
 const handleRemoveEmail = async (email: string) => {
+  // 移除后需重新走验证码流程才能加回,先确认(frontend-feedback R2)。
+  if (!window.confirm(t('profile.balanceNotify.removeConfirm', { email }))) return
   try {
     await userAPI.removeNotifyEmail(email)
     appStore.showSuccess(t('profile.balanceNotify.removeSuccess'))

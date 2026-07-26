@@ -425,6 +425,8 @@ export default {
       recoverStateHint: 'Used to recover error, rate-limit, and temporary unschedulable runtime state.',
       recoverStateSuccess: 'Account state recovered successfully',
       recoverStateFailed: 'Failed to recover account state',
+      resetQuotaConfirm: 'Reset the quota counter for account "{name}"? Usage drops to zero and cannot be restored.',
+      resetQuotaFailed: 'Failed to reset quota',
       fallbackActive: 'Fallback',
       fallbackActiveTip: 'Origin proxy {origin} expired',
       revertProxy: 'Revert proxy',

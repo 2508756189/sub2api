@@ -722,6 +722,7 @@ export default {
       verifySuccess: '邮箱添加成功',
       removeEmail: '移除',
       removeSuccess: '邮箱已移除',
+      removeConfirm: '确定要移除通知邮箱 {email} 吗？移除后需重新验证才能再次添加。',
       emailDuplicate: '该邮箱已存在',
       maxEmailsReached: '已达到通知邮箱数量上限',
       unverified: '未验证',
@@ -760,6 +761,7 @@ export default {
       replaceSuccess: '主邮箱已更新',
       unbindAction: '解绑',
       unbindSuccess: '{providerName} 已解绑',
+      unbindConfirm: '确定要解绑 {providerName} 吗？解绑后将无法用它登录，请确认你还有其他可用的登录方式。',
       boundCount: '已关联 {count} 条记录',
       status: {
         bound: '已绑定',

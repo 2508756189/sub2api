@@ -1747,6 +1747,7 @@ async function toggleChannelStatus(channel: Channel) {
     } else {
       channel.status = newStatus
     }
+    appStore.showSuccess(t('common.saved'))
   } catch (error) {
     appStore.showError(t('admin.channels.updateError', 'Failed to update channel'))
     console.error('Error toggling channel status:', error)

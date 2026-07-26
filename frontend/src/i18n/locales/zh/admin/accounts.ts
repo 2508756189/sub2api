@@ -493,6 +493,8 @@ export default {
       recoverStateHint: '用于恢复错误、限流和临时不可调度等可恢复状态。',
       recoverStateSuccess: '账号状态已恢复',
       recoverStateFailed: '恢复账号状态失败',
+      resetQuotaConfirm: '确定要重置账号「{name}」的配额计数吗？已用量将归零且无法恢复。',
+      resetQuotaFailed: '重置配额失败',
       fallbackActive: '已回退',
       fallbackActiveTip: '原代理 {origin} 已到期，当前使用备用代理',
       revertProxy: '切回原代理',

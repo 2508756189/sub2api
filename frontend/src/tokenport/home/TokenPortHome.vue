@@ -484,7 +484,7 @@ onMounted(async () => {
 .brand-link img {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--tp-radius-card);
   object-fit: cover;
   box-shadow: 0 8px 18px rgba(0, 102, 204, 0.18);
 }
@@ -536,7 +536,7 @@ onMounted(async () => {
   height: 36px;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--tp-radius-control);
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
@@ -547,7 +547,7 @@ onMounted(async () => {
   min-height: 42px;
   justify-content: center;
   gap: 8px;
-  border-radius: 12px;
+  border-radius: var(--tp-radius-card);
   padding: 0 16px;
   font-size: 14px;
   font-weight: 700;
@@ -616,7 +616,7 @@ onMounted(async () => {
   max-width: 620px;
   margin-top: 20px;
   color: var(--muted);
-  font-size: 16.5px;
+  font-size: 17px;
   font-weight: 400;
   line-height: 1.85;
 }
@@ -668,10 +668,10 @@ onMounted(async () => {
   gap: 1px;
   margin-top: 28px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--tp-radius-card);
   overflow: hidden;
   background: var(--line);
-  box-shadow: var(--shadow);
+  box-shadow: var(--tp-elev-2);
 }
 
 .signal-row div {
@@ -769,10 +769,10 @@ onMounted(async () => {
   position: relative;
   padding: 24px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--tp-radius-panel);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--soft)), var(--surface));
-  box-shadow: 0 10px 28px rgba(16, 52, 38, 0.04);
+  box-shadow: var(--tp-elev-1);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -782,7 +782,7 @@ onMounted(async () => {
 .market-grid article:hover {
   transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--brand) 40%, var(--line));
-  box-shadow: 0 16px 36px rgba(0, 120, 86, 0.1);
+  box-shadow: var(--tp-elev-2);
 }
 
 .card-index,
@@ -831,9 +831,9 @@ onMounted(async () => {
   gap: 12px;
   padding: 26px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--tp-radius-panel);
   background: var(--surface);
-  box-shadow: 0 10px 28px rgba(16, 52, 38, 0.04);
+  box-shadow: var(--tp-elev-1);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -848,14 +848,14 @@ onMounted(async () => {
   width: 34px;
   height: 34px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: var(--tp-radius-control);
   background: color-mix(in srgb, var(--brand) 14%, transparent);
   color: var(--brand-deep);
   font: 800 12px/1 ui-monospace, Consolas, monospace;
 }
 
 .capability-grid h3 {
-  font-size: 19px;
+  font-size: 20px;
   letter-spacing: -0.02em;
 }
 
@@ -898,7 +898,7 @@ onMounted(async () => {
   gap: 10px;
   padding: 22px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--tp-radius-panel);
   background: var(--surface);
 }
 
@@ -911,7 +911,7 @@ onMounted(async () => {
 .arch-core span {
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--tp-radius-card);
   background: var(--soft-2);
   color: var(--muted);
   font-size: 14px;
@@ -926,7 +926,7 @@ onMounted(async () => {
   border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--brand) 10%, var(--surface)), var(--soft));
-  box-shadow: 0 16px 40px rgba(0, 120, 86, 0.1);
+  box-shadow: var(--tp-elev-2);
 }
 
 .core-badge {
@@ -999,7 +999,7 @@ onMounted(async () => {
   min-height: 160px;
   padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--tp-radius-panel);
   background: var(--surface);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
@@ -1024,7 +1024,7 @@ onMounted(async () => {
   height: 34px;
   flex: 0 0 34px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: var(--tp-radius-control);
   background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 78%, white), var(--ctyun));
   color: #fff;
   font-size: 14px;
@@ -1072,10 +1072,10 @@ onMounted(async () => {
   display: grid;
   gap: 1px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--tp-radius-panel);
   overflow: hidden;
   background: var(--line);
-  box-shadow: var(--shadow);
+  box-shadow: var(--tp-elev-2);
 }
 
 .value-list div {

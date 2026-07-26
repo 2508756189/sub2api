@@ -77,6 +77,20 @@
     --tp-brand-deep: #087a58;
     --tp-brand-soft: #e0f6ee;
     --tp-brand-ink: #0b6f52;
+
+    /* 圆角三档(frontend-theme R3)。实测首页曾并存 10/12/14/16/18 五种半径,
+       没有可辨识的规律;收敛成「控件 / 卡片 / 面板」三档,卡片档对齐
+       Tailwind 的 rounded-xl,使定制面与主控制台同一尺度。 */
+    --tp-radius-control: 10px;
+    --tp-radius-card: 12px;
+    --tp-radius-panel: 16px;
+
+    /* 层级三档。实测首页曾并存 9 种阴影(其中两组同透明度不同模糊,
+       视觉上分不出高低),技能市场卡片则几乎无阴影——两页各说各话。
+       统一为静置 / 抬起 / 浮层三级,色相取品牌墨绿而非纯黑,避免发灰。 */
+    --tp-elev-1: 0 1px 2px rgb(16 52 38 / 4%), 0 2px 8px rgb(16 52 38 / 4%);
+    --tp-elev-2: 0 2px 4px rgb(16 52 38 / 5%), 0 8px 24px rgb(16 52 38 / 8%);
+    --tp-elev-3: 0 8px 16px rgb(16 52 38 / 6%), 0 24px 56px rgb(16 52 38 / 12%);
   }
 
   .dark {
@@ -86,10 +100,40 @@
     --tp-brand-deep: #4fd6ab;
     --tp-brand-soft: #11352a;
     --tp-brand-ink: #7fe3c0;
+
+    /* 深色下投影几乎不可见,层级改由更深的投影 + 顶部内高光承担,
+       后者模拟光源从上方掠过卡片边缘,是深色界面拉开层次的主要手段。 */
+    --tp-elev-1: 0 1px 2px rgb(0 0 0 / 40%), inset 0 1px 0 rgb(255 255 255 / 4%);
+    --tp-elev-2: 0 4px 12px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(255 255 255 / 6%);
+    --tp-elev-3: 0 16px 48px rgb(0 0 0 / 55%), inset 0 1px 0 rgb(255 255 255 / 8%);
   }
 }
 
 @layer components {
+  /* ============ 层级工具类 ============ */
+  /* Tailwind 的 shadow-[...] 任意值解析不了带逗号的多层阴影(会静默产出
+     box-shadow: none),所以层级以组件类形式提供。 */
+  .tp-elev-1 {
+    box-shadow: var(--tp-elev-1);
+  }
+
+  .tp-elev-2 {
+    box-shadow: var(--tp-elev-2);
+  }
+
+  .tp-elev-3 {
+    box-shadow: var(--tp-elev-3);
+  }
+
+  /* 静置 elev-1、悬停抬到 elev-2 的常见组合。 */
+  .tp-elev-raise {
+    box-shadow: var(--tp-elev-1);
+  }
+
+  .tp-elev-raise:hover {
+    box-shadow: var(--tp-elev-2);
+  }
+
   /* ============ 按钮样式 ============ */
   .btn {
     @apply inline-flex items-center justify-center gap-2;

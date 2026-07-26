@@ -13,15 +13,15 @@
           </p>
         </div>
         <div class="grid grid-cols-3 gap-3 text-center">
-          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 shadow-sm dark:border-dark-600 dark:bg-dark-800">
+          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 tp-elev-1 dark:border-dark-600 dark:bg-dark-800">
             <b class="block text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ registry?.skills.length || 0 }}</b>
             <span class="text-xs font-medium text-gray-500 dark:text-gray-400">技能</span>
           </div>
-          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 shadow-sm dark:border-dark-600 dark:bg-dark-800">
+          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 tp-elev-1 dark:border-dark-600 dark:bg-dark-800">
             <b class="block text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ registry?.categories.length || 0 }}</b>
             <span class="text-xs font-medium text-gray-500 dark:text-gray-400">分类</span>
           </div>
-          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 shadow-sm dark:border-dark-600 dark:bg-dark-800">
+          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 tp-elev-1 dark:border-dark-600 dark:bg-dark-800">
             <b class="block text-2xl font-extrabold tracking-tight text-primary-700 dark:text-primary-300">SHA256</b>
             <span class="text-xs font-medium text-gray-500 dark:text-gray-400">校验</span>
           </div>
@@ -29,7 +29,7 @@
       </div>
     </section>
 
-    <section class="rounded-xl border border-primary-950/10 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-800/70 lg:p-5">
+    <section class="rounded-xl border border-primary-950/10 bg-white p-4 tp-elev-1 dark:border-dark-700 dark:bg-dark-800/70 lg:p-5">
       <div class="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_180px_160px_160px]">
         <div class="relative">
           <Icon name="search" size="sm" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -64,7 +64,7 @@
       <article
         v-for="skill in filteredSkills"
         :key="skill.id"
-        class="group flex min-h-[280px] flex-col rounded-xl border border-primary-950/10 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-md dark:border-dark-700 dark:bg-dark-800/70 dark:hover:border-primary-600"
+        class="group flex min-h-[280px] flex-col rounded-xl border border-primary-950/10 bg-white p-5 tp-elev-raise transition duration-200 hover:-translate-y-0.5 hover:border-primary-300 dark:border-dark-700 dark:bg-dark-800/70 dark:hover:border-primary-600"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="flex min-w-0 items-start gap-3">
@@ -100,7 +100,7 @@
           <!-- 移动端触控目标 ≥40px(frontend-a11y R4);桌面端保持紧凑的 btn-sm 尺度。 -->
           <button
             type="button"
-            class="btn btn-secondary btn-sm min-h-[40px] sm:min-h-0"
+            class="btn btn-secondary btn-sm min-h-[40px] text-sm sm:min-h-0"
             @click="selectedSkill = skill"
           >查看详情</button>
         </div>

@@ -320,12 +320,11 @@ const keys = [
   --ok: #0a7a58;
   --warn: #c27b12;
   --dot: #c5d4cd;
-  --frame-shadow:
-    0 20px 40px rgba(16, 52, 38, 0.1),
-    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  /* 悬浮面板走 elev-3;额外的顶部内高光是这块「仿真窗」特有的玻璃边缘,不进通用令牌。 */
+  --frame-shadow: var(--tp-elev-3), 0 1px 0 rgb(255 255 255 / 85%) inset;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--line) 80%, #8fbaaa);
-  border-radius: 18px;
+  border-radius: var(--tp-radius-panel);
   background: var(--surface);
   box-shadow: var(--frame-shadow);
   color: var(--ink);
@@ -359,9 +358,8 @@ const keys = [
   --ok: #4fd6ab;
   --warn: #e2ab52;
   --dot: #33483d;
-  --frame-shadow:
-    0 20px 44px rgba(0, 0, 0, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  /* 深色 elev-3 自带顶部内高光,无需再叠。 */
+  --frame-shadow: var(--tp-elev-3);
 }
 
 .window-bar {
@@ -427,7 +425,7 @@ const keys = [
 .brand img {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: var(--tp-radius-control);
   box-shadow: 0 8px 18px rgba(0, 102, 204, 0.2);
 }
 
@@ -458,7 +456,7 @@ const keys = [
   min-height: 36px;
   padding: 0 11px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--tp-radius-control);
   background: transparent;
   color: var(--side-fg);
   font: inherit;
@@ -586,9 +584,9 @@ const keys = [
 .card,
 .table-card {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--tp-radius-card);
   background: var(--surface);
-  box-shadow: 0 6px 16px rgba(16, 52, 38, 0.04);
+  box-shadow: var(--tp-elev-1);
 }
 
 .kpi {
@@ -719,7 +717,7 @@ const keys = [
 
 .chart {
   height: 120px;
-  border-radius: 12px;
+  border-radius: var(--tp-radius-card);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--brand) 5%, transparent), transparent),
     repeating-linear-gradient(0deg, transparent, transparent 23px, color-mix(in srgb, var(--ink) 6%, transparent) 24px);
@@ -790,7 +788,7 @@ th {
   justify-content: space-between;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--tp-radius-card);
   background: var(--key-row-bg);
 }
 

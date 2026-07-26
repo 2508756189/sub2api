@@ -62,6 +62,39 @@ describe('frontend-theme R1 主题完整性', () => {
   })
 })
 
+describe('frontend-theme R3 圆角与层级刻度', () => {
+  it('style.css 定义三档圆角与三级层级,且层级有 .dark 变体', () => {
+    for (const token of ['--tp-radius-control', '--tp-radius-card', '--tp-radius-panel']) {
+      expect(styleCss).toContain(token)
+    }
+    for (const token of ['--tp-elev-1', '--tp-elev-2', '--tp-elev-3']) {
+      expect(styleCss).toContain(token)
+    }
+    expect(styleCss).toMatch(/\.dark\s*\{[^}]*--tp-elev-1:/s)
+  })
+
+  it('层级以组件类提供 —— Tailwind 任意值解析不了带逗号的多层阴影,会静默产出 none', () => {
+    expect(styleCss).toContain('.tp-elev-1 {')
+    expect(styleCss).toContain('.tp-elev-raise:hover')
+    expect(skillMarketCatalog).not.toContain('shadow-[var(')
+  })
+
+  it.each([
+    ['TokenPortHome', tokenPortHome],
+    ['ConsolePreview', consolePreview],
+  ])('%s 的圆角与卡片阴影走令牌,不再各写各的', (_name, source) => {
+    // 实测这两个文件曾并存 10/12/14/16/18 五种半径与多组同透明度不同模糊的阴影。
+    expect(source).not.toMatch(/border-radius:\s*1[2468]px/)
+    expect(source).not.toMatch(/border-radius:\s*10px/)
+    expect(source).toContain('var(--tp-radius-')
+    expect(source).toContain('var(--tp-elev-')
+  })
+
+  it('技能市场卡片有静置层级与悬停抬升(此前是无阴影的纯描边)', () => {
+    expect(skillMarketCatalog).toContain('tp-elev-raise')
+  })
+})
+
 describe('frontend-theme R3 定制面回归全站刻度', () => {
   it('SkillMarketCatalog 去除任意字号与超标圆角', () => {
     expect(skillMarketCatalog).not.toContain('text-[26px]')

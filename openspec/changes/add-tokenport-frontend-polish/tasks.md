@@ -32,6 +32,7 @@
 - [ ] 4.2 ConfirmDialog 覆盖盘点：57 个 Modal/Dialog 文件逐一确认破坏性操作是否有确认，无则补
 - [ ] 4.3 `WechatCallbackView` / `OidcCallbackView` / `DingTalkCallbackView` 加载态补齐（与 `OAuthCallbackView` 的 spinner 对齐；上游文件按 D9 加性插入）
 - [ ] 4.4 空态收敛：DataTable 内置空态与 `EmptyState` 视觉 token 对齐（D6）
+- [ ] 4.5 技能卡头像：现为首字母（`skillInitial`），可改按技能语义取图标。来源为 2026-07-22 的 stash `user-ui-enhancements`（已丢弃，其 emoji 映射表针对旧版生物信息学技能目录，对当前 28 个技能仅命中 1 个）。重做时映射 MUST 由 registry 字段驱动（category 或新增 icon 字段），MUST NOT 再硬编码 id→emoji 表
 
 ## 5. P2 导航与可达性（frontend-navigation / frontend-a11y）
 

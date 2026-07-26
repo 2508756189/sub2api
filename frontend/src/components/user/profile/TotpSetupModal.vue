@@ -3,7 +3,7 @@
     <div class="flex min-h-full items-center justify-center p-4">
       <div class="fixed inset-0 bg-black/50 transition-opacity" @click="$emit('close')"></div>
 
-      <div class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-dark-800">
+      <div ref="panelRef" class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-dark-800">
         <!-- Header -->
         <div class="mb-6 text-center">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
@@ -170,6 +170,11 @@
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useFocusTrap } from '@/composables/useFocusTrap'
+
+// 自建遮罩,不走 BaseDialog,需自行圈定 Tab(frontend-a11y R1)。
+const panelRef = ref<HTMLElement | null>(null)
+useFocusTrap(panelRef)
 import { totpAPI } from '@/api'
 import type { TotpSetupResponse } from '@/types'
 import QRCode from 'qrcode'

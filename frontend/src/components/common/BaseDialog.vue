@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getFocusableWithin, useFocusTrap } from '@/composables/useFocusTrap'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
@@ -110,44 +111,16 @@ const handleClose = () => {
   }
 }
 
-// 排除 disabled 与 tabindex="-1",否则 Tab 会停在无法交互的元素上。
-const FOCUSABLE_SELECTOR =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+const getFocusable = () => getFocusableWithin(dialogRef.value)
 
-const getFocusable = () =>
-  dialogRef.value
-    ? Array.from(dialogRef.value.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-        (el) => el.getClientRects().length > 0
-      )
-    : []
+// Tab 圈定走共享实现,与自建遮罩的弹窗保持同一套行为。
+useFocusTrap(dialogRef, () => props.show)
 
 const handleKeydown = (event: KeyboardEvent) => {
   if (!props.show) return
 
   if (event.key === 'Escape' && props.closeOnEscape) {
     emit('close')
-    return
-  }
-
-  if (event.key === 'Tab') {
-    const root = dialogRef.value
-    const active = document.activeElement as HTMLElement | null
-    // 只在焦点确实位于本弹窗内时圈定,否则嵌套弹窗会互相把焦点抢回去。
-    if (!root || !active || !root.contains(active)) return
-
-    const focusable = getFocusable()
-    if (!focusable.length) return
-
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
-
-    if (event.shiftKey && active === first) {
-      event.preventDefault()
-      last.focus()
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault()
-      first.focus()
-    }
   }
 }
 

@@ -48,14 +48,15 @@
 - [x] 5.1 移动端导航改为精简保留（D4）：≤720px 只隐藏 `.nav-link-optional`（模型与渠道 / Docs），保留 Skill Market、主题切换与登录
 - [x] 5.2 技能市场未登录壳头部加主题切换；顺带抽出 `composables/useThemeToggle.ts`，两个门面页共用（全仓原有 5 份复制实现，上游那 3 份按 D9 不动，本次未新增第 6 份）
 - [x] 5.3 门控链接加锁形标识与说明。复核发现**回跳本来就通**——路由守卫 `router/index.ts:836` 已写 `?redirect=`，`LoginView.vue:502/536` 已消费，缺的只是点击前的预示
-- [x] 5.4 `BaseDialog` 补 Tab 循环圈定（排除 disabled/不可见元素；焦点不在本弹窗内时不介入，避免嵌套弹窗互抢）。自建 `fixed inset-0` 遮罩的约 18 个文件**未迁移**，留待后续批次
+- [x] 5.4 Tab 循环圈定：逻辑抽到 `composables/useFocusTrap.ts` 单点实现（排除 disabled/不可见元素；焦点不在容器内时不介入，避免嵌套弹窗互抢），`BaseDialog` 改为调用它。自建 `fixed inset-0` 的 18 个文件已分类：4 个认证弹窗（`TotpLoginModal` / `TotpStepUpDialog` / `TotpDisableDialog` / `TotpSetupModal`，原先 Esc 与 Tab 圈定**都没有**）已接入；其余为下拉菜单/抽屉/内联面板（`AccountActionMenu`、`AccountGroupsCell`、`AnnouncementBell`、`AppLayout`、`AppSidebar`、`LoginAgreementPrompt` 的 checkbox 分支等），圈定语义不适用，不处理
+  - 待续：`BackupView` / `RedeemView` / `SettingsView` / `SubscriptionsView` / `PaymentView` / `AccountTestModal`×2 / `AnnouncementPopup` 里的内联弹窗尚未接入，均为上游文件，随后续触碰逐个补
 - [x] 5.5 style.css 全局 `:focus-visible` 兜底规则；`.btn` 焦点环改 `focus-visible:`；`.input` 保留 `focus:border`（点击需可见)但环改 `focus-visible:`
 - [x] 5.6 图标按钮 aria-label 本地化（`BaseDialog` 关闭按钮原为硬编码 "Close modal"、登录页密码可见性切换原无可访问名；新增 `common.showPassword/hidePassword` 中英各一）
 - [x] 5.7 技能卡「查看详情」移动端 `min-h-[40px]`，桌面端保持 btn-sm 紧凑尺度
 
 ## 6. 跨仓与交叉引用（不在本 change 实现）
 
-- [ ] 6.1 registry `source` 字段改指 state-of-art-skills 固定 commit——现指向已转为爬虫仓的 `github.com/anbeime/skill`，详情弹窗「查看来源」会把用户带去非权威仓（state-of-art-skills 仓生成端/元数据修，随下次 sync-skill-market 生效）
+- [x] 6.1 registry `source` 字段已改正：7 个 `anbeime-*` 条目原指向已转为爬虫仓的 `github.com/anbeime/skill`，现指向本仓对应技能目录（在 state-of-art-skills 的 `market/categories.json` 改，重建 registry 后经 sync-skill-market 同步进 fork）。其余 21 个条目本就指向各自上游的固定 commit，未动
 - [ ] 6.2 定制面硬编码中文迁 i18n → `add-tokenport-access-center` tasks 5.6（不在此重复）
 - [ ] 6.3 Sub2API/TokenPort/sub2api 品牌写法统一 → 同上 tasks 6.3（不在此重复）
 

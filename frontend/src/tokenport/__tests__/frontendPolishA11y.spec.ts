@@ -3,6 +3,11 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import baseDialog from '@/components/common/BaseDialog.vue?raw'
 import loginView from '@/views/auth/LoginView.vue?raw'
+import totpLoginModal from '@/components/auth/TotpLoginModal.vue?raw'
+import totpStepUpDialog from '@/components/auth/TotpStepUpDialog.vue?raw'
+import totpDisableDialog from '@/components/user/profile/TotpDisableDialog.vue?raw'
+import totpSetupModal from '@/components/user/profile/TotpSetupModal.vue?raw'
+import focusTrapSource from '@/composables/useFocusTrap?raw'
 import zhCommon from '@/i18n/locales/zh/common'
 import enCommon from '@/i18n/locales/en/common'
 
@@ -15,20 +20,36 @@ const styleCss = readCss('../../style.css')
 // 锁的是「弹窗焦点圈定 + 键盘焦点可见 + 图标按钮可访问名」,改动前先读 spec。
 
 describe('frontend-a11y R1 模态框焦点圈定', () => {
-  it('BaseDialog 监听 Tab 并在首尾元素间循环', () => {
-    expect(baseDialog).toContain("event.key === 'Tab'")
+  it('共享实现监听 Tab 并在首尾元素间循环', () => {
+    expect(focusTrapSource).toContain("event.key !== 'Tab'")
     // 反向 Tab 到首元素时跳到尾元素,正向 Tab 到尾元素时跳回首元素。
-    expect(baseDialog).toMatch(/shiftKey/)
-    expect(baseDialog).toMatch(/last(Focusable)?\??\.focus\(\)/)
-    expect(baseDialog).toMatch(/first(Focusable)?\??\.focus\(\)/)
+    expect(focusTrapSource).toMatch(/shiftKey/)
+    expect(focusTrapSource).toMatch(/last\.focus\(\)/)
+    expect(focusTrapSource).toMatch(/first\.focus\(\)/)
   })
 
-  it('可聚焦元素选择器排除 disabled 与 hidden,避免焦点落进死元素', () => {
-    expect(baseDialog).toContain(':not([disabled])')
+  it('可聚焦元素选择器排除 disabled 与不可见元素', () => {
+    expect(focusTrapSource).toContain(':not([disabled])')
+    expect(focusTrapSource).toContain('getClientRects().length > 0')
   })
 
-  it('圈定只在弹窗打开时生效', () => {
-    expect(baseDialog).toMatch(/if\s*\(!?\s*props\.show/)
+  it('焦点不在容器内时不介入,避免嵌套弹窗互抢', () => {
+    expect(focusTrapSource).toContain('container.contains(active)')
+  })
+
+  it('BaseDialog 走共享圈定而非自带副本', () => {
+    expect(baseDialog).toContain('useFocusTrap(dialogRef')
+    expect(baseDialog).not.toContain("event.key === 'Tab'")
+  })
+
+  it.each([
+    ['TotpLoginModal', totpLoginModal],
+    ['TotpStepUpDialog', totpStepUpDialog],
+    ['TotpDisableDialog', totpDisableDialog],
+    ['TotpSetupModal', totpSetupModal],
+  ])('%s 自建遮罩也接入圈定', (_name, source) => {
+    expect(source).toContain('useFocusTrap(panelRef')
+    expect(source).toMatch(/<div ref="panelRef"/)
   })
 })
 

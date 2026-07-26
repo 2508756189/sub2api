@@ -21,7 +21,7 @@
               v-if="showCloseButton"
               @click="emit('close')"
               class="-mr-2 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2 dark:text-dark-500 dark:hover:bg-dark-700 dark:hover:text-dark-300 dark:focus-visible:ring-offset-dark-900"
-              aria-label="Close modal"
+              :aria-label="t('common.close')"
             >
               <Icon name="x" size="md" />
             </button>
@@ -44,7 +44,10 @@
 
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+
+const { t } = useI18n()
 
 // 生成唯一ID以避免多个对话框时ID冲突
 let dialogIdCounter = 0
@@ -107,9 +110,44 @@ const handleClose = () => {
   }
 }
 
-const handleEscape = (event: KeyboardEvent) => {
-  if (props.show && props.closeOnEscape && event.key === 'Escape') {
+// 排除 disabled 与 tabindex="-1",否则 Tab 会停在无法交互的元素上。
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+const getFocusable = () =>
+  dialogRef.value
+    ? Array.from(dialogRef.value.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (el) => el.getClientRects().length > 0
+      )
+    : []
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!props.show) return
+
+  if (event.key === 'Escape' && props.closeOnEscape) {
     emit('close')
+    return
+  }
+
+  if (event.key === 'Tab') {
+    const root = dialogRef.value
+    const active = document.activeElement as HTMLElement | null
+    // 只在焦点确实位于本弹窗内时圈定,否则嵌套弹窗会互相把焦点抢回去。
+    if (!root || !active || !root.contains(active)) return
+
+    const focusable = getFocusable()
+    if (!focusable.length) return
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    if (event.shiftKey && active === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault()
+      first.focus()
+    }
   }
 }
 
@@ -125,12 +163,7 @@ watch(
 
       // 等待DOM更新后设置焦点到对话框
       await nextTick()
-      if (dialogRef.value) {
-        const firstFocusable = dialogRef.value.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        firstFocusable?.focus()
-      }
+      getFocusable()[0]?.focus()
     } else {
       document.body.classList.remove('modal-open')
       // 恢复之前的焦点
@@ -144,11 +177,11 @@ watch(
 )
 
 onMounted(() => {
-  document.addEventListener('keydown', handleEscape)
+  document.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape)
+  document.removeEventListener('keydown', handleKeydown)
   // 确保组件卸载时移除滚动锁定
   document.body.classList.remove('modal-open')
 })

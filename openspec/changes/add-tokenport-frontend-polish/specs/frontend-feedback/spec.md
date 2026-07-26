@@ -17,11 +17,13 @@
 - **THEN** 系统 MUST NOT 直接执行删除
 
 ### Requirement: 等待型页面必须有进行中状态
-登录/支付回调等等待型页面 SHALL 呈现进行中指示（spinner 或骨架 + 文案），完成/失败各有明确终态。已核实：`WechatCallbackView.vue`（1102 行）、`OidcCallbackView.vue`（856 行）、`DingTalkCallbackView.vue`（852 行）未检出任何加载指示（含「正在…」文案），而 `OAuthCallbackView.vue` 有 spinner——同族页面 MUST 一致。
+登录/支付回调等等待型页面 SHALL 同时呈现**文案**与**视觉指示**（spinner 或骨架），完成/失败各有明确终态。
+
+实现期复核修正：初始普查报告 `WechatCallbackView.vue`、`OidcCallbackView.vue`、`DingTalkCallbackView.vue` 「未检出任何加载指示」——**该结论不实**。三者均有 `isProcessing` 分支与处理中文案（`auth.oidc.callbackProcessing` / `auth.dingtalk.callbackProcessing`，中文为「正在验证登录信息，请稍候...」）；初始 grep 只搜模板里的字面中文，漏掉了走 i18n 的文案。真实差距是三者缺 `OAuthCallbackView.vue:5` 那样的 spinner，即同族页面**视觉指示不一致**——已按加性补丁补齐。
 
 #### Scenario: 微信扫码后回调处理中
 - **WHEN** 回调页正在与后端交换凭据
-- **THEN** 页面 MUST 显示进行中指示，MUST NOT 白屏或静止
+- **THEN** 页面 MUST 同时显示处理中文案与 spinner，且 spinner MUST 带 `role="status"` 与可访问名
 
 ### Requirement: 空态视觉必须收敛为一套
 空列表呈现 SHALL 收敛：表格场景用 DataTable 内置空态，非表格场景用 `EmptyState` 组件，两者的图标尺寸/字号/间距/文案键 MUST 对齐（D6）；MUST NOT 再新增第三种空态写法。

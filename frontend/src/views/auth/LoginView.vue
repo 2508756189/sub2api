@@ -60,6 +60,7 @@
               type="button"
               @click="showPassword = !showPassword"
               :disabled="authActionDisabled"
+              :aria-label="showPassword ? t('common.hidePassword') : t('common.showPassword')"
               class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-dark-300"
             >
               <Icon v-if="showPassword" name="eyeOff" size="md" />

@@ -11,13 +11,28 @@
         </span>
       </router-link>
       <nav>
-        <router-link to="/skill-market">Skill Market</router-link>
-        <router-link to="/available-channels">模型与渠道</router-link>
-        <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">Docs</a>
+        <router-link to="/skill-market" class="nav-link">Skill Market</router-link>
+        <router-link
+          to="/available-channels"
+          class="nav-link nav-link-optional"
+          :class="{ 'is-gated': !isAuthenticated }"
+          :title="isAuthenticated ? undefined : '需登录后查看，登录成功将回到此页'"
+        >
+          模型与渠道
+          <Icon v-if="!isAuthenticated" name="lock" size="sm" class="gate-icon" />
+        </router-link>
+        <a
+          v-if="docUrl"
+          :href="docUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="nav-link nav-link-optional"
+        >Docs</a>
         <button
           type="button"
           class="icon-control"
           :title="isDark ? '切换浅色模式' : '切换深色模式'"
+          :aria-label="isDark ? '切换浅色模式' : '切换深色模式'"
           @click="toggleTheme"
         >
           <Icon :name="isDark ? 'sun' : 'moon'" size="sm" />
@@ -220,6 +235,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore, useAppStore } from '@/stores'
+import { useThemeToggle } from '@/composables/useThemeToggle'
 import Icon from '@/components/icons/Icon.vue'
 import ConsolePreview from '@/tokenport/home/ConsolePreview.vue'
 import {
@@ -254,7 +270,7 @@ const skillCount = ref(0)
 const categoryCount = ref(0)
 const categoryNames = ref<string[]>([])
 const featuredSkills = ref<Array<{ id: string; name: string; category: string; description: string }>>([])
-const isDark = ref(document.documentElement.classList.contains('dark'))
+const { isDark, toggleTheme } = useThemeToggle()
 
 const siteName = computed(() =>
   resolveTokenPortName(appStore.cachedPublicSettings?.site_name || appStore.siteName),
@@ -356,12 +372,6 @@ const deployments = [
     description: '提供行业 Skill 包、模型资源接入、运营报表、运维诊断与持续升级服务。',
   },
 ]
-
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
-}
 
 onMounted(async () => {
   await Promise.allSettled([authStore.checkAuth(), appStore.fetchPublicSettings()])
@@ -509,6 +519,15 @@ onMounted(async () => {
 
 .topbar nav > a:not(.primary-link):hover {
   color: var(--ink);
+}
+
+/* 门控链接:未登录时点击会跳登录页,这里给出可见预示(frontend-navigation R3)。 */
+.topbar nav > .nav-link.is-gated {
+  gap: 4px;
+}
+
+.topbar nav > .nav-link .gate-icon {
+  opacity: 0.6;
 }
 
 .icon-control {
@@ -1153,9 +1172,14 @@ onMounted(async () => {
 }
 
 @media (max-width: 720px) {
-  .topbar nav > a:not(.primary-link),
-  .topbar nav .icon-control {
+  /* D4:移动端精简保留「市场 + 主题切换 + 登录」,只隐藏次要入口。
+     早前这里连同 .icon-control 一起隐藏,顶栏只剩登录按钮。 */
+  .topbar nav > .nav-link-optional {
     display: none;
+  }
+
+  .topbar nav {
+    gap: 12px;
   }
 
   .topbar {

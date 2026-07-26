@@ -11,6 +11,15 @@
           <span><b class="block text-base">{{ siteName }}</b><small class="text-xs text-gray-500">{{ siteSubtitle }}</small></span>
         </router-link>
         <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300 dark:hover:bg-dark-700"
+            :title="isDark ? '切换浅色模式' : '切换深色模式'"
+            :aria-label="isDark ? '切换浅色模式' : '切换深色模式'"
+            @click="toggleTheme"
+          >
+            <Icon :name="isDark ? 'sun' : 'moon'" size="sm" />
+          </button>
           <router-link to="/home" class="btn btn-secondary">返回首页</router-link>
           <router-link to="/login" class="btn btn-primary">登录控制台</router-link>
         </div>
@@ -28,11 +37,14 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import Icon from '@/components/icons/Icon.vue'
 import { useAppStore, useAuthStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
+import { useThemeToggle } from '@/composables/useThemeToggle'
 import { resolveTokenPortLogo, resolveTokenPortName, resolveTokenPortSubtitle } from '@/tokenport/brand/tokenPortBrand'
 import SkillMarketCatalog from '@/tokenport/market/SkillMarketCatalog.vue'
 
+const { isDark, toggleTheme } = useThemeToggle()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 const isAuthenticated = computed(() => authStore.isAuthenticated)

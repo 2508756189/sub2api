@@ -97,7 +97,12 @@
             <span class="mx-2">·</span>
             <span class="font-mono">{{ shortHash(skill.archive.sha256) }}</span>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" @click="selectedSkill = skill">查看详情</button>
+          <!-- 移动端触控目标 ≥40px(frontend-a11y R4);桌面端保持紧凑的 btn-sm 尺度。 -->
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm min-h-[40px] sm:min-h-0"
+            @click="selectedSkill = skill"
+          >查看详情</button>
         </div>
       </article>
     </div>

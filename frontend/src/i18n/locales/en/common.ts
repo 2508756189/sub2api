@@ -44,6 +44,8 @@ export default {
     inactive: 'Inactive',
     more: 'More',
     close: 'Close',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
     toggleMenu: 'Toggle menu',
     userMenu: 'User menu',
     pageNotFound: 'Page not found',

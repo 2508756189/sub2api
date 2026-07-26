@@ -44,6 +44,8 @@ export default {
     inactive: '禁用',
     more: '更多',
     close: '关闭',
+    showPassword: '显示密码',
+    hidePassword: '隐藏密码',
     toggleMenu: '切换菜单',
     userMenu: '用户菜单',
     pageNotFound: '页面不存在',

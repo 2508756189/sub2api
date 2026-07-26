@@ -255,7 +255,7 @@ const reasoningSelectOptions = computed(() =>
   })),
 )
 const showClaudeOptions = computed(() => props.client === 'claude')
-const showCodexOptions = computed(() => props.client === 'codex' || props.client === 'codex-ws' || props.client === 'grok' || props.client === 'teleagent')
+const showCodexOptions = computed(() => props.client === 'codex' || props.client === 'grok' || props.client === 'teleagent')
 const showCodexAdvancedOptions = computed(() => showCodexOptions.value && props.client !== 'teleagent')
 const selectedPlugins = computed(() => value.value.claude.enabledPlugins)
 const selectedMcpServers = computed(() => value.value.codex.mcpServers)

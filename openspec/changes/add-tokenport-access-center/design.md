@@ -17,15 +17,17 @@
 | D9 | CCS 模式与 Skill | CCS 模式不承载 Skill：隐藏技能选择器并修正文案 | skill-delivery R8 |
 | D10 | composite 平台 | 默认口径：显式不支持——composite key 在配置中心显示引导文案而非生成错误协议配置 | connector-delivery R1 |
 | D11 | 版本语义 | 短期明说「每次安装为全量覆盖，不支持回滚」；版本管理为独立后续 change | skill-delivery R9 |
+| D12 | WebSocket 形态 | **transport 开关**（2026-07-27 拍板，见 OQ4）：保留已实现并在用的「标准连接 / WebSocket」切换，删除从未被 `clientTabs` 产出的 `codex-ws` 客户端类型 | connector-delivery R1 |
+| D13 | 认证接管边界 | **绝不静默改写**（2026-07-27 拍板，见 OQ5）：不写 `preferred_auth_method`、不删既有 `tokens`、检测到登录态必须告知并给还原命令；「让 API Key 优先」只作为默认关闭的显式开关 | connector-delivery R6 |
 
 ## Open Questions（实现前必须逐条确认，未确认项不得自行漂移）
 
 1. ~~**CCS deeplink 契约三问（需向 CC Switch 侧确认）**~~ **已确认（2026-07-26，依据 cc-switch v3.18.0 源码，见文末「CC Switch deeplink 契约确认记录」）**：三问结论——usageScript 是 QuickJS 对整段脚本求值、取完成值为 `{request, extractor}` 对象（两者都不是：非 `new Function` 函数体、也非浏览器 eval）；config 是**建档不落盘**（导入只写 CC Switch 内部供应商库，`enabled=true` 才顺带切换写盘）；未知参数自 v3.7.0 起一律静默忽略，真正的版本闸门在 `app` 白名单与必填参数。connector-delivery R3 已按结论更新。
 2. **gemini direct 路径是否应带 `/v1beta`**：上游 CLI 输出裸 base，TokenPort direct 多拼了一层。需用真实 gemini-cli 抓包确认后统一 `resolveClientEndpoint`。——阻塞 H3 修复方向。
 3. **antigravity × OpenCode 的协议选择**：补 `anthropic + /antigravity/v1` 还是恢复上游双文件（anthropic + google 两份）。——阻塞 H2。
-4. **WebSocket 形态**：独立 codex-ws tab 还是 transport 开关（当前死分支残留）。二选一后从矩阵与代码中删除另一半。
-5. **Codex 认证接管边界**：直接配置模式是否覆盖已有 ChatGPT OAuth 登录态（写 `preferred_auth_method` 还是保留并存并在 UI 说明）。
-6. **supportsSkills 范围**：OpenCode / Gemini CLI / Grok CLI 不支持技能是有意还是漏配。
+4. ~~**WebSocket 形态**~~ **已拍板（2026-07-27）→ D12：transport 开关**。实现现状核实后决定：开关那半已完整可用（`ClientAccessCenterDialog.vue` 的 `codexTransport` 状态、`codexTransports` 选项、按选择走 `buildOpenAIWsFiles`/`buildOpenAIFiles`），而 `codex-ws` 客户端类型**从未被 `clientTabs` 产出过**——五个平台分支无一生成它，全仓仅 3 处 `x === 'codex' || x === 'codex-ws'` 形态的不可达条件。语义上传输方式也不该是独立客户端：它只改 Responses API 的传输通道，做成 tab 会让用户误以为是两个工具。
+5. ~~**Codex 认证接管边界**~~ **已拍板（2026-07-27）→ D13：不接管**。定夺理由（用户口径）：**用户的对话与用量归属跟着 provider 走，静默改写会让人丢历史、丢订阅计费归属**。核实现状后确认现有实现方向正确但告知不足——写入的 `~/.codex/auth.json` 只含 `OPENAI_API_KEY`，安装脚本走 `Merge-TokenPortJson` 合并而非覆盖，既有 `tokens` 原样保留，且改前已备份（`accessCenterFiles.ts:231`，bash 版 `:330`）。真正的缺口是界面与脚本对「两种凭据并存后走哪个」只字未提。补充事实：Codex 的会话记录存于 `~/.codex/sessions/` 本地文件，不随认证方式迁移，**真正会变的是计费来源**（ChatGPT 订阅额度 → API Key 扣费），这才是必须告知用户的点。
+6. **supportsSkills 范围**：OpenCode / Gemini CLI / Grok CLI 不支持技能是有意还是漏配。（**仍开放**——与 OQ5 同属 tasks 1.4，本次只关闭了认证边界那半）
 7. **composite 的后续形态**（D10 之后）：是否按 composite-routes 的 `target_platform` 集合合并出多个 tab。
 
 ## 与审计条目的映射

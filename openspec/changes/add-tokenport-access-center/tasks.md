@@ -17,8 +17,10 @@
 
 - [x] 1.1 向 CC Switch 侧确认 deeplink 三问（usageScript 语义 / config 落盘方式 / 未知参数行为），回写 design.md（2026-07-26 依据 cc-switch v3.18.0 源码 + 旧 tag 抽查确认；结论见 design.md「CC Switch deeplink 契约确认记录」，R3 已按结论改写并新增 usageScript 契约 Requirement）
 - [ ] 1.2 用真实 gemini-cli 验证 direct 路径 `/v1beta` 取舍，敲定 `resolveClientEndpoint` 的 gemini/antigravity 规则
-- [ ] 1.3 拍板 WebSocket 形态（独立 tab vs transport 开关），删除另一半死分支
-- [ ] 1.4 拍板 Codex OAuth 接管边界与 supportsSkills 范围
+- [x] 1.3 WebSocket 形态已拍板（2026-07-27）→ **D12 transport 开关**。核实发现开关那半早已完整可用，`codex-ws` 客户端类型从未被 `clientTabs` 产出（三处不可达条件），已删除并加回归断言（`accessCenterFiles.spec.ts` 的 D12 describe 块）
+- [~] 1.4 拍板 Codex OAuth 接管边界与 supportsSkills 范围
+  - [x] 认证边界已拍板（2026-07-27）→ **D13 不接管**。理由：用户的用量归属与订阅计费跟着凭据走，静默改写等同替用户换账本。现状核实：写入 `auth.json` 走合并不是覆盖、既有 `tokens` 保留、改前有备份——方向本就正确，缺的是告知。connector-delivery R6 已按结论重写
+  - [ ] supportsSkills 范围**仍待定**：OpenCode / Gemini CLI / Grok CLI 不支持技能是有意还是漏配
 
 ## 2. Blocker 收尾（决策后立即动手）
 
@@ -33,6 +35,7 @@
 - [ ] 3.3 H4 切 tab 清空已选技能并提示（skill-delivery R4）
 - [ ] 3.4 H6 registry 信任模型：fallback 默认关 + 来源显示 + content-type/结构校验 + curl `-fL`（skill-delivery R3/R2）
 - [ ] 3.5 H8 CMD tab：禁用一键脚本按钮 + title 提示（或 EncodedCommand 方案，二选一写回 spec）；`codexConfigDir` 补 `'cmd'` 分支
+- [ ] 3.6 D13 认证告知落地（connector-delivery R6）：检测 `auth.json` 已含 `tokens` 时，界面与脚本输出并存说明 + **计费来源从 ChatGPT 订阅额度变为 API Key 扣费**的提示；脚本输出补**还原命令**（现仅打印备份路径）；「让 API Key 优先」作为默认关闭的显式开关，勾选处标注计费变化。MUST NOT 默认写 `preferred_auth_method`、MUST NOT 删 `tokens`
 
 ## 4. Medium 批次（按 spec 逐条）
 

@@ -3,7 +3,13 @@
 ## ADDED Requirements
 
 ### Requirement: 客户端与平台的能力矩阵必须显式声明并由数据驱动
-系统 SHALL 维护一张显式能力矩阵（行：claude / codex / gemini / grok / opencode / teleagent；列：anthropic / openai / gemini / antigravity / grok / composite），每格取值为 支持 / 不支持 / 需 `allow_messages_dispatch`，并注明依据（目标客户端支持的 wire 协议）。客户端 tab 的生成 MUST 读取该矩阵，MUST NOT 以 if 链散落在组件里。composite 平台按 D10 口径：MUST 显示引导文案，MUST NOT 落入任何默认分支生成错误协议配置。WebSocket 形态按 Open Question 4 拍板前，`codex-ws` 死分支 MUST NOT 扩散。
+系统 SHALL 维护一张显式能力矩阵（行：claude / codex / gemini / grok / opencode / teleagent；列：anthropic / openai / gemini / antigravity / grok / composite），每格取值为 支持 / 不支持 / 需 `allow_messages_dispatch`，并注明依据（目标客户端支持的 wire 协议）。客户端 tab 的生成 MUST 读取该矩阵，MUST NOT 以 if 链散落在组件里。composite 平台按 D10 口径：MUST 显示引导文案，MUST NOT 落入任何默认分支生成错误协议配置。
+
+WebSocket 按 D12：传输方式 SHALL 建模为 Codex tab 内的 transport 开关（标准连接 / WebSocket），MUST NOT 建模为独立客户端类型——它只改 Responses API 的传输通道，不构成另一个客户端。`codex-ws` 作为客户端类型 MUST NOT 出现在能力矩阵、tab 列表或任何条件分支中。
+
+#### Scenario: 切换 Codex 传输方式
+- **WHEN** 用户在 Codex tab 把连接方式从「标准连接」切到「WebSocket」
+- **THEN** 生成的配置 MUST 走 WebSocket 模板，且客户端 tab 列表 MUST NOT 因此增减
 
 #### Scenario: composite 平台的 key 打开配置中心
 - **WHEN** 用户为 platform=composite 的 key 打开配置中心
@@ -67,9 +73,22 @@ JSON 合并 SHALL 为两层合并且数组做并集（保留用户已有项，�
 - **WHEN** 用户在同一秒内执行两次一键脚本
 - **THEN** 第一次的原始备份 MUST 仍然存在且未被覆盖
 
-### Requirement: Codex 认证接管边界必须显式
-在 Open Question 5 确认前，直接配置模式 SHALL 保持「不删除已有 ChatGPT OAuth tokens」的现状，但 MUST 在 Codex tab 显示凭据并存说明（存在 tokens 时提示实际路由取决于 Codex 版本）。确认后按结论补 `preferred_auth_method` 或清理逻辑。
+### Requirement: 认证接管必须显式、可见、可回退
+按 D13，切换认证方式 SHALL 永远是用户显式选择的结果，MUST NOT 静默改写——用户的用量归属与订阅计费跟着凭据走，静默改写等同于替用户换了账本。
+
+具体约束：
+
+- 系统 MUST NOT 默认写入 `preferred_auth_method`，MUST NOT 删除或置空既有 `tokens` 字段；写入 `~/.codex/auth.json` MUST 走合并而非覆盖（现状已合规）。
+- 写入前 MUST 备份目标文件（现状已合规），脚本输出 MUST 同时给出**还原命令**，而不只是备份路径。
+- 检测到 `auth.json` 已含 `tokens` 时，界面与脚本输出 MUST 说明：本次只新增 API Key、不会删除登录态；实际生效凭据取决于 Codex 版本；**计费来源会从 ChatGPT 订阅额度变为 API Key 扣费**。
+- 「让 API Key 优先」（写 `preferred_auth_method`）MAY 作为显式开关提供，但 MUST 默认关闭，且开关旁 MUST 说明计费来源变化。
+
+说明：Codex 会话记录存于 `~/.codex/sessions/` 本地文件，不随认证方式迁移；需要向用户交代的是计费归属而非历史丢失。
 
 #### Scenario: 已用 ChatGPT 登录过的用户执行脚本
 - **WHEN** auth.json 中已有 tokens 字段且用户执行一键脚本
-- **THEN** 界面/脚本输出 MUST 包含双凭据并存的说明，MUST NOT 静默留下歧义状态
+- **THEN** 既有 tokens MUST 原样保留，输出 MUST 包含并存说明、计费来源变化提示与还原命令，MUST NOT 静默留下歧义状态
+
+#### Scenario: 用户主动要求 API Key 优先
+- **WHEN** 用户显式勾选「让 API Key 优先」
+- **THEN** 才写入 `preferred_auth_method`，且 MUST 已在勾选处告知计费来源变化

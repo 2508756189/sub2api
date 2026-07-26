@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import clientAccessCenterDialog from '../ClientAccessCenterDialog.vue?raw'
+import connectorOptions from '@/components/keys/ConnectorOptions.vue?raw'
 import type { SkillInstallSelection } from '@/api/skillMarket'
 import {
   buildCcsUsageScript,
@@ -162,5 +164,22 @@ describe('buildCcsUsageScript', () => {
 
   it('stays ASCII so buildCcSwitchImportDeeplink can btoa() it without throwing', () => {
     expect(/^[\x20-\x7e\s]*$/.test(buildCcsUsageScript())).toBe(true)
+  })
+})
+
+// openspec add-tokenport-access-center D12：WebSocket 是 Codex tab 内的传输开关,
+// 不是独立客户端类型。`codex-ws` 曾作为客户端类型残留在三处不可达条件里
+// (clientTabs 从未产出过它),已删除;这里锁住不让它回来。
+describe('connector-delivery R1 — WebSocket 建模为传输开关(D12)', () => {
+  it('传输开关仍在,且按选择切换模板', () => {
+    expect(clientAccessCenterDialog).toContain("codexTransport = ref<'responses' | 'websocket'>")
+    expect(clientAccessCenterDialog).toContain('buildOpenAIWsFiles')
+  })
+
+  it.each([
+    ['ClientAccessCenterDialog', clientAccessCenterDialog],
+    ['ConnectorOptions', connectorOptions],
+  ])('%s 不再把 codex-ws 当客户端类型', (_name, source) => {
+    expect(source).not.toContain('codex-ws')
   })
 })

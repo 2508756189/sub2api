@@ -26,7 +26,9 @@
 - **THEN** 两路生成的 endpoint MUST 逐字符一致
 
 ### Requirement: CC Switch deeplink 契约必须逐参数成文
-deeplink 的每个参数（resource/app/name/homepage/endpoint/apiKey/model/haikuModel/sonnetModel/opusModel/config/configFormat/usageEnabled/usageScript/usageAutoInterval）SHALL 有类型、必填性、编码方式与引入版本的成文定义。payload MUST 按 clientType 过滤：非 Claude 客户端 MUST NOT 携带 Claude 档位参数；grokbuild 必选 model MUST 进入顶层参数；OpenCode MUST 有专属 config 分支（`opencode.json` 而非 `settings.json` 兜底）且无 config 时 MUST NOT 声明 `configFormat=json`。`providerName` 来源为 `publicSettings.site_name`，回落 `'TokenPort'`。版本协商与回执机制按 Open Question 1 确认后补充。
+deeplink 的每个参数（resource/app/name/homepage/endpoint/apiKey/model/haikuModel/sonnetModel/opusModel/config/configFormat/usageEnabled/usageScript/usageAutoInterval）SHALL 有类型、必填性、编码方式与引入版本的成文定义（契约事实见 design.md「CC Switch deeplink 契约确认记录」）。payload MUST 按 clientType 过滤：非 Claude 客户端 MUST NOT 携带 Claude 档位参数；grokbuild 必选 model MUST 进入顶层参数；OpenCode 走 CCS 时 MUST NOT 发送 `settings.json` 形态的 config（CC Switch 只从 config 提取 apiKey/endpoint/model 后自建 opencode 供应商结构，其余内容丢弃）——首选省略 config 仅发 URL 参数，若发送则 MUST 为可提取的 opencode provider 形态；无 config 时 MUST NOT 声明 `configFormat=json`。`providerName` 来源为 `publicSettings.site_name`，回落 `'TokenPort'`。
+
+已确认的协议事实（2026-07-26）：homepage/endpoint/apiKey MUST 始终随 URL 参数发出（兼容 v3.7.x 必填要求）；未知参数被所有版本静默忽略，但 `app=opencode` 要求 CCS ≥ v3.12.0、`app=grokbuild` 要求 CCS ≥ v3.18.0，UI 提示 CC Switch 版本要求时 MUST 按此口径；协议无版本协商与回执，导入成败只在 CC Switch 内呈现，发起页 MUST 依赖 focus 启发式提示未安装/未接管（见 client-access-center R4）。
 
 #### Scenario: 用户在 Claude tab 填过档位后切到 codex 导入
 - **WHEN** connectorOptions 中存在 Claude 档位残留且当前 clientType=codex
@@ -34,7 +36,18 @@ deeplink 的每个参数（resource/app/name/homepage/endpoint/apiKey/model/haik
 
 #### Scenario: OpenCode 走 CCS
 - **WHEN** 用户在 OpenCode tab 点击导入 CCS
-- **THEN** deeplink 的 config MUST 携带 opencode.json 内容与显式 provider 键，MUST NOT 发送空 config
+- **THEN** deeplink MUST 携带 endpoint/apiKey（及已选 model）URL 参数，MUST NOT 发送 settings.json 形态的 config，MUST NOT 在无 config 时声明 configFormat
+
+### Requirement: CCS usageScript 必须满足 QuickJS 求值契约
+经 deeplink 发送的 `usageScript` MUST 为 UTF-8 base64；解码后的脚本 MUST 是求值结果为对象的表达式（规范形态 `({ ... })`），该对象 MUST 含 `request`（url/method/headers）与 `extractor`（函数）。脚本 MUST 使用 `{{baseUrl}}`/`{{apiKey}}` 模板变量而非烧录字面量（使密钥/端点编辑后查询仍随 live 配置走）；请求 URL MUST 与 base_url 同源（HTTPS），指向 `/v1/usage`。在编码器仍使用 `btoa()` 期间脚本内容 MUST 保持 ASCII。MUST NOT 发送 `({endpoint, key})` 等非契约形态（该形态在 CC Switch 查询时报「缺少 request 配置」）。
+
+#### Scenario: CCS 导入后查询用量
+- **WHEN** 用户经任一客户端 tab 导入 CC Switch 并触发用量查询
+- **THEN** 脚本求值 MUST 得到含 request/extractor 的对象，查询 MUST 命中 `{{baseUrl}}/v1/usage` 且通过同源校验
+
+#### Scenario: antigravity 平台 key 导入后查询用量
+- **WHEN** platform=antigravity 的 key 经 CCS 导入（endpoint 带 `/antigravity` 前缀）
+- **THEN** 用量查询 URL MUST 解析到后端真实的 `/v1/usage` 路由（经 `usageBaseUrl` 覆盖或等效手段，与 H2/H3 的 endpoint 决议一并实现）
 
 ### Requirement: TOML 交付不得使用无差别文本追加
 Codex/Grok 的 TOML 交付 SHALL 遵循 D5：写入前 MUST 扫描目标文件，若已存在同名 table 或将要写入的根级键，MUST 中止并提示手工合并（列出冲突键），MUST NOT 直接追加托管块。托管块以裸键开头的模板 MUST 改为完整 table 或显式根级段，保证追加到空文件时也不产生归属歧义。独立 profile 文件（`config.tokenport.toml` + 主文件单一引用）作为后续增强实现。

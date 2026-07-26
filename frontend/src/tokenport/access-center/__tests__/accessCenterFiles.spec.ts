@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { SkillInstallSelection } from '@/api/skillMarket'
 import {
+  buildCcsUsageScript,
   buildClientInstallScript,
   buildGeminiFiles,
   buildGrokFiles,
@@ -143,5 +144,23 @@ describe('buildGrokFiles', () => {
     expect(file.path).toBe('Grok Build 配置说明.txt')
     expect(file.content).toContain('必须指定一个模型')
     expect(file.content).not.toContain('grok-4.5')
+  })
+})
+
+describe('buildCcsUsageScript', () => {
+  it('satisfies the cc-switch usage script contract: object literal with request and extractor', () => {
+    const script = buildCcsUsageScript()
+
+    expect(script.trimStart().startsWith('({')).toBe(true)
+    expect(script.trimEnd().endsWith('})')).toBe(true)
+    expect(script).toContain('request:')
+    expect(script).toContain('url: "{{baseUrl}}/v1/usage"')
+    expect(script).toContain('"Authorization": "Bearer {{apiKey}}"')
+    expect(script).toContain('extractor: function')
+    expect(script).not.toContain('endpoint:')
+  })
+
+  it('stays ASCII so buildCcSwitchImportDeeplink can btoa() it without throwing', () => {
+    expect(/^[\x20-\x7e\s]*$/.test(buildCcsUsageScript())).toBe(true)
   })
 })

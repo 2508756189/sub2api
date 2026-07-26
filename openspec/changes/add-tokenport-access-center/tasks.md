@@ -15,7 +15,7 @@
 
 ## 1. 决策关闭（阻塞后续实现，见 design.md Open Questions）
 
-- [ ] 1.1 向 CC Switch 侧确认 deeplink 三问（usageScript 语义 / config 落盘方式 / 未知参数行为），回写 design.md
+- [x] 1.1 向 CC Switch 侧确认 deeplink 三问（usageScript 语义 / config 落盘方式 / 未知参数行为），回写 design.md（2026-07-26 依据 cc-switch v3.18.0 源码 + 旧 tag 抽查确认；结论见 design.md「CC Switch deeplink 契约确认记录」，R3 已按结论改写并新增 usageScript 契约 Requirement）
 - [ ] 1.2 用真实 gemini-cli 验证 direct 路径 `/v1beta` 取舍，敲定 `resolveClientEndpoint` 的 gemini/antigravity 规则
 - [ ] 1.3 拍板 WebSocket 形态（独立 tab vs transport 开关），删除另一半死分支
 - [ ] 1.4 拍板 Codex OAuth 接管边界与 supportsSkills 范围
@@ -24,19 +24,20 @@
 
 - [ ] 2.1 B5 Codex TOML：按 connector-delivery R4 实现同名表/根键检测中止；模板改完整 table；补「已存在 TokenPort 配置」的确认输出（条目 20）
 - [ ] 2.2 sync-skill-market.ps1 补 sha256 复核（对照 index.json 而非纯 Copy-Item）
+- [x] 2.3 修复 usageScript 形态回归：access-center 曾发 `({endpoint, key})`（CC Switch 查询必报「缺少 request 配置」），已改回上游合规的 `({request, extractor})` 模板（`buildCcsUsageScript()`，1.1 确认后落地，spec 断言防回归）
 
 ## 3. High 批次
 
 - [ ] 3.1 H1 密钥可见性：高级编辑强制显示、TeleAgent 文案改明文警示、下载确认（client-access-center R2）
-- [ ] 3.2 H2/H3 endpoint：实现共享 `resolveClientEndpoint` 并替换三套归一化函数，按 1.2 结论修 gemini/antigravity；同步改 `accessCenterFiles.spec.ts:23` 断言
+- [ ] 3.2 H2/H3 endpoint：实现共享 `resolveClientEndpoint` 并替换三套归一化函数，按 1.2 结论修 gemini/antigravity；同步改 `accessCenterFiles.spec.ts:23` 断言；一并处理 antigravity 平台 usage 查询 URL 错位（`{{baseUrl}}/v1/usage` 会带上 `/antigravity` 前缀，可用 `usageBaseUrl` 覆盖，CCS ≥ v3.9.0，见 R3 新 Scenario）
 - [ ] 3.3 H4 切 tab 清空已选技能并提示（skill-delivery R4）
 - [ ] 3.4 H6 registry 信任模型：fallback 默认关 + 来源显示 + content-type/结构校验 + curl `-fL`（skill-delivery R3/R2）
 - [ ] 3.5 H8 CMD tab：禁用一键脚本按钮 + title 提示（或 EncodedCommand 方案，二选一写回 spec）；`codexConfigDir` 补 `'cmd'` 分支
 
 ## 4. Medium 批次（按 spec 逐条）
 
-- [ ] 4.1 CCS payload 按 clientType 过滤、grokbuild model 进顶层、OpenCode config 分支（connector-delivery R3）
-- [ ] 4.2 deeplink 接管探测 + `keys.ccSwitchNotInstalled` 复用 + 「复制 CCS 链接」兜底（client-access-center R4）
+- [ ] 4.1 CCS payload 按 clientType 过滤、grokbuild model 进顶层、OpenCode 改为纯 URL 参数不发 settings.json 形态 config（connector-delivery R3 已按确认结论改写）；UI 版本提示按白名单口径：opencode ≥ v3.12.0、grokbuild ≥ v3.18.0
+- [ ] 4.2 deeplink 接管探测 + `keys.ccSwitchNotInstalled` 复用 + 「复制 CCS 链接」兜底（client-access-center R4；已确认协议无回执，focus 启发式是唯一信号）
 - [ ] 4.3 高级编辑 path 键 dirty 跟踪（client-access-center R3）
 - [ ] 4.4 备份保留策略 N=5、同秒不覆盖、原始备份保护、还原命令输出（connector-delivery R5）
 - [ ] 4.5 CCS 模式隐藏技能选择器并修文案（skill-delivery R8）

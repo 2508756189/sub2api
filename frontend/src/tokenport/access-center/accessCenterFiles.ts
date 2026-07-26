@@ -154,6 +154,28 @@ export function buildGrokFiles(
   }]
 }
 
+// cc-switch 用 QuickJS 对整段脚本求值，结果必须是带 request/extractor 的对象字面量；
+// {{baseUrl}}/{{apiKey}} 由 cc-switch 在查询时按供应商 live 配置替换。
+// 内容需保持 ASCII：buildCcSwitchImportDeeplink 用 btoa() 编码，非 Latin-1 会抛异常。
+export function buildCcsUsageScript(): string {
+  return `({
+    request: {
+      url: "{{baseUrl}}/v1/usage",
+      method: "GET",
+      headers: { "Authorization": "Bearer {{apiKey}}" }
+    },
+    extractor: function(response) {
+      const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
+      const unit = response?.unit ?? response?.quota?.unit ?? "USD";
+      return {
+        isValid: response?.is_active ?? response?.isValid ?? true,
+        remaining,
+        unit
+      };
+    }
+  })`
+}
+
 export function isSkillInstallFile(file: FileConfig): boolean {
   return file.path.startsWith('Install ') && file.path.includes(' skills ')
 }

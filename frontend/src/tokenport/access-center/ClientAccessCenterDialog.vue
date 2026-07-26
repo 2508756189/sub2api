@@ -119,6 +119,7 @@ import {
   type FileConfig,
 } from '@/components/keys/connectorTemplates'
 import {
+  buildCcsUsageScript,
   buildClientInstallScript,
   buildGeminiFiles,
   buildGrokFiles,
@@ -351,7 +352,7 @@ function importToCcs() {
   const normalized = normalizeConnectorOptions(connectorOptions.value)
   const payload = ccsConfig()
   const clientType = ccsClientType()
-  const usageScript = `({ endpoint: ${JSON.stringify(props.baseUrl || window.location.origin)}, key: ${JSON.stringify(props.apiKey)} })`
+  const usageScript = buildCcsUsageScript()
   const deeplink = buildCcSwitchImportDeeplink({
     baseUrl: props.baseUrl || window.location.origin,
     platform: props.platform,

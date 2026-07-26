@@ -80,7 +80,7 @@
                 <div class="card-head"><b>Token 使用趋势</b><em>Input / Output</em></div>
                 <div class="chart">
                   <svg viewBox="0 0 320 120" preserveAspectRatio="none">
-                    <path d="M0 90 C40 88, 60 70, 90 72 S140 40, 170 48 S230 20, 260 28 S300 50, 320 42" fill="none" stroke="#00a878" stroke-width="3" />
+                    <path d="M0 90 C40 88, 60 70, 90 72 S140 40, 170 48 S230 20, 260 28 S300 50, 320 42" fill="none" stroke="var(--brand)" stroke-width="3" />
                     <path d="M0 100 C50 98, 80 92, 110 88 S170 80, 210 78 S280 70, 320 68" fill="none" stroke="#5bb8ff" stroke-width="2.5" opacity="0.8" />
                   </svg>
                 </div>
@@ -249,7 +249,7 @@ const kpis = [
 ]
 
 const models = [
-  { name: '高性能模型', share: '示例', color: '#00a878' },
+  { name: '高性能模型', share: '示例', color: 'var(--brand)' },
   { name: '快速模型', share: '示例', color: '#5bb8ff' },
   { name: '多模态模型', share: '示例', color: '#f5b942' },
   { name: '其他模型', share: '示例', color: '#c5d4cd' },
@@ -302,15 +302,32 @@ const keys = [
   --muted: #62756c;
   --line: #d7e5de;
   --soft: #f3faf6;
-  --brand: #00a878;
+  --brand: var(--tp-brand);
+  --brand-deep: var(--tp-brand-deep);
   --ctyun: #0077e6;
+  --surface: #ffffff;
+  --canvas: #f4f8f6;
+  --body-bg: #f7faf8;
+  --bar-from: #f8fbfa;
+  --bar-to: #eef5f1;
+  --bar-border: #dce7e1;
+  --side-fg: #2f453d;
+  --side-section: #8aa197;
+  --row-border: #e7f0eb;
+  --meter-track: #e7f1ec;
+  --key-row-bg: #fbfdfc;
+  --admin-bg: #102a21;
+  --ok: #0a7a58;
+  --warn: #c27b12;
+  --dot: #c5d4cd;
+  --frame-shadow:
+    0 20px 40px rgba(16, 52, 38, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--line) 80%, #8fbaaa);
   border-radius: 18px;
-  background: #fff;
-  box-shadow:
-    0 20px 40px rgba(16, 52, 38, 0.1),
-    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  background: var(--surface);
+  box-shadow: var(--frame-shadow);
   color: var(--ink);
   font-family: "Noto Sans SC", "PingFang SC", "HarmonyOS Sans SC", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -321,21 +338,47 @@ const keys = [
   user-select: none;
 }
 
+/* 深色主题:整套局部变量按 .dark 重取值(frontend-polish D1,首期变量级替换) */
+.dark .console-preview {
+  --ink: #e6f1ec;
+  --muted: #92a79e;
+  --line: #23372d;
+  --soft: #132019;
+  --surface: #101c16;
+  --canvas: #0d1712;
+  --body-bg: #0f1a14;
+  --bar-from: #15231c;
+  --bar-to: #101b15;
+  --bar-border: #20342a;
+  --side-fg: #c3d5cc;
+  --side-section: #6e8479;
+  --row-border: #1d3026;
+  --meter-track: #1c2e24;
+  --key-row-bg: #12201a;
+  --admin-bg: #23453a;
+  --ok: #4fd6ab;
+  --warn: #e2ab52;
+  --dot: #33483d;
+  --frame-shadow:
+    0 20px 44px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
 .window-bar {
   display: flex;
   align-items: center;
   gap: 8px;
   height: 42px;
   padding: 0 14px;
-  border-bottom: 1px solid #dce7e1;
-  background: linear-gradient(180deg, #f8fbfa, #eef5f1);
+  border-bottom: 1px solid var(--bar-border);
+  background: linear-gradient(180deg, var(--bar-from), var(--bar-to));
 }
 
 .dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #c5d4cd;
+  background: var(--dot);
 }
 
 .dot.red { background: #ff796f; }
@@ -344,14 +387,14 @@ const keys = [
 
 .window-bar b {
   margin-left: 6px;
-  color: #4f635a;
+  color: var(--side-fg);
   font-size: 12px;
   font-weight: 700;
 }
 
 .window-bar em {
   margin-left: auto;
-  color: #7d9188;
+  color: var(--muted);
   font-size: 11px;
   font-style: normal;
 }
@@ -360,7 +403,7 @@ const keys = [
   display: grid;
   grid-template-columns: 210px 1fr;
   min-height: 480px;
-  background: #f7faf8;
+  background: var(--body-bg);
 }
 
 .side {
@@ -369,7 +412,7 @@ const keys = [
   gap: 2px;
   padding: 14px 12px;
   border-right: 1px solid var(--line);
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .brand {
@@ -401,7 +444,7 @@ const keys = [
 
 .side-section {
   margin: 10px 8px 6px;
-  color: #8aa197;
+  color: var(--side-section);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -417,7 +460,7 @@ const keys = [
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #2f453d;
+  color: var(--side-fg);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -427,15 +470,19 @@ const keys = [
 }
 
 .side-item:hover {
-  background: rgba(0, 168, 120, 0.08);
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
   color: var(--ink);
 }
 
 .side-item.active {
-  background: linear-gradient(180deg, rgba(0, 168, 120, 0.16), rgba(0, 168, 120, 0.1));
-  color: #066b4c;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand) 16%, transparent),
+    color-mix(in srgb, var(--brand) 10%, transparent)
+  );
+  color: var(--brand-deep);
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgba(0, 168, 120, 0.16);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 16%, transparent);
 }
 
 .side-item .icon {
@@ -457,7 +504,7 @@ const keys = [
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(0, 119, 230, 0.12);
+  background: color-mix(in srgb, var(--ctyun) 12%, transparent);
   color: var(--ctyun);
   font-size: 10px;
   font-style: normal;
@@ -471,7 +518,7 @@ const keys = [
   flex-direction: column;
   min-width: 0;
   padding: 16px 18px 18px;
-  background: #f4f8f6;
+  background: var(--canvas);
 }
 
 .main-top {
@@ -508,19 +555,19 @@ const keys = [
   padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
 }
 
 .balance {
-  color: #0a7a58 !important;
+  color: var(--ok) !important;
 }
 
 .admin-chip {
-  background: #102a21 !important;
-  border-color: #102a21 !important;
+  background: var(--admin-bg) !important;
+  border-color: var(--admin-bg) !important;
   color: #fff !important;
 }
 
@@ -540,7 +587,7 @@ const keys = [
 .table-card {
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 6px 16px rgba(16, 52, 38, 0.04);
 }
 
@@ -618,11 +665,11 @@ const keys = [
 
 .card-head em,
 .ok {
-  color: #0a7a58;
+  color: var(--ok);
 }
 
 .warn {
-  color: #c27b12;
+  color: var(--warn);
 }
 
 .donut-wrap {
@@ -637,7 +684,7 @@ const keys = [
   height: 96px;
   border-radius: 50%;
   background:
-    conic-gradient(#00a878 0 41%, #5bb8ff 41% 69%, #f5b942 69% 87%, #c5d4cd 87% 100%);
+    conic-gradient(var(--brand) 0 41%, #5bb8ff 41% 69%, #f5b942 69% 87%, var(--dot) 87% 100%);
   mask: radial-gradient(circle at center, transparent 46%, #000 47%);
 }
 
@@ -674,8 +721,8 @@ const keys = [
   height: 120px;
   border-radius: 12px;
   background:
-    linear-gradient(180deg, rgba(0, 168, 120, 0.05), transparent),
-    repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(16, 52, 38, 0.05) 24px);
+    linear-gradient(180deg, color-mix(in srgb, var(--brand) 5%, transparent), transparent),
+    repeating-linear-gradient(0deg, transparent, transparent 23px, color-mix(in srgb, var(--ink) 6%, transparent) 24px);
 }
 
 .chart svg {
@@ -692,7 +739,7 @@ table {
 th,
 td {
   padding: 10px 8px;
-  border-bottom: 1px solid #e7f0eb;
+  border-bottom: 1px solid var(--row-border);
   text-align: left;
 }
 
@@ -724,14 +771,14 @@ th {
   margin: 10px 0;
   overflow: hidden;
   border-radius: 999px;
-  background: #e7f1ec;
+  background: var(--meter-track);
 }
 
 .meter i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #12b884, #0077e6);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--brand) 85%, white), var(--ctyun));
 }
 
 .account p {
@@ -744,7 +791,7 @@ th {
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fbfdfc;
+  background: var(--key-row-bg);
 }
 
 .key-row b {

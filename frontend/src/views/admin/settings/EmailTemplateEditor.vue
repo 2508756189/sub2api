@@ -210,6 +210,7 @@
                 </span>
               </div>
               <div class="bg-gray-100 p-3 dark:bg-dark-900">
+                <!-- 预览 iframe 两种主题下均保持白底:邮件 HTML 默认按浅色背景设计,深底会让透明背景的邮件不可读 -->
                 <iframe
                   class="h-[36rem] w-full rounded-md border border-gray-200 bg-white dark:border-dark-700"
                   sandbox=""

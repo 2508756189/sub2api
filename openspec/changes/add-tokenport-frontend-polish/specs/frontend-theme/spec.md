@@ -8,8 +8,9 @@
 - `frontend/src/views/user/SkillMarketView.vue:6,7,22`——未登录壳根 `bg-[#f4f8f6]`、顶栏 `bg-white/90`、底栏 `bg-white` 均无 dark: 变体（实测深色下为浅底、深色卡片、白顶底栏混合态）；
 - `frontend/src/tokenport/home/TokenPortHome.vue`——1226 行内 `dark:` 出现 0 次，仅 3 条 `.dark` 兜底选择器；
 - `frontend/src/tokenport/home/ConsolePreview.vue`——深色页面中央 616×804 纯白窗口（实测）；
-- `frontend/src/views/admin/SettingsView.vue:11694-11699`——`.settings-tabs-shell` 粘性 Tab 条 `border-white/80 bg-white/90` 与浅色阴影无 dark: 对应（上游文件，按 D9 只做加性补丁）；
-- `frontend/src/views/admin/settings/EmailTemplateEditor.vue:214`——`bg-white dark:border-dark-700` 补了 border 漏了 bg。
+- `frontend/src/views/admin/SettingsView.vue:11694-11699`——`.settings-tabs-shell` 粘性 Tab 条 `border-white/80 bg-white/90` 与浅色阴影无 dark: 对应（上游文件，按 D9 只做加性补丁）。
+
+实现期复核例外（不计入破洞）：`frontend/src/views/admin/settings/EmailTemplateEditor.vue` 预览 iframe 的 `bg-white` 为有意保留——邮件 HTML 默认按浅色背景设计，深底会让透明背景的邮件不可读；已在代码处加注释说明。此类「内容本身假定浅色」的容器（邮件预览等）允许在深色主题下保持白底，但 MUST 有注释记录理由。
 
 #### Scenario: 深色模式浏览技能市场未登录页
 - **WHEN** 用户在深色主题下访问 /skill-market（未登录）

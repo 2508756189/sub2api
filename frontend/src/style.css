@@ -60,7 +60,25 @@
     @apply bg-primary-500/20 text-primary-900 dark:text-primary-100;
   }
 
+  /* TokenPort 品牌色唯一定义点(openspec add-tokenport-frontend-polish D2/D3)。
+     终值待 design.md OQ1 拍板,拍板后只改这里;组件内一律引用 var(--tp-brand*)。 */
+  :root {
+    --tp-brand: #00a878;
+    --tp-brand-hover: #00b583;
+    --tp-brand-strong: #008f66;
+    --tp-brand-deep: #087a58;
+    --tp-brand-soft: #e0f6ee;
+    --tp-brand-ink: #0b6f52;
+  }
 
+  .dark {
+    --tp-brand: #21c493;
+    --tp-brand-hover: #35d6a6;
+    --tp-brand-strong: #17b083;
+    --tp-brand-deep: #4fd6ab;
+    --tp-brand-soft: #11352a;
+    --tp-brand-ink: #7fe3c0;
+  }
 }
 
 @layer components {

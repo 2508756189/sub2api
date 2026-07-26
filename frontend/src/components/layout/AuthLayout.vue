@@ -133,15 +133,15 @@ onMounted(() => {
   --line: #d7e5de;
   --surface: #ffffff;
   --soft: #edf8f3;
-  --brand: #00a878;
-  --brand-deep: #087a58;
+  --brand: var(--tp-brand);
+  --brand-deep: var(--tp-brand-deep);
   --shadow: 0 18px 50px rgba(16, 52, 38, 0.1);
   position: relative;
   min-height: 100vh;
   overflow-x: clip;
   color: var(--ink);
   background:
-    radial-gradient(1200px 500px at 85% -10%, rgba(0, 168, 120, 0.12), transparent 60%),
+    radial-gradient(1200px 500px at 85% -10%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%),
     radial-gradient(900px 420px at 8% 8%, rgba(0, 119, 230, 0.08), transparent 55%),
     linear-gradient(180deg, #f8fbf9 0%, #f3f8f5 45%, #f7faf8 100%);
   font-family:
@@ -162,7 +162,7 @@ onMounted(() => {
   --soft: #13241d;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
   background:
-    radial-gradient(1000px 420px at 80% -10%, rgba(0, 168, 120, 0.16), transparent 60%),
+    radial-gradient(1000px 420px at 80% -10%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 60%),
     linear-gradient(180deg, #09110e 0%, #0b1410 50%, #0a120e 100%);
 }
 
@@ -172,7 +172,7 @@ onMounted(() => {
   inset: 0 auto auto 0;
   width: min(48vw, 620px);
   height: 520px;
-  background: radial-gradient(circle at 30% 30%, rgba(0, 168, 120, 0.12), transparent 70%);
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 70%);
   filter: blur(10px);
 }
 

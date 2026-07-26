@@ -402,15 +402,15 @@ onMounted(async () => {
   --surface: #ffffff;
   --soft: #edf8f3;
   --soft-2: #f4faf7;
-  --brand: #00a878;
-  --brand-deep: #087a58;
+  --brand: var(--tp-brand);
+  --brand-deep: var(--tp-brand-deep);
   --ctyun: #0077e6;
   --shadow: 0 18px 50px rgba(16, 52, 38, 0.1);
   position: relative;
   min-height: 100vh;
   overflow-x: clip;
   background:
-    radial-gradient(1200px 500px at 85% -10%, rgba(0, 168, 120, 0.12), transparent 60%),
+    radial-gradient(1200px 500px at 85% -10%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%),
     radial-gradient(900px 420px at 8% 8%, rgba(0, 119, 230, 0.08), transparent 55%),
     linear-gradient(180deg, #f8fbf9 0%, #f3f8f5 45%, #f7faf8 100%);
   color: var(--ink);
@@ -428,7 +428,7 @@ onMounted(async () => {
   --soft-2: #0e1713;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
   background:
-    radial-gradient(1000px 420px at 80% -10%, rgba(0, 168, 120, 0.16), transparent 60%),
+    radial-gradient(1000px 420px at 80% -10%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 60%),
     linear-gradient(180deg, #09110e 0%, #0b1410 50%, #0a120e 100%);
 }
 
@@ -438,7 +438,7 @@ onMounted(async () => {
   inset: 0 auto auto 0;
   width: min(48vw, 620px);
   height: 520px;
-  background: radial-gradient(circle at 30% 30%, rgba(0, 168, 120, 0.12), transparent 70%);
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 70%);
   filter: blur(10px);
 }
 
@@ -498,7 +498,7 @@ onMounted(async () => {
 
 .topbar nav {
   gap: 16px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .topbar nav > a:not(.primary-link) {
@@ -530,16 +530,16 @@ onMounted(async () => {
   gap: 8px;
   border-radius: 12px;
   padding: 0 16px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   text-decoration: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .primary-link {
-  background: linear-gradient(180deg, #12b884 0%, var(--brand) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 78%, white) 0%, var(--brand) 100%);
   color: #fff;
-  box-shadow: 0 10px 24px rgba(0, 168, 120, 0.28);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand) 28%, transparent);
 }
 
 .primary-link:hover,
@@ -580,11 +580,6 @@ onMounted(async () => {
   color: var(--brand-deep);
   font: 700 12px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
   letter-spacing: 0.08em;
-}
-
-.dark .eyebrow,
-.dark .section-label {
-  color: #41d0a1;
 }
 
 .hero-copy h1 {
@@ -632,10 +627,6 @@ onMounted(async () => {
   color: var(--brand-deep);
   font-size: 12px;
   font-weight: 700;
-}
-
-.dark .chip {
-  color: #7fe0bc;
 }
 
 .chip.soft {
@@ -694,7 +685,7 @@ onMounted(async () => {
 .preview-hint {
   margin-top: 12px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   text-align: center;
 }
 
@@ -788,11 +779,6 @@ onMounted(async () => {
   font: 700 11px/1 ui-monospace, Consolas, monospace;
 }
 
-.dark .card-index,
-.dark .deploy-tag {
-  color: #7fe0bc;
-}
-
 .change-grid b,
 .deployment-options b {
   display: block;
@@ -847,10 +833,6 @@ onMounted(async () => {
   background: color-mix(in srgb, var(--brand) 14%, transparent);
   color: var(--brand-deep);
   font: 800 12px/1 ui-monospace, Consolas, monospace;
-}
-
-.dark .cap-head span {
-  color: #7fe0bc;
 }
 
 .capability-grid h3 {
@@ -913,7 +895,7 @@ onMounted(async () => {
   border-radius: 12px;
   background: var(--soft-2);
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .dark .arch-column span,
@@ -938,17 +920,9 @@ onMounted(async () => {
   letter-spacing: 0.08em;
 }
 
-.dark .core-badge {
-  color: #7fe0bc;
-}
-
 .arch-core > b {
   color: var(--brand-deep);
   font-size: 24px;
-}
-
-.dark .arch-core > b {
-  color: #7fe0bc;
 }
 
 .flow-arrow {
@@ -1032,7 +1006,7 @@ onMounted(async () => {
   flex: 0 0 34px;
   place-items: center;
   border-radius: 10px;
-  background: linear-gradient(135deg, #12b884, #0077e6);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 78%, white), var(--ctyun));
   color: #fff;
   font-size: 14px;
   font-weight: 800;
@@ -1053,27 +1027,19 @@ onMounted(async () => {
   font-weight: 700;
 }
 
-.dark .skill-top em {
-  color: #7fe0bc;
-}
-
 .market-grid p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
 }
 
 .text-link {
   gap: 6px;
   color: var(--brand-deep);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
-}
-
-.dark .text-link {
-  color: #7fe0bc;
 }
 
 .value-band {
@@ -1136,7 +1102,7 @@ onMounted(async () => {
   gap: 20px;
   padding: 22px clamp(20px, 5vw, 72px);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .home-shell footer a {

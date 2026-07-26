@@ -10,21 +10,21 @@
 
 ## 2. P1 主题急救（frontend-theme R1）
 
-- [ ] 2.1 `SkillMarketView.vue:6,7,22` 三处补 dark: 变体（根/顶栏/底栏）
-- [ ] 2.2 `TokenPortHome.vue` 深色适配（配色变量化后按主题取值，或补齐 `.dark` 选择器覆盖）
-- [ ] 2.3 `ConsolePreview.vue` 深色变体（D1：变量级替换）
-- [ ] 2.4 `SettingsView.vue:11694-11699` `.settings-tabs-shell` 加性 dark: 补丁（上游文件，D9）
-- [ ] 2.5 `EmailTemplateEditor.vue:214` 补 `dark:bg-*`（上游文件，D9）
-- [ ] 2.6 防回归：为关键壳组件补 vitest 字符串断言（含 dark: 变体，参照 `accessCenterFiles.spec.ts` 风格）
+- [x] 2.1 `SkillMarketView.vue:6,7,22` 三处补 dark: 变体（根/顶栏/底栏）
+- [x] 2.2 `TokenPortHome.vue` 深色适配——实现期复核：该页 `.dark .home-shell` 变量覆盖早已存在且生效，真正的欠账只在 ConsolePreview（见 2.3）；本次将 8 条冗余 `.dark X { color: #7fe0bc }` 手工覆盖删除，改由主题化的 `--brand-deep` 单点解析
+- [x] 2.3 `ConsolePreview.vue` 深色变体（D1：局部变量扩展为 20 个 + `.dark .console-preview` 整套重取值，硬编码浅色全部改 var）
+- [x] 2.4 `SettingsView.vue` `.settings-tabs-shell` 加性 dark: 补丁 + 深色阴影覆盖（上游文件，D9）
+- [x] 2.5 `EmailTemplateEditor.vue` 复核改判：邮件预览 iframe 白底为有意保留（邮件 HTML 假定浅色背景），已加注释，spec 同步记录例外
+- [x] 2.6 防回归：`src/tokenport/__tests__/frontendPolishTheme.spec.ts` 12 条字符串断言（令牌单一来源/主题完整性/刻度回归）
 
 ## 3. P1 品牌令牌统一（frontend-theme R2/R3/R4）
 
-- [ ] 3.1 全局品牌色定义点落地（style.css `:root` 或 tailwind token，过渡取值 `#00a878`）
-- [ ] 3.2 删除三处局部 `--brand` 副本并改引用（`AuthLayout.vue:136` / `ConsolePreview.vue:305` / `TokenPortHome.vue:405`）
-- [ ] 3.3 `tokenport-console.css` `--tp-mint` 系映射到全局定义
-- [ ] 3.4 `SkillMarketCatalog.vue` / `SkillMarketView.vue` emerald→品牌令牌收敛；`rounded-2xl`→`rounded-xl`；任意字号回刻度
-- [ ] 3.5 落地页正文字号提升到 ≥14px（现状 12–13px 共 87 处、11px 12 处，11px 仅留装饰）
-- [ ] 3.6 硬编码 hex 分批令牌化：`AuthLayout.vue`(44) → `ConsolePreview.vue`(43) → `TokenPortHome.vue`(37)，其余文件随后续触碰逐步收敛
+- [x] 3.1 全局品牌色定义点落地：style.css `:root` 六个 `--tp-brand*` + `.dark` 六个深色取值（过渡值 `#00a878`，OQ1 拍板后单点改）
+- [x] 3.2 三处局部 `--brand` 副本改为引用 `var(--tp-brand)`/`var(--tp-brand-deep)`；三个文件内 `rgba(0,168,120,…)` 品牌光晕改 `color-mix(var(--brand))`
+- [x] 3.3 `tokenport-console.css` mint 系五变量映射到全局令牌；`.dark` 块的 mint 重定义删除（随全局 .dark 解析）；`#36dcc0/#42e4c8` 按钮渐变顶改 `color-mix(…, white)`，按钮文字改白（新品牌绿更深，原深墨绿文字对比不足）
+- [x] 3.4 `SkillMarketCatalog.vue` / `SkillMarketView.vue` emerald→primary（风险徽章语义色 emerald-100/700 保留）；`rounded-2xl`→`rounded-xl`；`text-[26px]`→`text-2xl`、`text-[15px]`→`text-base`
+- [x] 3.5 落地页正文字号：导航/按钮/市场卡描述/架构条目/文字链 13→14px，预览提示/页脚 12→13px；ConsolePreview 仿真窗内部 10–13px 为示意性微缩 UI，按装饰豁免；徽章/eyebrow 保持 11–12px
+- [ ] 3.6 硬编码 hex 分批令牌化：ConsolePreview/TokenPortHome 已基本令牌化（余下为变量定义值、恒暗横幅与图表系列色）；`AuthLayout.vue` 品牌相关已接令牌，其余表面色值待后续批次；其他文件随触碰收敛
 
 ## 4. P2 反馈补齐（frontend-feedback）
 

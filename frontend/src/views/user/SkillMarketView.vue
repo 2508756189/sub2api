@@ -3,8 +3,8 @@
     <SkillMarketCatalog />
   </AppLayout>
 
-  <div v-else class="min-h-screen bg-[#f4f8f6] text-gray-950">
-    <header class="border-b border-emerald-950/10 bg-white/90">
+  <div v-else class="min-h-screen bg-[#f4f8f6] text-gray-950 dark:bg-dark-950 dark:text-gray-100">
+    <header class="border-b border-primary-950/10 bg-white/90 dark:border-dark-700 dark:bg-dark-900/90">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
         <router-link to="/home" class="flex items-center gap-3">
           <img :src="brandLogo" alt="天翼云 TokenPort" class="h-9 w-9 rounded-xl object-cover shadow-sm" />
@@ -19,7 +19,7 @@
     <main class="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-10">
       <SkillMarketCatalog />
     </main>
-    <footer class="border-t border-emerald-950/10 bg-white py-6 text-center text-xs text-gray-500">
+    <footer class="border-t border-primary-950/10 bg-white py-6 text-center text-xs text-gray-500 dark:border-dark-700 dark:bg-dark-900 dark:text-gray-400">
       © {{ currentYear }} {{ siteName }} · 技能安装需登录后在 API 密钥接入配置中心完成
     </footer>
   </div>

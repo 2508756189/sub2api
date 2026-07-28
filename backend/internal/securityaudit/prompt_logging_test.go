@@ -33,7 +33,8 @@ func TestPromptAuditLogAllowlistAndErrorsDoNotLeakCanarySecrets(t *testing.T) {
 	beforeUnknown := output.Len()
 	LogWarn("prompt_audit.typo_event", map[string]any{"status": "failed"})
 	require.Equal(t, beforeUnknown, output.Len(), "events outside the stable dictionary must not be emitted")
-	require.Len(t, knownLogEvents, 29)
+	require.Len(t, knownLogEvents, 30)
+	require.Contains(t, knownLogEvents, EventConfigTokenInvalid)
 	require.Contains(t, knownLogEvents, EventSecretGuardBlocked)
 	require.Contains(t, knownLogEvents, EventSecretGuardRecordFailed)
 

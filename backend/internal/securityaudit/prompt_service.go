@@ -205,7 +205,7 @@ func (s *PromptService) CheckLocalSecrets(ctx context.Context, req Request) (*Pr
 	}, nil
 }
 
-func (s *PromptService) GetConfig() PublicConfig { return s.config.Public() }
+func (s *PromptService) GetConfig() (PublicConfig, error) { return s.config.Public() }
 
 func (s *PromptService) SaveConfig(ctx context.Context, req UpdateConfigRequest, actorID int64) (PublicConfig, error) {
 	return s.config.Save(ctx, req, actorID)

@@ -39,8 +39,8 @@ describe('frontend-theme R2 品牌令牌单一来源', () => {
     expect(consoleCss).not.toContain('#36dcc0')
   })
 
-  it('TokenPortHome 的 .dark 强调色走令牌(final-cta 恒暗横幅保留唯一字面量)', () => {
-    expect(tokenPortHome.split('#7fe0bc').length - 1).toBe(1)
+  it('TokenPortHome 的强调色全部走主题令牌', () => {
+    expect(tokenPortHome).not.toContain('#7fe0bc')
     expect(tokenPortHome).not.toContain('#41d0a1')
   })
 })

@@ -274,12 +274,12 @@
       </section>
 
       <section class="final-cta reveal-item">
-        <div>
+        <div class="final-cta-copy">
           <p class="section-label light">TOKENPORT</p>
           <h2>让模型资源可管理，让每一个 Token 有归属</h2>
           <p>从一个统一入口开始，建立企业 AI 的用量、成本、权限与能力资产体系。</p>
         </div>
-        <router-link :to="entryPath" class="primary-link large">
+        <router-link :to="entryPath" class="primary-link large final-cta-action">
           {{ isAuthenticated ? '进入控制台' : '登录体验' }}
           <Icon name="arrowRight" size="md" />
         </router-link>
@@ -987,17 +987,42 @@ onBeforeUnmount(() => revealObserver?.disconnect())
 .deployment-grid .featured a { border-color: var(--brand); background: var(--brand); color: #fff; }
 
 .final-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 40px;
-  padding: 72px max(24px, calc((100vw - 1180px) / 2));
-  background: #0d241c;
+  gap: 48px;
+  width: min(1180px, 100% - 48px);
+  margin: 96px auto;
+  padding: 64px 60px;
+  border: 1px solid color-mix(in srgb, var(--brand) 38%, transparent);
+  border-radius: var(--tp-radius-panel);
+  background:
+    radial-gradient(130% 150% at 100% 0%, color-mix(in srgb, var(--brand) 34%, transparent) 0%, transparent 56%),
+    linear-gradient(150deg, #0f2a20 0%, #0a1c15 100%);
   color: #fff;
+  box-shadow: var(--tp-elev-3);
 }
-.final-cta .section-label.light { color: #7fe0bc; }
-.final-cta h2 { max-width: 800px; font-size: 36px; }
-.final-cta p:last-child { margin: 14px 0 0; color: #a9c3b7; font-size: 14px; }
+/* dot-grid texture, faded toward the copy so text stays crisp */
+.final-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(color-mix(in srgb, var(--brand) 46%, transparent) 1px, transparent 1.6px);
+  background-size: 22px 22px;
+  opacity: 0.18;
+  mask-image: radial-gradient(120% 130% at 100% 0%, #000 0%, transparent 72%);
+}
+.final-cta-copy { position: relative; max-width: 620px; }
+.final-cta .section-label.light { color: color-mix(in srgb, var(--brand) 52%, #ffffff); letter-spacing: 0.14em; }
+.final-cta h2 { max-width: 620px; font-size: 36px; color: #fff; }
+.final-cta p:last-child { margin: 16px 0 0; max-width: 560px; color: rgb(255 255 255 / 74%); font-size: 15px; line-height: 1.72; }
+/* high-contrast solid button so the CTA reads clearly on the deep band in both themes */
+.final-cta-action { flex-shrink: 0; background: #ffffff; color: #0a1c15; box-shadow: 0 12px 28px rgb(6 20 15 / 34%); }
+.final-cta-action:hover { transform: translateY(-1px); box-shadow: 0 16px 34px rgb(6 20 15 / 42%); }
 
 .site-footer { padding: 58px 24px 24px; border-top: 1px solid var(--line); background: var(--soft-2); color: var(--muted); font-size: 12px; }
 .footer-inner { display: grid; grid-template-columns: 1.45fr repeat(3, minmax(130px, 0.72fr)); gap: 48px; width: min(1180px, 100%); margin: 0 auto; }
@@ -1086,7 +1111,8 @@ onBeforeUnmount(() => revealObserver?.disconnect())
   .content-section { padding: 72px 16px; }
   .section-heading h2,
   .final-cta h2 { font-size: 30px; }
-  .final-cta { align-items: flex-start; flex-direction: column; padding: 56px 20px; }
+  .final-cta { align-items: flex-start; flex-direction: column; gap: 28px; width: calc(100% - 32px); margin: 64px auto; padding: 44px 28px; }
+  .final-cta-action { width: 100%; }
   .footer-bottom { align-items: flex-start; flex-direction: column; }
 }
 

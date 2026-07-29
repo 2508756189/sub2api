@@ -1,7 +1,5 @@
 <template>
   <div class="home-shell">
-    <div class="bg-glow" aria-hidden="true" />
-
     <header class="topbar">
       <router-link to="/home" class="brand-link">
         <img :src="brandLogo" alt="天翼云 TokenPort" />
@@ -10,8 +8,12 @@
           <small>{{ siteSubtitle }}</small>
         </span>
       </router-link>
-      <nav>
+
+      <nav aria-label="首页导航">
+        <a href="#platform" class="nav-link nav-link-optional">核心能力</a>
+        <a href="#cost" class="nav-link nav-link-optional">Token 经营</a>
         <router-link to="/skill-market" class="nav-link">Skill Market</router-link>
+        <a href="#deploy" class="nav-link nav-link-optional">部署交付</a>
         <router-link
           to="/available-channels"
           class="nav-link nav-link-optional"
@@ -37,7 +39,7 @@
         >
           <Icon :name="isDark ? 'sun' : 'moon'" size="sm" />
         </button>
-        <router-link :to="entryPath" class="primary-link">
+        <router-link :to="entryPath" class="primary-link compact">
           {{ isAuthenticated ? '进入控制台' : '登录平台' }}
           <Icon name="arrowRight" size="sm" />
         </router-link>
@@ -46,173 +48,212 @@
 
     <main>
       <section class="hero-band">
-        <div class="hero-copy">
-          <p class="eyebrow">AI ACCESS · TOKEN OPERATIONS · SKILL DELIVERY</p>
-          <h1>统一管理模型、Token 与智能体能力</h1>
-          <p class="lead">
-            模型越来越多、企业用量越来越大、AI 工具种类繁杂。TokenPort 用一个受控入口连接模型资源、开发工具和可复用技能，让每次调用有归属、有成本、有治理。
-          </p>
-          <div class="hero-actions">
-            <router-link :to="entryPath" class="primary-link large">
-              {{ isAuthenticated ? '进入控制台' : '开始使用' }}
-              <Icon name="arrowRight" size="md" />
-            </router-link>
-            <router-link to="/skill-market" class="secondary-link">浏览 Skill Market</router-link>
-          </div>
-          <div class="chip-row" aria-label="支持协议与工具">
-            <span v-for="item in TOKENPORT_PRODUCT.protocols" :key="item" class="chip">{{ item }}</span>
-            <span class="chip-divider" />
-            <span v-for="item in TOKENPORT_PRODUCT.clients" :key="item" class="chip soft">{{ item }}</span>
-          </div>
-          <dl class="signal-row">
-            <div>
-              <dt>协议入口</dt>
-              <dd>{{ TOKENPORT_PRODUCT.protocols.length }} 类</dd>
+        <div class="hero-grid" aria-hidden="true" />
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="status-label"><i />企业级 AI 运营底座</p>
+            <h1>
+              <span>让模型资源可管理，</span>
+              <span>让每一个 <em>Token</em> 有归属</span>
+            </h1>
+            <p class="lead">
+              TokenPort 将多家模型、部门密钥、Token 成本、智能应用接入与 Skill Market 收敛到同一平台，形成统一接入、统一治理、统一核算和统一交付。
+            </p>
+            <div class="hero-actions">
+              <router-link :to="entryPath" class="primary-link large">
+                {{ isAuthenticated ? '进入控制台' : '开始使用' }}
+                <Icon name="arrowRight" size="md" />
+              </router-link>
+              <a href="#platform" class="secondary-link">查看平台能力</a>
             </div>
-            <div>
-              <dt>工具接入</dt>
-              <dd>{{ TOKENPORT_PRODUCT.clients.length }} 类</dd>
-            </div>
-            <div>
-              <dt>Skill Market</dt>
-              <dd>{{ skillCount }} 个 Skill</dd>
-            </div>
-          </dl>
-        </div>
-        <div class="product-stage">
-          <ConsolePreview :logo-src="brandLogo" />
-          <p class="preview-hint">可点击左侧菜单切换页面，查看控制台能力结构</p>
-        </div>
-      </section>
-
-      <section class="change-band">
-        <div class="section-heading">
-          <p class="section-label">市场变化</p>
-          <h2>企业不缺模型入口，缺的是统一管理能力</h2>
-        </div>
-        <div class="change-grid">
-          <article v-for="item in changes" :key="item.title">
-            <div class="card-index">{{ item.index }}</div>
-            <b>{{ item.title }}</b>
-            <p>{{ item.description }}</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="capability-band">
-        <div class="section-heading wide">
-          <div>
-            <p class="section-label">产品能力</p>
-            <h2>从统一接入到用量治理，覆盖完整流程</h2>
-          </div>
-          <span>模型与价格来自当前可用渠道，首页不维护容易失真的静态价格表。</span>
-        </div>
-        <div class="capability-grid">
-          <article v-for="item in capabilities" :key="item.title">
-            <div class="cap-head">
-              <span>{{ item.number }}</span>
-              <h3>{{ item.title }}</h3>
-            </div>
-            <p>{{ item.description }}</p>
-            <ul>
-              <li v-for="point in item.points" :key="point">{{ point }}</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="architecture-band">
-        <div class="section-heading">
-          <p class="section-label">系统架构</p>
-          <h2>一个平台连接企业用户、AI 工具与模型资源</h2>
-        </div>
-        <div class="architecture">
-          <div class="arch-column">
-            <b>使用入口</b>
-            <span v-for="item in entryNodes" :key="item">{{ item }}</span>
-          </div>
-          <div class="flow-arrow" aria-hidden="true">
-            <span />
-          </div>
-          <div class="arch-core">
-            <div class="core-badge">CONTROL PLANE</div>
-            <b>TokenPort</b>
-            <span v-for="item in coreNodes" :key="item">{{ item }}</span>
-          </div>
-          <div class="flow-arrow" aria-hidden="true">
-            <span />
-          </div>
-          <div class="arch-column">
-            <b>资源供给</b>
-            <span v-for="item in supplyNodes" :key="item">{{ item }}</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="market-band">
-        <div class="section-heading wide">
-          <div>
-            <p class="section-label">Skill Market</p>
-            <h2>可复用 Skill，直接用于开发与日常工作</h2>
-          </div>
-          <router-link to="/skill-market" class="text-link">
-            查看全部 {{ skillCount }} 个 Skill
-            <Icon name="arrowRight" size="sm" />
-          </router-link>
-        </div>
-        <div class="market-meta">
-          <span v-for="cat in categoryNames" :key="cat">{{ cat }}</span>
-        </div>
-        <div class="market-grid">
-          <article v-for="skill in featuredSkills" :key="skill.id">
-            <div class="skill-top">
-              <div class="skill-identity">
-                <span class="skill-avatar">{{ skill.name.slice(0, 1) }}</span>
-                <div>
-                  <b>{{ skill.name }}</b>
-                  <em>{{ skill.category }}</em>
-                </div>
+            <dl class="hero-stats">
+              <div>
+                <dt>5</dt>
+                <dd>核心能力</dd>
               </div>
-            </div>
-            <p>{{ skill.description }}</p>
-          </article>
+              <div>
+                <dt>{{ marketLoading ? '—' : skillCount }}</dt>
+                <dd>收录 Skill</dd>
+              </div>
+              <div class="wide">
+                <dt>OpenAI · Anthropic · Gemini</dt>
+                <dd>协议兼容 · 统一入口接入</dd>
+              </div>
+            </dl>
+          </div>
+          <ModelFlowPreview />
         </div>
       </section>
 
-      <section class="value-band">
-        <div class="value-copy">
-          <p class="section-label">使用价值</p>
-          <h2>把分散的 AI 调用变成可统计、可优化、可复用的能力</h2>
-          <p>
-            统一入口减少重复配置，模型路由降低不必要的高价调用，部门报表明确成本归属，Skill 复用减少重复开发。既适合内部统一管理，也支持私有化部署和行业 Skill 交付。
-          </p>
+      <section class="tool-strip" aria-label="支持的模型协议与客户端">
+        <p>统一团队正在使用的模型与工具栈</p>
+        <div>
+          <span v-for="item in TOKENPORT_PRODUCT.clients" :key="item">{{ item }}</span>
+          <span v-for="item in TOKENPORT_PRODUCT.protocols" :key="item">{{ item }} 兼容</span>
+          <span>企业自有模型</span>
         </div>
-        <div class="value-list">
-          <div v-for="item in values" :key="item.title">
-            <b>{{ item.title }}</b>
-            <span>{{ item.description }}</span>
+      </section>
+
+      <section id="platform" class="content-section">
+        <div class="section-inner">
+          <div class="section-heading">
+            <p class="section-label"><span>01</span> 核心能力</p>
+            <h2>面向 AI 供给到使用的同一控制面</h2>
+            <p>模型调用、部门成本、工具接入与技能交付，在一处完成治理。</p>
+          </div>
+          <div class="capability-grid">
+            <article
+              v-for="(item, index) in capabilities"
+              :key="item.title"
+              :class="{ featured: index === 0 }"
+            >
+              <div class="capability-icon" v-html="item.icon" />
+              <div class="capability-copy">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+              </div>
+              <ul v-if="item.points.length">
+                <li v-for="point in item.points" :key="point"><i />{{ point }}</li>
+              </ul>
+            </article>
           </div>
         </div>
       </section>
 
-      <section class="deployment-band">
-        <div class="section-heading">
-          <p class="section-label">部署方式</p>
-          <h2>统一平台直接使用，也支持企业资源独立部署</h2>
+      <section id="cost" class="content-section section-alt">
+        <div class="section-inner split-section">
+          <div class="section-heading">
+            <p class="section-label"><span>02</span> Token 经营</p>
+            <h2>把每一次调用变成可核算的经营数据</h2>
+            <p>
+              按模型、部门、用户与 API Key 记录用量和成本，为预算控制、采购评估和资源优化提供统一口径。
+            </p>
+            <div class="value-points">
+              <div><b>成本归属</b><span>每笔消耗对应部门、Key 与模型</span></div>
+              <div><b>预算护栏</b><span>按周期设置额度并提前预警</span></div>
+              <div><b>模型优化</b><span>比较价格、质量和真实可用性</span></div>
+            </div>
+          </div>
+          <TokenUsageShowcase />
         </div>
-        <div class="deployment-options">
-          <article v-for="item in deployments" :key="item.title">
-            <div class="deploy-tag">{{ item.tag }}</div>
-            <b>{{ item.title }}</b>
-            <p>{{ item.description }}</p>
-          </article>
+      </section>
+
+      <section class="content-section console-section">
+        <div class="section-inner">
+          <div class="section-heading horizontal">
+            <div>
+              <p class="section-label"><span>03</span> 平台控制台</p>
+              <h2>从模型资源到部门用量，一套界面统一管理</h2>
+            </div>
+            <p>下方为交互式能力预览，可切换菜单查看用户、渠道、账号、用量、Skill 与 API Key 的管理结构。</p>
+          </div>
+          <div class="console-stage">
+            <ConsolePreview :logo-src="brandLogo" />
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section section-alt">
+        <div class="section-inner">
+          <div class="section-heading connector-heading">
+            <p class="section-label"><span>04</span> 智能应用连接器</p>
+            <h2>选择客户端，生成可以检查的接入配置</h2>
+            <p>
+              按当前 API Key 的协议、可用模型和部门策略生成配置；模型可留空，现有文件先备份再合并，Skill 安装脚本独立可审查。
+            </p>
+          </div>
+          <ConnectorShowcase />
+        </div>
+      </section>
+
+      <section id="skill-market" class="content-section market-section">
+        <div class="section-inner">
+          <div class="section-heading horizontal">
+            <div>
+              <p class="section-label"><span>05</span> Skill Market</p>
+              <h2>能力沉淀一次，在团队与客户项目中持续复用</h2>
+            </div>
+            <router-link to="/skill-market" class="text-link">
+              查看完整市场
+              <Icon name="arrowRight" size="sm" />
+            </router-link>
+          </div>
+          <p class="market-intro">
+            通过中文说明、版本、来源、运行时、风险等级和 SHA256 校验管理能力包。浏览器不会静默安装，用户确认后执行透明安装脚本。
+          </p>
+          <div v-if="categoryNames.length" class="market-categories">
+            <span v-for="category in categoryNames" :key="category">{{ category }}</span>
+          </div>
+          <div v-if="marketLoading" class="market-grid loading-grid" aria-label="Skill Market 加载中">
+            <article v-for="index in 6" :key="index" />
+          </div>
+          <div v-else-if="featuredSkills.length" class="market-grid">
+            <article v-for="skill in featuredSkills" :key="skill.id">
+              <div class="skill-meta">
+                <span>{{ skill.category }}</span>
+                <em>{{ skill.risk }}</em>
+              </div>
+              <h3>{{ skill.name }}</h3>
+              <p>{{ skill.description }}</p>
+              <footer><span>skill/{{ skill.id }}</span><b>v{{ skill.version }}</b></footer>
+            </article>
+          </div>
+          <div v-else class="market-empty">
+            <b>Skill Market 暂时无法加载</b>
+            <span>{{ marketError || '请稍后重试，或进入市场页面查看内置目录。' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section architecture-section">
+        <div class="section-inner">
+          <div class="section-heading">
+            <p class="section-label"><span>06</span> 系统架构</p>
+            <h2>一个平台连接企业用户、AI 工具与模型资源</h2>
+          </div>
+          <div class="architecture">
+            <div class="arch-column">
+              <b>使用入口</b>
+              <span v-for="item in entryNodes" :key="item">{{ item }}</span>
+            </div>
+            <div class="flow-arrow" aria-hidden="true"><span /></div>
+            <div class="arch-core">
+              <em>CONTROL PLANE</em>
+              <b>TokenPort</b>
+              <span v-for="item in coreNodes" :key="item">{{ item }}</span>
+            </div>
+            <div class="flow-arrow" aria-hidden="true"><span /></div>
+            <div class="arch-column">
+              <b>资源供给</b>
+              <span v-for="item in supplyNodes" :key="item">{{ item }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="deploy" class="content-section section-alt">
+        <div class="section-inner">
+          <div class="section-heading">
+            <p class="section-label"><span>07</span> 部署与交付</p>
+            <h2>统一平台直接使用，也支持企业资源独立部署</h2>
+            <p>根据数据边界、模型资源和运维要求，选择托管服务、私有化部署或企业定制。</p>
+          </div>
+          <div class="deployment-grid">
+            <article v-for="item in deployments" :key="item.title" :class="{ featured: item.featured }">
+              <div><h3>{{ item.title }}</h3><span>{{ item.tag }}</span></div>
+              <p>{{ item.description }}</p>
+              <ul><li v-for="point in item.points" :key="point"><i />{{ point }}</li></ul>
+              <router-link :to="entryPath">{{ item.action }}<Icon name="arrowRight" size="sm" /></router-link>
+            </article>
+          </div>
         </div>
       </section>
 
       <section class="final-cta">
         <div>
           <p class="section-label light">TOKENPORT</p>
-          <h2>统一管理 Token 与 Skill，让接入更简单、成本更清晰</h2>
+          <h2>让模型资源可管理，让每一个 Token 有归属</h2>
+          <p>从一个统一入口开始，建立企业 AI 的用量、成本、权限与能力资产体系。</p>
         </div>
         <router-link :to="entryPath" class="primary-link large">
           {{ isAuthenticated ? '进入控制台' : '登录体验' }}
@@ -221,13 +262,16 @@
       </section>
     </main>
 
-    <footer>
-      <span>© {{ currentYear }} {{ siteName }}</span>
-      <span>
-        基于
-        <a :href="TOKENPORT_BRAND.upstreamUrl" target="_blank" rel="noopener">Sub2API</a>
+    <footer class="site-footer">
+      <div>
+        <img :src="brandLogo" alt="" />
+        <span><b>{{ siteName }}</b><small>统一接入 · 统一治理 · 统一核算 · 统一交付</small></span>
+      </div>
+      <p>© {{ currentYear }} {{ siteName }}</p>
+      <p>
+        基于 <a :href="TOKENPORT_BRAND.upstreamUrl" target="_blank" rel="noopener">Sub2API</a>
         持续构建，遵循原项目许可证。
-      </span>
+      </p>
     </footer>
   </div>
 </template>
@@ -237,12 +281,16 @@ import { computed, onMounted, ref } from 'vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import { useThemeToggle } from '@/composables/useThemeToggle'
 import Icon from '@/components/icons/Icon.vue'
+import ConnectorShowcase from '@/tokenport/home/ConnectorShowcase.vue'
 import ConsolePreview from '@/tokenport/home/ConsolePreview.vue'
+import ModelFlowPreview from '@/tokenport/home/ModelFlowPreview.vue'
+import TokenUsageShowcase from '@/tokenport/home/TokenUsageShowcase.vue'
 import {
   fetchSkillMarket,
   getSkillCategoryName,
   getSkillDisplayDescription,
   getSkillDisplayName,
+  getSkillRiskLabel,
 } from '@/api/skillMarket'
 import type { SkillMarketEntry } from '@/api/skillMarket'
 import {
@@ -255,121 +303,96 @@ import {
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
-const props = withDefaults(
-  defineProps<{
-    siteLogo?: string
-    docUrl?: string
-  }>(),
-  {
-    siteLogo: '',
-    docUrl: '',
-  },
-)
+const props = withDefaults(defineProps<{ siteLogo?: string; docUrl?: string }>(), {
+  siteLogo: '',
+  docUrl: '',
+})
 
 const skillCount = ref(0)
-const categoryCount = ref(0)
+const marketLoading = ref(true)
+const marketError = ref('')
 const categoryNames = ref<string[]>([])
-const featuredSkills = ref<Array<{ id: string; name: string; category: string; description: string }>>([])
+const featuredSkills = ref<Array<{
+  id: string
+  name: string
+  category: string
+  description: string
+  version: string
+  risk: string
+}>>([])
 const { isDark, toggleTheme } = useThemeToggle()
 
-const siteName = computed(() =>
-  resolveTokenPortName(appStore.cachedPublicSettings?.site_name || appStore.siteName),
-)
-const siteSubtitle = computed(() =>
-  resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle),
-)
-const siteLogo = computed(() => props.siteLogo)
-const brandLogo = computed(() => resolveTokenPortLogo(siteLogo.value))
+const siteName = computed(() => resolveTokenPortName(appStore.cachedPublicSettings?.site_name || appStore.siteName))
+const siteSubtitle = computed(() => resolveTokenPortSubtitle(appStore.cachedPublicSettings?.site_subtitle))
+const brandLogo = computed(() => resolveTokenPortLogo(props.siteLogo))
 const docUrl = computed(() => props.docUrl)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
-const entryPath = computed(() =>
-  isAuthenticated.value ? (authStore.isAdmin ? '/admin/dashboard' : '/dashboard') : '/login',
-)
+const entryPath = computed(() => isAuthenticated.value
+  ? (authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+  : '/login')
 const currentYear = new Date().getFullYear()
-
-const changes = [
-  {
-    index: '01',
-    title: '模型供给增加',
-    description: '国内外模型与兼容渠道持续扩展，单一供应商已无法覆盖所有业务场景。',
-  },
-  {
-    index: '02',
-    title: '调用规模扩大',
-    description: '研发、产品、运营与客服同时使用 AI，密钥、成本和权限边界快速复杂化。',
-  },
-  {
-    index: '03',
-    title: '工具入口分散',
-    description: 'ChatGPT / Codex、Claude Code、OpenCode、Gemini CLI 等工具需要不同配置和能力目录。',
-  },
-]
 
 const capabilities = [
   {
-    number: '01',
-    title: '统一模型接入',
-    description: '连接 OpenAI、Anthropic、Gemini 兼容资源与企业自有模型，按可用性和成本组织服务。',
-    points: ['多协议兼容', '自有模型接入', '渠道可用性'],
+    title: '统一模型网关',
+    description: '统一管理上游资源、账号池、模型映射与路由，对外提供稳定的 OpenAI、Anthropic 与 Gemini 兼容入口。',
+    points: ['多上游资源聚合', '模型映射与故障切换', '限流与可用性治理', '企业自有模型接入'],
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 6h4a4 4 0 0 1 4 4M7 18h4a4 4 0 0 0 4-4"/></svg>',
   },
   {
-    number: '02',
-    title: 'Token 用量与成本',
-    description: '按部门、用户、API Key 和模型统计调用量、Token、成本、额度与预算预警。',
-    points: ['部门成本归属', '预算预警', '用量审计'],
+    title: '部门密钥与权限',
+    description: '为部门、项目和用户签发独立 API Key，绑定模型范围、额度与分组策略，上游密钥不下发终端。',
+    points: [],
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.4"/></svg>',
   },
   {
-    number: '03',
-    title: '智能工具配置',
-    description: '为 ChatGPT / Codex、Claude Code、OpenCode、Gemini CLI 与 CCS 生成可检查、可合并的配置。',
-    points: ['一键配置', '诊断合并', '客户端兼容'],
+    title: 'Token 计量与成本',
+    description: '记录输入、输出与总 Token，关联模型价格、部门、Key 和时间，形成可以核对的成本明细。',
+    points: [],
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18M7 14l3-4 3 3 4-6"/><circle cx="20" cy="7" r="1"/></svg>',
   },
   {
-    number: '04',
+    title: '智能应用连接器',
+    description: '为 ChatGPT / Codex、Claude Code、OpenCode 和 Gemini CLI 生成可检查、可合并的接入配置。',
+    points: [],
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg>',
+  },
+  {
     title: 'Skill Market',
-    description: '以版本、风险、依赖、许可证和 SHA256 管理可复用智能体能力。',
-    points: ['版本管理', '风险标注', '可校验交付'],
+    description: '以中文说明、版本、依赖、风险、许可证和 SHA256 管理可复用能力，支持受控安装与私有化交付。',
+    points: [],
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>',
   },
 ]
 
 const entryNodes = ['业务应用', '研发工具', '智能体', '部门用户']
 const coreNodes = ['统一密钥与权限', '模型路由与定价', 'Token 计量与预算', '接入配置与 Skill']
-const supplyNodes = ['公有模型 API', '企业自有模型', '代理与兼容渠道', '行业 Skill 包']
-
-const values = computed(() => [
-  {
-    title: '成本透明',
-    description: '按部门、Key、模型和时间追踪 Token 与实际成本',
-  },
-  {
-    title: '效率提升',
-    description: '一处生成 ChatGPT / Codex、Claude Code、OpenCode 与 CCS 接入配置',
-  },
-  {
-    title: '资产复用',
-    description: `${skillCount.value} 个 Skill、${categoryCount.value} 类能力可查看版本、风险与校验信息`,
-  },
-  {
-    title: '客户交付',
-    description: '支持品牌配置、自有模型资源接入和私有化部署',
-  },
-])
+const supplyNodes = ['公有模型 API', '企业自有模型', '兼容渠道', '行业 Skill 包']
 
 const deployments = [
   {
-    tag: 'SaaS',
     title: '平台服务',
+    tag: '快速启用',
     description: '企业和团队直接使用统一平台，快速获得模型接入、用量管理和 Skill Market。',
+    points: ['托管网关与持续升级', '模型目录与价格维护', '按团队与用量运营'],
+    action: '登录体验',
+    featured: false,
   },
   {
-    tag: 'On-Prem',
-    title: '私有化交付',
-    description: '客户已有算力、大模型或安全边界时，可在客户资源环境内完成部署与定制。',
+    title: '私有化部署',
+    tag: '密钥不出域',
+    description: '部署到客户自有资源环境，统一纳管内部模型、公有模型接口与安全边界。',
+    points: ['客户资源独立部署', '自有模型与专属渠道', '权限、日志与备份恢复'],
+    action: '查看方案',
+    featured: true,
   },
   {
-    tag: 'Addon',
-    title: '增值服务',
-    description: '提供行业 Skill 包、模型资源接入、运营报表、运维诊断与持续升级服务。',
+    title: '企业定制',
+    tag: '增值服务',
+    description: '围绕组织架构、行业流程和交付标准，扩展专属路由、能力市场与经营报表。',
+    points: ['行业 Skill 能力包', '品牌与系统集成', '运营分析与持续运维'],
+    action: '联系方案',
+    featured: false,
   },
 ]
 
@@ -378,91 +401,70 @@ onMounted(async () => {
   try {
     const registry = await fetchSkillMarket()
     skillCount.value = registry.skills.length
-    categoryCount.value = registry.categories.length
     categoryNames.value = registry.categories
-      .map((cat) => cat.name || getSkillCategoryName(cat.id, registry))
+      .map((category) => category.name || getSkillCategoryName(category.id, registry))
       .filter(Boolean)
-      .slice(0, 6)
-
-    featuredSkills.value = registry.skills.slice(0, 4).map((skill: SkillMarketEntry) => {
+      .slice(0, 7)
+    featuredSkills.value = registry.skills.slice(0, 6).map((skill: SkillMarketEntry) => {
       const description = getSkillDisplayDescription(skill).trim()
       return {
         id: skill.id,
         name: getSkillDisplayName(skill),
         category: getSkillCategoryName(skill.category, registry),
-        description: description.length > 72 ? `${description.slice(0, 72)}…` : description,
+        description: description.length > 92 ? `${description.slice(0, 92)}…` : description,
+        version: skill.version,
+        risk: getSkillRiskLabel(skill.riskLevel),
       }
     })
-  } catch {
-    skillCount.value = 0
-    categoryCount.value = 0
-    categoryNames.value = []
-    featuredSkills.value = []
+  } catch (error) {
+    marketError.value = error instanceof Error ? error.message : '市场索引加载失败'
+  } finally {
+    marketLoading.value = false
   }
 })
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap");
-
 .home-shell {
-  --ink: #10211c;
-  --muted: #5f7169;
-  --line: #d7e5de;
-  --surface: #ffffff;
-  --soft: #edf8f3;
-  --soft-2: #f4faf7;
   --brand: var(--tp-brand);
   --brand-deep: var(--tp-brand-deep);
-  --ctyun: #0077e6;
-  --shadow: 0 18px 50px rgba(16, 52, 38, 0.1);
-  position: relative;
+  --ink: #11231d;
+  --muted: #60746b;
+  --line: #d8e5df;
+  --surface: #ffffff;
+  --soft: #eef7f3;
+  --soft-2: #f6faf8;
   min-height: 100vh;
   overflow-x: clip;
-  background:
-    radial-gradient(1200px 500px at 85% -10%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%),
-    radial-gradient(900px 420px at 8% 8%, rgba(0, 119, 230, 0.08), transparent 55%),
-    linear-gradient(180deg, #f8fbf9 0%, #f3f8f5 45%, #f7faf8 100%);
+  background: #f8fbf9;
   color: var(--ink);
-  font-family: "Noto Sans SC", "PingFang SC", "HarmonyOS Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 .dark .home-shell {
-  --ink: #edf5f1;
-  --muted: #97aca3;
-  --line: #24362e;
-  --surface: #101a16;
-  --soft: #13241d;
-  --soft-2: #0e1713;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
-  background:
-    radial-gradient(1000px 420px at 80% -10%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 60%),
-    linear-gradient(180deg, #09110e 0%, #0b1410 50%, #0a120e 100%);
-}
-
-.bg-glow {
-  pointer-events: none;
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: min(48vw, 620px);
-  height: 520px;
-  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 70%);
-  filter: blur(10px);
+  --ink: #edf6f2;
+  --muted: #91a99f;
+  --line: #20362c;
+  --surface: #0e1914;
+  --soft: #12231b;
+  --soft-2: #0a120f;
+  background: #08100d;
 }
 
 .topbar {
   position: sticky;
+  z-index: 30;
   top: 0;
-  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 14px clamp(20px, 5vw, 72px);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  gap: 24px;
+  min-height: 68px;
+  padding: 10px max(24px, calc((100vw - 1180px) / 2));
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
   backdrop-filter: blur(18px);
 }
 
@@ -470,7 +472,8 @@ onMounted(async () => {
 .brand-link span,
 .topbar nav,
 .primary-link,
-.text-link {
+.text-link,
+.site-footer > div {
   display: flex;
   align-items: center;
 }
@@ -481,59 +484,46 @@ onMounted(async () => {
   text-decoration: none;
 }
 
-.brand-link img {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--tp-radius-card);
+.brand-link img,
+.site-footer img {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--tp-radius-control);
   object-fit: cover;
-  box-shadow: 0 8px 18px rgba(0, 102, 204, 0.18);
+  box-shadow: var(--tp-elev-1);
 }
 
-.brand-link span {
+.brand-link span,
+.site-footer > div span {
   flex-direction: column;
   align-items: flex-start;
 }
 
-.brand-link b {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
+.brand-link b { font-size: 17px; font-weight: 800; }
+.brand-link small { margin-top: 2px; color: var(--muted); font-size: 11px; }
 
-.brand-link small {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 500;
-}
+.topbar nav { gap: 6px; }
 
-.topbar nav {
-  gap: 16px;
-  font-size: 14px;
-}
-
-.topbar nav > a:not(.primary-link) {
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.topbar nav > a:not(.primary-link):hover {
-  color: var(--ink);
-}
-
-/* 门控链接:未登录时点击会跳登录页,这里给出可见预示(frontend-navigation R3)。 */
-.topbar nav > .nav-link.is-gated {
+.nav-link {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
+  min-height: 38px;
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.16s ease;
 }
 
-.topbar nav > .nav-link .gate-icon {
-  opacity: 0.6;
-}
+.nav-link:hover { color: var(--ink); }
+.nav-link.is-gated .gate-icon { opacity: 0.58; }
 
 .icon-control {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: var(--tp-radius-control);
@@ -544,292 +534,195 @@ onMounted(async () => {
 
 .primary-link,
 .secondary-link {
-  min-height: 42px;
   justify-content: center;
   gap: 8px;
+  min-height: 46px;
+  padding: 0 18px;
   border-radius: var(--tp-radius-card);
-  padding: 0 16px;
   font-size: 14px;
   font-weight: 700;
   text-decoration: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 
 .primary-link {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 78%, white) 0%, var(--brand) 100%);
+  background: var(--brand);
   color: #fff;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand) 28%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
+.primary-link.compact { min-height: 40px; padding: 0 14px; }
+.primary-link.large { min-height: 50px; padding: 0 22px; }
 .primary-link:hover,
-.secondary-link:hover {
-  transform: translateY(-1px);
-}
-
-.primary-link.large,
-.secondary-link {
-  min-height: 48px;
-  padding: 0 20px;
-}
+.secondary-link:hover { transform: translateY(-1px); }
 
 .secondary-link {
   display: inline-flex;
-  align-items: center;
   border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   color: var(--ink);
 }
 
 .hero-band {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.88fr) minmax(520px, 1.12fr);
-  align-items: center;
-  gap: clamp(24px, 3.5vw, 48px);
-  min-height: calc(100vh - 72px);
-  padding: 48px clamp(20px, 5vw, 72px) 64px;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--line) 55%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--line) 55%, transparent) 1px, transparent 1px);
-  background-size: 48px 48px;
-  background-position: center top;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: var(--soft-2);
 }
 
-.eyebrow,
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.72;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--line) 54%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 54%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
+}
+
+.hero-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(500px, 0.92fr);
+  align-items: center;
+  gap: 64px;
+  width: min(1180px, calc(100% - 48px));
+  min-height: min(760px, calc(100vh - 68px));
+  margin: 0 auto;
+  padding: 70px 0 58px;
+}
+
+.status-label,
 .section-label {
   color: var(--brand-deep);
-  font: 700 12px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
-  letter-spacing: 0.08em;
+  font: 700 12px/1.4 ui-monospace, Consolas, monospace;
+  letter-spacing: 0;
+}
+
+.status-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand) 7%, var(--surface));
+}
+
+.status-label i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--brand) 62%, transparent);
 }
 
 .hero-copy h1 {
-  max-width: none;
-  margin: 18px 0 0;
-  font-size: clamp(34px, 3.6vw, 52px);
-  line-height: 1.18;
+  margin: 24px 0 0;
+  font-size: 52px;
+  line-height: 1.16;
   font-weight: 900;
-  letter-spacing: -0.03em;
-  text-wrap: pretty;
+  letter-spacing: 0;
   word-break: keep-all;
 }
+
+.hero-copy h1 span { display: block; }
+.hero-copy h1 em { color: var(--brand); font-style: normal; }
 
 .lead {
   max-width: 620px;
-  margin-top: 20px;
+  margin: 22px 0 0;
   color: var(--muted);
   font-size: 17px;
-  font-weight: 400;
   line-height: 1.85;
 }
 
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 28px;
-}
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 26px;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 30px;
-  padding: 0 10px;
-  border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--line));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--brand) 8%, var(--surface));
-  color: var(--brand-deep);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.chip.soft {
-  border-color: var(--line);
-  background: var(--surface);
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.chip-divider {
-  width: 1px;
-  align-self: stretch;
-  margin: 4px 2px;
-  background: var(--line);
-}
-
-.signal-row {
+.hero-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  margin-top: 28px;
-  border: 1px solid var(--line);
-  border-radius: var(--tp-radius-card);
-  overflow: hidden;
-  background: var(--line);
-  box-shadow: var(--tp-elev-2);
-}
-
-.signal-row div {
-  padding: 14px 16px;
-  background: var(--surface);
-}
-
-.signal-row dt {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.signal-row dd {
-  margin-top: 6px;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.product-stage {
-  position: relative;
-  transform: none;
-  filter: none;
-}
-
-.product-stage :deep(.console-preview) {
-  width: 100%;
-}
-
-.preview-hint {
-  margin-top: 12px;
-  color: var(--muted);
-  font-size: 13px;
-  text-align: center;
-}
-
-.change-band,
-.capability-band,
-.architecture-band,
-.market-band,
-.value-band,
-.deployment-band {
-  padding: 84px clamp(20px, 5vw, 72px);
+  grid-template-columns: 90px 110px 1fr;
+  gap: 24px;
+  max-width: 560px;
+  margin: 42px 0 0;
+  padding-top: 22px;
   border-top: 1px solid var(--line);
 }
 
-.section-heading {
-  max-width: 760px;
+.hero-stats dt {
+  color: var(--ink);
+  font: 800 22px/1.2 ui-monospace, Consolas, monospace;
+  white-space: nowrap;
 }
 
-.section-heading.wide {
+.hero-stats .wide dt { font-size: 15px; line-height: 1.5; }
+.hero-stats dd { margin: 5px 0 0; color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+.tool-strip {
+  padding: 28px 24px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 70%, var(--soft-2));
+  text-align: center;
+}
+
+.tool-strip p {
+  color: var(--muted);
+  font: 700 11px/1.4 ui-monospace, Consolas, monospace;
+}
+
+.tool-strip div {
   display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 24px;
-  max-width: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px 34px;
+  width: min(1000px, 100%);
+  margin: 19px auto 0;
 }
 
-.section-heading.wide > div {
-  max-width: 760px;
-}
+.tool-strip span { color: var(--muted); font: 600 13px/1.4 ui-monospace, Consolas, monospace; }
 
-.change-band h2,
+.content-section { padding: 96px 24px; border-bottom: 1px solid var(--line); }
+.section-alt { background: var(--soft-2); }
+.section-inner { width: min(1180px, 100%); margin: 0 auto; }
+.section-heading { max-width: 740px; }
+.section-heading.horizontal { display: flex; align-items: end; justify-content: space-between; gap: 40px; max-width: none; }
+.section-heading.horizontal > div { max-width: 760px; }
+.section-label span { margin-right: 8px; color: var(--muted); }
+
 .section-heading h2,
-.value-copy h2,
-.deployment-band h2,
 .final-cta h2 {
-  margin-top: 10px;
-  max-width: none;
-  font-size: clamp(28px, 3vw, 40px);
+  margin: 16px 0 0;
+  font-size: 38px;
   line-height: 1.28;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  text-wrap: pretty;
+  font-weight: 850;
+  letter-spacing: 0;
   word-break: keep-all;
 }
 
-.section-heading > span {
-  max-width: 280px;
+.section-heading > p:last-child,
+.section-heading.horizontal > p,
+.market-intro {
+  margin: 16px 0 0;
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.8;
 }
 
-.change-grid,
-.deployment-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 34px;
-}
-
-.change-grid article,
-.deployment-options article {
-  position: relative;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: var(--tp-radius-panel);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--soft)), var(--surface));
-  box-shadow: var(--tp-elev-1);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.change-grid article:hover,
-.deployment-options article:hover,
-.capability-grid article:hover,
-.market-grid article:hover {
-  transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--brand) 40%, var(--line));
-  box-shadow: var(--tp-elev-2);
-}
-
-.card-index,
-.deploy-tag {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  margin-bottom: 14px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--brand) 12%, transparent);
-  color: var(--brand-deep);
-  font: 700 11px/1 ui-monospace, Consolas, monospace;
-}
-
-.change-grid b,
-.deployment-options b {
-  display: block;
-  font-size: 18px;
-  letter-spacing: -0.02em;
-}
-
-.change-grid p,
-.deployment-options p,
-.value-copy > p:last-child {
-  margin-top: 10px;
-  color: var(--muted);
-  line-height: 1.7;
-}
-
-.capability-band,
-.market-band,
-.value-band {
-  background: linear-gradient(180deg, var(--soft-2), var(--soft));
-}
+.section-heading.horizontal > p { max-width: 390px; }
 
 .capability-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-top: 34px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin-top: 42px;
 }
 
 .capability-grid article {
-  display: grid;
-  gap: 12px;
-  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: var(--tp-radius-panel);
   background: var(--surface);
@@ -837,380 +730,202 @@ onMounted(async () => {
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.cap-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.capability-grid article:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brand) 42%, var(--line));
+  box-shadow: var(--tp-elev-2);
 }
 
-.cap-head span {
+.capability-grid article.featured {
   display: grid;
-  width: 34px;
-  height: 34px;
+  grid-template-columns: 50px 1fr 0.9fr;
+  grid-column: span 2;
+  gap: 18px;
+  align-items: start;
+}
+
+.capability-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
   place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand) 32%, var(--line));
   border-radius: var(--tp-radius-control);
-  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  background: color-mix(in srgb, var(--brand) 8%, var(--soft));
   color: var(--brand-deep);
-  font: 800 12px/1 ui-monospace, Consolas, monospace;
 }
 
-.capability-grid h3 {
-  font-size: 20px;
-  letter-spacing: -0.02em;
-}
+.capability-icon :deep(svg) { width: 21px; height: 21px; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.capability-copy h3 { margin: 18px 0 0; font-size: 19px; }
+.capability-grid .featured .capability-copy h3 { margin-top: 0; }
+.capability-copy p { margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
+.capability-grid ul { display: grid; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.capability-grid li { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; }
+.capability-grid li i,
+.deployment-grid li i { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--brand); }
 
-.capability-grid p {
-  color: var(--muted);
-  line-height: 1.7;
-}
+.split-section { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: center; gap: 64px; }
+.split-section > * { min-width: 0; }
+.value-points { display: grid; gap: 1px; margin-top: 30px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--tp-radius-panel); background: var(--line); }
+.value-points div { display: grid; grid-template-columns: 92px 1fr; gap: 16px; padding: 16px 18px; background: var(--surface); }
+.value-points b { font-size: 14px; }
+.value-points span { color: var(--muted); font-size: 13px; line-height: 1.6; }
 
-.capability-grid ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 4px 0 0;
-  padding: 0;
-  list-style: none;
+.console-section { overflow: hidden; }
+.console-stage { position: relative; margin-top: 42px; }
+.console-stage::before {
+  content: "";
+  position: absolute;
+  inset: 24px -24px -24px;
+  border: 1px solid color-mix(in srgb, var(--brand) 16%, transparent);
+  border-radius: var(--tp-radius-panel);
+  background-image: radial-gradient(circle at center, color-mix(in srgb, var(--brand) 15%, transparent) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  opacity: 0.5;
 }
+.console-stage :deep(.console-preview) { position: relative; z-index: 1; }
+.connector-heading { margin-bottom: 38px; }
 
-.capability-grid li {
-  min-height: 28px;
-  padding: 0 10px;
+.text-link {
+  flex: 0 0 auto;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--soft-2);
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 28px;
+  border-radius: var(--tp-radius-control);
+  color: var(--brand-deep);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
-.architecture {
-  display: grid;
-  grid-template-columns: 1fr auto 1.3fr auto 1fr;
-  align-items: stretch;
-  gap: 16px;
-  margin-top: 36px;
-}
-
-.arch-column,
-.arch-core {
-  display: grid;
-  gap: 10px;
+.market-intro { max-width: 860px; }
+.market-categories { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.market-categories span { min-height: 29px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 12px; line-height: 29px; }
+.market-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin-top: 24px; }
+.market-grid article {
+  display: flex;
+  flex-direction: column;
+  min-height: 230px;
   padding: 22px;
   border: 1px solid var(--line);
   border-radius: var(--tp-radius-panel);
   background: var(--surface);
-}
-
-.arch-column b,
-.arch-core b {
-  letter-spacing: -0.02em;
-}
-
-.arch-column span,
-.arch-core span {
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--tp-radius-card);
-  background: var(--soft-2);
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.dark .arch-column span,
-.dark .arch-core span {
-  background: #0c1511;
-}
-
-.arch-core {
-  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--brand) 10%, var(--surface)), var(--soft));
-  box-shadow: var(--tp-elev-2);
-}
-
-.core-badge {
-  width: fit-content;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--brand) 16%, transparent);
-  color: var(--brand-deep);
-  font: 700 10px/1 ui-monospace, Consolas, monospace;
-  letter-spacing: 0.08em;
-}
-
-.arch-core > b {
-  color: var(--brand-deep);
-  font-size: 24px;
-}
-
-.flow-arrow {
-  display: grid;
-  place-items: center;
-}
-
-.flow-arrow span {
-  width: 42px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--brand), transparent);
-  position: relative;
-}
-
-.flow-arrow span::after {
-  content: "";
-  position: absolute;
-  right: -1px;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--brand);
-  border-top: 2px solid var(--brand);
-  transform: translateY(-50%) rotate(45deg);
-}
-
-.market-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 22px;
-}
-
-.market-meta span {
-  min-height: 28px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 28px;
-}
-
-.market-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-top: 18px;
-}
-
-.market-grid article {
-  display: grid;
-  gap: 10px;
-  min-height: 160px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--tp-radius-panel);
-  background: var(--surface);
+  box-shadow: var(--tp-elev-1);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
+.market-grid article:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--brand) 42%, var(--line)); box-shadow: var(--tp-elev-2); }
+.skill-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.skill-meta span,
+.skill-meta em { padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font: 700 10px/1 ui-monospace, Consolas, monospace; font-style: normal; }
+.skill-meta em { color: var(--brand-deep); }
+.market-grid h3 { margin: 20px 0 0; font-size: 17px; line-height: 1.45; }
+.market-grid p { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.market-grid footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font: 600 10px/1.3 ui-monospace, Consolas, monospace; }
+.market-grid footer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.market-grid footer b { color: var(--brand-deep); }
+.loading-grid article { min-height: 230px; background: linear-gradient(90deg, var(--surface), var(--soft), var(--surface)); background-size: 200% 100%; animation: tp-loading 1.5s ease infinite; }
+.market-empty { display: grid; gap: 7px; margin-top: 24px; padding: 24px; border: 1px solid var(--line); border-radius: var(--tp-radius-panel); background: var(--surface); }
+.market-empty span { color: var(--muted); font-size: 13px; }
 
-.skill-top {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 10px;
-}
+.architecture { display: grid; grid-template-columns: 1fr auto 1.3fr auto 1fr; align-items: stretch; gap: 16px; margin-top: 42px; }
+.arch-column,
+.arch-core { display: grid; gap: 10px; padding: 22px; border: 1px solid var(--line); border-radius: var(--tp-radius-panel); background: var(--surface); box-shadow: var(--tp-elev-1); }
+.arch-column > b,
+.arch-core > b { margin-bottom: 3px; font-size: 18px; }
+.arch-column span,
+.arch-core span { padding: 12px 13px; border: 1px solid var(--line); border-radius: var(--tp-radius-card); background: var(--soft-2); color: var(--muted); font-size: 13px; }
+.arch-core { border-color: color-mix(in srgb, var(--brand) 44%, var(--line)); background: color-mix(in srgb, var(--brand) 7%, var(--surface)); box-shadow: var(--tp-elev-2); }
+.arch-core em { width: fit-content; padding: 5px 8px; border-radius: 999px; background: color-mix(in srgb, var(--brand) 13%, transparent); color: var(--brand-deep); font: 700 10px/1 ui-monospace, Consolas, monospace; font-style: normal; }
+.arch-core > b { color: var(--brand-deep); font-size: 24px; }
+.flow-arrow { display: grid; place-items: center; }
+.flow-arrow span { position: relative; width: 42px; height: 2px; background: linear-gradient(90deg, transparent, var(--brand), transparent); }
+.flow-arrow span::after { content: ""; position: absolute; right: -1px; top: 50%; width: 8px; height: 8px; border-top: 2px solid var(--brand); border-right: 2px solid var(--brand); transform: translateY(-50%) rotate(45deg); }
 
-.skill-identity {
-  display: flex;
-  align-items: start;
-  gap: 10px;
-  min-width: 0;
-}
-
-.skill-avatar {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  place-items: center;
-  border-radius: var(--tp-radius-control);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 78%, white), var(--ctyun));
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.skill-top b {
-  display: block;
-  font-size: 14px;
-  letter-spacing: -0.02em;
-}
-
-.skill-top em {
-  display: block;
-  margin-top: 3px;
-  color: var(--brand-deep);
-  font-style: normal;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.market-grid p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.text-link {
-  gap: 6px;
-  color: var(--brand-deep);
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.value-band {
-  display: grid;
-  grid-template-columns: 0.95fr 1.05fr;
-  gap: 48px;
-  align-items: start;
-}
-
-.value-list {
-  display: grid;
-  gap: 1px;
-  border: 1px solid var(--line);
-  border-radius: var(--tp-radius-panel);
-  overflow: hidden;
-  background: var(--line);
-  box-shadow: var(--tp-elev-2);
-}
-
-.value-list div {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 18px;
-  padding: 20px 22px;
-  background: var(--surface);
-}
-
-.value-list b {
-  letter-spacing: -0.02em;
-}
-
-.value-list span {
-  color: var(--muted);
-  line-height: 1.6;
-}
+.deployment-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin-top: 42px; }
+.deployment-grid article { display: flex; flex-direction: column; min-height: 360px; padding: 24px; border: 1px solid var(--line); border-radius: var(--tp-radius-panel); background: var(--surface); box-shadow: var(--tp-elev-1); }
+.deployment-grid article.featured { border-color: color-mix(in srgb, var(--brand) 48%, var(--line)); box-shadow: var(--tp-elev-2); }
+.deployment-grid article > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.deployment-grid h3 { font-size: 19px; }
+.deployment-grid article > div span { padding: 6px 9px; border-radius: 999px; background: color-mix(in srgb, var(--brand) 12%, transparent); color: var(--brand-deep); font: 700 10px/1 ui-monospace, Consolas, monospace; }
+.deployment-grid p { margin: 16px 0 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
+.deployment-grid ul { display: grid; gap: 12px; margin: 24px 0; padding: 0; list-style: none; }
+.deployment-grid li { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; }
+.deployment-grid a { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; margin-top: auto; border: 1px solid var(--line); border-radius: var(--tp-radius-control); color: var(--ink); font-size: 13px; font-weight: 700; text-decoration: none; }
+.deployment-grid .featured a { border-color: var(--brand); background: var(--brand); color: #fff; }
 
 .final-cta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 30px;
-  padding: 72px clamp(20px, 5vw, 72px);
-  background:
-    radial-gradient(700px 240px at 15% 20%, rgba(18, 184, 132, 0.22), transparent 60%),
-    linear-gradient(135deg, #0d241c 0%, #12352a 55%, #0f2a21 100%);
+  gap: 40px;
+  padding: 72px max(24px, calc((100vw - 1180px) / 2));
+  background: #0d241c;
   color: #fff;
 }
+.final-cta .section-label.light { color: #7fe0bc; }
+.final-cta h2 { max-width: 800px; font-size: 36px; }
+.final-cta p:last-child { margin: 14px 0 0; color: #a9c3b7; font-size: 14px; }
 
-.final-cta .section-label.light {
-  color: #7fe0bc;
+.site-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px max(24px, calc((100vw - 1180px) / 2)); color: var(--muted); font-size: 12px; }
+.site-footer > div { gap: 10px; }
+.site-footer > div b { color: var(--ink); font-size: 14px; }
+.site-footer > div small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.site-footer p { margin: 0; }
+.site-footer a { color: var(--brand-deep); text-decoration: none; }
+
+@keyframes tp-loading { to { background-position: -200% 0; } }
+
+@media (max-width: 1120px) {
+  .topbar .nav-link-optional { display: none; }
+  .hero-inner { grid-template-columns: 1fr; gap: 44px; min-height: auto; }
+  .hero-copy { max-width: 760px; }
+  .hero-inner :deep(.flow-preview) { max-width: 760px; margin: 0 auto; }
+  .split-section { grid-template-columns: minmax(0, 1fr); }
+  .architecture { grid-template-columns: 1fr; }
+  .flow-arrow span { width: 2px; height: 36px; background: linear-gradient(180deg, transparent, var(--brand), transparent); }
+  .flow-arrow span::after { right: 50%; top: auto; bottom: -1px; transform: translateX(50%) rotate(135deg); }
 }
 
-.final-cta h2 {
-  max-width: 820px;
-}
-
-.home-shell footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 22px clamp(20px, 5vw, 72px);
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.home-shell footer a {
-  color: var(--brand);
-  text-decoration: none;
-}
-
-@media (max-width: 1180px) {
-  .market-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 1024px) {
-  .hero-band {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    padding-top: 40px;
-  }
-
-  .product-stage {
-    transform: none;
-  }
-
-  .architecture {
-    grid-template-columns: 1fr;
-  }
-
-  .flow-arrow span {
-    width: 2px;
-    height: 36px;
-    background: linear-gradient(180deg, transparent, var(--brand), transparent);
-  }
-
-  .flow-arrow span::after {
-    right: 50%;
-    top: auto;
-    bottom: -1px;
-    transform: translateX(50%) rotate(135deg);
-  }
-
-  .value-band,
-  .section-heading.wide {
-    grid-template-columns: 1fr;
-    display: grid;
-    align-items: start;
-  }
+@media (max-width: 820px) {
+  .capability-grid,
+  .market-grid,
+  .deployment-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .capability-grid article.featured { grid-template-columns: 46px 1fr; grid-column: 1 / -1; }
+  .capability-grid article.featured ul { grid-column: 2; }
+  .section-heading.horizontal { align-items: flex-start; flex-direction: column; gap: 20px; }
+  .site-footer { align-items: flex-start; flex-direction: column; }
 }
 
 @media (max-width: 720px) {
-  /* D4:移动端精简保留「市场 + 主题切换 + 登录」,只隐藏次要入口。
-     早前这里连同 .icon-control 一起隐藏,顶栏只剩登录按钮。 */
-  .topbar nav > .nav-link-optional {
-    display: none;
-  }
+  .topbar nav > .nav-link-optional { display: none; }
+  .topbar { padding-inline: 16px; }
+  .brand-link small { display: none; }
+  .topbar nav { gap: 5px; }
+  .nav-link { padding-inline: 6px; font-size: 12px; }
+  .primary-link.compact { width: 40px; padding: 0; overflow: hidden; color: transparent; gap: 0; }
+  .primary-link.compact :deep(svg) { color: #fff; }
+  .hero-inner { width: calc(100% - 32px); padding: 54px 0 44px; }
+  .hero-copy h1 { font-size: 38px; }
+  .lead { font-size: 15px; }
+  .hero-stats { grid-template-columns: 72px 90px 1fr; gap: 16px; }
+  .hero-stats .wide dt { white-space: normal; }
+  .content-section { padding: 72px 16px; }
+  .section-heading h2,
+  .final-cta h2 { font-size: 30px; }
+  .final-cta { align-items: flex-start; flex-direction: column; padding: 56px 20px; }
+}
 
-  .topbar nav {
-    gap: 12px;
-  }
-
-  .topbar {
-    padding-inline: 16px;
-  }
-
-  .hero-copy h1 {
-    font-size: 34px;
-  }
-
-  .signal-row,
-  .change-grid,
+@media (max-width: 560px) {
+  .hero-copy h1 { font-size: 34px; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .hero-stats .wide { grid-column: 1 / -1; }
+  .tool-strip div { gap: 14px 22px; }
   .capability-grid,
-  .deployment-options,
-  .market-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .value-list div {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
-  .final-cta,
-  .home-shell footer {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .chip-divider {
-    display: none;
-  }
+  .market-grid,
+  .deployment-grid { grid-template-columns: 1fr; }
+  .capability-grid article.featured { display: flex; }
+  .value-points div { grid-template-columns: 1fr; gap: 5px; }
+  .market-grid article { min-height: 210px; }
 }
 </style>

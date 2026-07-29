@@ -98,11 +98,13 @@
       </section>
 
       <section class="tool-strip reveal-item" aria-label="支持的模型协议与客户端">
-        <p>统一团队正在使用的模型与工具栈</p>
-        <div>
-          <span v-for="item in TOKENPORT_PRODUCT.clients" :key="item">{{ item }}</span>
-          <span v-for="item in TOKENPORT_PRODUCT.protocols" :key="item">{{ item }} 兼容</span>
-          <span>企业自有模型</span>
+        <div class="tool-strip-inner">
+          <p class="tool-strip-label"><i />统一团队正在使用的模型与工具栈</p>
+          <div class="tool-list">
+            <span v-for="item in TOKENPORT_PRODUCT.clients" :key="item">{{ item }}</span>
+            <span v-for="item in TOKENPORT_PRODUCT.protocols" :key="item">{{ item }} 兼容</span>
+            <span>企业自有模型</span>
+          </div>
         </div>
       </section>
 
@@ -761,12 +763,19 @@ onBeforeUnmount(() => revealObserver?.disconnect())
 
 .hero-stats {
   display: grid;
-  grid-template-columns: 90px 110px 1fr;
-  gap: 24px;
-  max-width: 560px;
+  grid-template-columns: 0.7fr 0.8fr 1.5fr;
+  gap: 1px;
+  max-width: 580px;
   margin: 42px 0 0;
-  padding-top: 22px;
-  border-top: 1px solid var(--line);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--tp-radius-card);
+  background: var(--line);
+}
+
+.hero-stats div {
+  padding: 15px 18px;
+  background: color-mix(in srgb, var(--surface) 90%, var(--soft-2));
 }
 
 .hero-stats dt {
@@ -775,31 +784,61 @@ onBeforeUnmount(() => revealObserver?.disconnect())
   white-space: nowrap;
 }
 
-.hero-stats .wide dt { font-size: 15px; line-height: 1.5; }
-.hero-stats dd { margin: 5px 0 0; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.hero-stats .wide dt { font-size: 14px; line-height: 1.5; white-space: normal; }
+.hero-stats dd { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
 
 .tool-strip {
-  padding: 28px 24px;
+  padding: 26px 24px;
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface) 70%, var(--soft-2));
-  text-align: center;
 }
 
-.tool-strip p {
+.tool-strip-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px 40px;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.tool-strip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
   color: var(--muted);
   font: 700 11px/1.4 ui-monospace, Consolas, monospace;
 }
 
-.tool-strip div {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 18px 34px;
-  width: min(1000px, 100%);
-  margin: 19px auto 0;
+.tool-strip-label i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--brand) 60%, transparent);
 }
 
-.tool-strip span { color: var(--muted); font: 600 13px/1.4 ui-monospace, Consolas, monospace; }
+.tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.tool-list span {
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: 600 12.5px/1 ui-monospace, Consolas, monospace;
+  transition: border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.tool-list span:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--brand) 42%, var(--line));
+  color: var(--ink);
+}
 
 .content-section { padding: 96px 24px; border-bottom: 1px solid var(--line); }
 .section-alt { background: var(--soft-2); }
@@ -861,7 +900,16 @@ onBeforeUnmount(() => revealObserver?.disconnect())
   grid-column: span 2;
   gap: 18px;
   align-items: start;
+  border-color: color-mix(in srgb, var(--brand) 26%, var(--line));
+  background: color-mix(in srgb, var(--brand) 6%, var(--surface));
 }
+
+.capability-grid .featured .capability-icon {
+  border-color: color-mix(in srgb, var(--brand) 46%, var(--line));
+  background: color-mix(in srgb, var(--brand) 15%, var(--soft));
+}
+
+.capability-grid .featured ul { align-self: center; }
 
 .capability-icon {
   display: grid;
@@ -886,8 +934,10 @@ onBeforeUnmount(() => revealObserver?.disconnect())
 .split-section { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: center; gap: 64px; }
 .split-section > * { min-width: 0; }
 .value-points { display: grid; gap: 1px; margin-top: 30px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--tp-radius-panel); background: var(--line); }
-.value-points div { display: grid; grid-template-columns: 92px 1fr; gap: 16px; padding: 16px 18px; background: var(--surface); }
-.value-points b { font-size: 14px; }
+.value-points div { display: grid; grid-template-columns: 104px 1fr; gap: 16px; align-items: center; padding: 16px 18px; background: var(--surface); transition: background 0.16s ease; }
+.value-points div:hover { background: color-mix(in srgb, var(--brand) 5%, var(--surface)); }
+.value-points b { position: relative; padding-left: 14px; font-size: 14px; }
+.value-points b::before { content: ""; position: absolute; left: 0; top: 50%; width: 5px; height: 5px; border-radius: 50%; background: var(--brand); transform: translateY(-50%); }
 .value-points span { color: var(--muted); font-size: 13px; line-height: 1.6; }
 
 .console-section { overflow: hidden; }
@@ -1069,6 +1119,7 @@ onBeforeUnmount(() => revealObserver?.disconnect())
   .capability-grid article.featured { grid-template-columns: 46px 1fr; grid-column: 1 / -1; }
   .capability-grid article.featured ul { grid-column: 2; }
   .section-heading.horizontal { align-items: flex-start; flex-direction: column; gap: 20px; }
+  .tool-strip-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
   .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .footer-brand { grid-column: 1 / -1; }
 }
@@ -1106,8 +1157,7 @@ onBeforeUnmount(() => revealObserver?.disconnect())
   .hero-inner { width: calc(100% - 32px); padding: 54px 0 44px; }
   .hero-copy h1 { font-size: 38px; }
   .lead { font-size: 15px; }
-  .hero-stats { grid-template-columns: 72px 90px 1fr; gap: 16px; }
-  .hero-stats .wide dt { white-space: normal; }
+  .hero-stats { grid-template-columns: 0.8fr 0.9fr 1.4fr; }
   .content-section { padding: 72px 16px; }
   .section-heading h2,
   .final-cta h2 { font-size: 30px; }
@@ -1120,7 +1170,7 @@ onBeforeUnmount(() => revealObserver?.disconnect())
   .hero-copy h1 { font-size: 34px; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
   .hero-stats .wide { grid-column: 1 / -1; }
-  .tool-strip div { gap: 14px 22px; }
+  .tool-list { gap: 7px; }
   .capability-grid,
   .market-grid,
   .deployment-grid { grid-template-columns: 1fr; }

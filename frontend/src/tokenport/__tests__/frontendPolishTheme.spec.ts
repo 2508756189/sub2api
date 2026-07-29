@@ -6,6 +6,7 @@ import tokenPortHome from '@/tokenport/home/TokenPortHome.vue?raw'
 import consolePreview from '@/tokenport/home/ConsolePreview.vue?raw'
 import skillMarketView from '@/views/user/SkillMarketView.vue?raw'
 import skillMarketCatalog from '@/tokenport/market/SkillMarketCatalog.vue?raw'
+import skillMarketCard from '@/tokenport/market/SkillMarketCard.vue?raw'
 import settingsView from '@/views/admin/SettingsView.vue?raw'
 
 // .css 的 ?raw 导入在 vitest 里会被 CSS 管线截空,改用 fs 直读。
@@ -38,13 +39,16 @@ describe('frontend-theme R2 品牌令牌单一来源', () => {
     expect(consoleCss).not.toContain('#36dcc0')
   })
 
-  it('TokenPortHome 锁定 Figma Make 最终稿的独立深色令牌', () => {
+  it('TokenPortHome 提供纯白主题并在 dark 覆盖中锁定 Figma 深色令牌', () => {
+    expect(tokenPortHome).toContain('--color-ground: #ffffff')
+    expect(tokenPortHome).toContain('--color-panel: #ffffff')
+    expect(tokenPortHome).toContain('.tp-home.dark-mode')
     expect(tokenPortHome).toContain('--color-ground: #0a0e0d')
     expect(tokenPortHome).toContain('--color-panel: #121b18')
     expect(tokenPortHome).toContain('--color-primary: #2fd4a0')
     expect(tokenPortHome).toContain('--color-accent: #4fd6e0')
     expect(tokenPortHome).toContain('--radius: 14px')
-    expect(tokenPortHome).not.toContain('useThemeToggle')
+    expect(tokenPortHome).toContain('useThemeToggle')
   })
 })
 
@@ -98,7 +102,8 @@ describe('frontend-theme R3 圆角与层级刻度', () => {
   })
 
   it('技能市场卡片有静置层级与悬停抬升(此前是无阴影的纯描边)', () => {
-    expect(skillMarketCatalog).toContain('tp-elev-raise')
+    expect(skillMarketCard).toContain('var(--tp-elev-1')
+    expect(skillMarketCard).toContain('var(--tp-elev-2')
   })
 })
 
@@ -118,5 +123,18 @@ describe('frontend-theme R3 定制面回归全站刻度', () => {
 
   it('SkillMarketView 未登录壳不再使用 emerald 边框', () => {
     expect(skillMarketView).not.toContain('emerald')
+  })
+
+  it('首页和正式目录共用同一 Skill Market 卡片结构', () => {
+    expect(tokenPortHome).toContain("import SkillMarketCard from '@/tokenport/market/SkillMarketCard.vue'")
+    expect(skillMarketCatalog).toContain("import SkillMarketCard from './SkillMarketCard.vue'")
+    for (const field of ['skill.version', 'skill.runtime', 'skill.archive.size', 'skill.archive.sha256']) {
+      expect(skillMarketCard).toContain(field)
+    }
+  })
+
+  it('首页功能图标统一使用 Icon 组件而不是 v-html SVG', () => {
+    expect(tokenPortHome).toContain('<Icon :name="feature.icon"')
+    expect(tokenPortHome).not.toContain('v-html="feature.icon"')
   })
 })

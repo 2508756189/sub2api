@@ -1,19 +1,9 @@
 <template>
-  <div ref="homeRoot" class="tp-home">
+  <div ref="homeRoot" class="tp-home" :class="{ 'dark-mode': isDark }">
     <header class="tp-header" :class="{ scrolled }">
       <div class="nav-inner">
         <router-link to="/home" class="tp-logo" aria-label="TokenPort 首页" @click="closeMenu">
-          <span class="tp-logo-box">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M1.5 12h21" class="mark-axis" />
-              <path d="M12 2.4 19.6 6.8v8.4L12 19.6l-7.6-4.4V6.8Z" class="mark-port" />
-              <circle cx="12" cy="12" r="3.5" class="mark-token" />
-              <circle cx="12" cy="12" r="1.3" class="mark-hole" />
-              <circle cx="4.4" cy="7" r="1" class="mark-accent" />
-              <circle cx="19.6" cy="17" r="1" class="mark-token" />
-            </svg>
-          </span>
-          <span class="tp-wordmark">Token<em>Port</em></span>
+          <TokenPortLogo :src="brandLogo" />
         </router-link>
 
         <nav class="desktop-nav" aria-label="首页导航">
@@ -23,22 +13,30 @@
           <a href="#deploy">部署交付</a>
         </nav>
 
-        <div class="desktop-actions">
-          <router-link :to="entryPath" class="nav-login">登录控制台</router-link>
-          <router-link :to="entryPath" class="tp-button primary small">预约演示</router-link>
+        <div class="nav-actions">
+          <button
+            type="button"
+            class="theme-control"
+            :title="isDark ? '切换浅色模式' : '切换深色模式'"
+            :aria-label="isDark ? '切换浅色模式' : '切换深色模式'"
+            @click="toggleTheme"
+          >
+            <Icon :name="isDark ? 'sun' : 'moon'" size="sm" :stroke-width="1.8" />
+          </button>
+          <div class="desktop-actions">
+            <router-link :to="entryPath" class="nav-login">登录控制台</router-link>
+            <router-link :to="entryPath" class="tp-button primary small">预约演示</router-link>
+          </div>
+          <button
+            type="button"
+            class="menu-button"
+            :aria-expanded="menuOpen"
+            :aria-label="menuOpen ? '关闭导航菜单' : '打开导航菜单'"
+            @click="menuOpen = !menuOpen"
+          >
+            <Icon :name="menuOpen ? 'x' : 'menu'" size="md" :stroke-width="1.8" />
+          </button>
         </div>
-
-        <button
-          type="button"
-          class="menu-button"
-          :aria-expanded="menuOpen"
-          :aria-label="menuOpen ? '关闭导航菜单' : '打开导航菜单'"
-          @click="menuOpen = !menuOpen"
-        >
-          <span :class="{ open: menuOpen }" />
-          <span :class="{ open: menuOpen }" />
-          <span :class="{ open: menuOpen }" />
-        </button>
       </div>
 
       <div class="mobile-nav" :class="{ open: menuOpen }">
@@ -107,7 +105,9 @@
             :class="{ featured: index === 0 }"
           >
             <div class="feature-main">
-              <div class="feature-icon" v-html="feature.icon" />
+              <div class="feature-icon">
+                <Icon :name="feature.icon" size="md" :stroke-width="1.65" />
+              </div>
               <h3>{{ feature.title }}</h3>
               <p>{{ feature.body }}</p>
             </div>
@@ -219,18 +219,16 @@
               v-for="skill in visibleSkills"
               :key="skill.id"
               to="/skill-market"
-              class="skill-card reveal-item"
+              class="skill-card-link reveal-item"
             >
-              <div class="skill-meta">
-                <span>{{ skill.category }}</span>
-                <em :class="`risk-${skill.riskLevel}`">{{ skill.risk }}</em>
-              </div>
-              <h3>{{ skill.name }}</h3>
-              <p>{{ skill.description }}</p>
-              <footer>
-                <span><i>skill/</i>{{ skill.id }} · v{{ skill.version }}</span>
-                <b>安装 →</b>
-              </footer>
+              <SkillMarketCard :skill="skill" :registry="marketRegistry" variant="home">
+                <template #action>
+                  <span class="skill-card-action">
+                    查看详情
+                    <Icon name="arrowRight" size="xs" :stroke-width="2" />
+                  </span>
+                </template>
+              </SkillMarketCard>
             </router-link>
           </div>
           <div v-else class="market-error">
@@ -260,7 +258,12 @@
           >
             <div class="deployment-head"><h3>{{ mode.name }}</h3><span>{{ mode.tag }}</span></div>
             <p>{{ mode.desc }}</p>
-            <ul><li v-for="point in mode.points" :key="point"><i />{{ point }}</li></ul>
+            <ul>
+              <li v-for="point in mode.points" :key="point">
+                <Icon name="check" size="sm" :stroke-width="2.2" />
+                {{ point }}
+              </li>
+            </ul>
             <router-link :to="entryPath" class="deployment-action" :class="{ primary: mode.featured }">
               {{ mode.featured ? '联系方案团队' : '了解更多' }}
             </router-link>
@@ -289,15 +292,7 @@
       <div class="footer-inner">
         <div class="footer-brand">
           <router-link to="/home" class="tp-logo">
-            <span class="tp-logo-box">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M1.5 12h21" class="mark-axis" />
-                <path d="M12 2.4 19.6 6.8v8.4L12 19.6l-7.6-4.4V6.8Z" class="mark-port" />
-                <circle cx="12" cy="12" r="3.5" class="mark-token" />
-                <circle cx="12" cy="12" r="1.3" class="mark-hole" />
-              </svg>
-            </span>
-            <span class="tp-wordmark">Token<em>Port</em></span>
+            <TokenPortLogo :src="brandLogo" />
           </router-link>
           <p>TokenPort 智能应用与技能接入平台——统一接入、统一治理、统一核算、统一交付。</p>
         </div>
@@ -317,18 +312,25 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useAppStore, useAuthStore } from '@/stores'
+import Icon from '@/components/icons/Icon.vue'
+import { useThemeToggle } from '@/composables/useThemeToggle'
+import TokenPortLogo from '@/tokenport/brand/TokenPortLogo.vue'
 import ConnectorShowcase from '@/tokenport/home/ConnectorShowcase.vue'
 import ModelFlowPreview from '@/tokenport/home/ModelFlowPreview.vue'
+import SkillMarketCard from '@/tokenport/market/SkillMarketCard.vue'
 import {
   fetchSkillMarket,
   getSkillCategoryName,
-  getSkillDisplayDescription,
-  getSkillDisplayName,
-  getSkillRiskLabel,
 } from '@/api/skillMarket'
-import type { SkillMarketEntry } from '@/api/skillMarket'
+import type { SkillMarketEntry, SkillMarketRegistry } from '@/api/skillMarket'
 
 type TokenRange = '7D' | '30D' | '90D'
+type HomeCapability = {
+  title: string
+  body: string
+  highlights?: string[]
+  icon: 'swap' | 'key' | 'chartBar' | 'terminal' | 'grid'
+}
 
 const props = withDefaults(defineProps<{ siteLogo?: string; docUrl?: string }>(), {
   siteLogo: '',
@@ -337,28 +339,22 @@ const props = withDefaults(defineProps<{ siteLogo?: string; docUrl?: string }>()
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const { isDark, toggleTheme } = useThemeToggle()
 const homeRoot = ref<HTMLElement | null>(null)
 const menuOpen = ref(false)
 const scrolled = ref(false)
 const marketLoading = ref(true)
 const marketError = ref('')
 const skillCount = ref(0)
+const marketRegistry = ref<SkillMarketRegistry | null>(null)
 const marketCategories = ref<Array<{ id: string; name: string }>>([])
 const activeCategory = ref('all')
 const tokenRange = ref<TokenRange>('30D')
-const featuredSkills = ref<Array<{
-  id: string
-  name: string
-  categoryId: string
-  category: string
-  description: string
-  version: string
-  risk: string
-  riskLevel: string
-}>>([])
+const featuredSkills = ref<SkillMarketEntry[]>([])
 let revealObserver: IntersectionObserver | null = null
 
 const docUrl = computed(() => props.docUrl)
+const brandLogo = computed(() => props.siteLogo || '/tokenport-logo.svg')
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const entryPath = computed(() => isAuthenticated.value
   ? (authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
@@ -367,32 +363,32 @@ const currentYear = new Date().getFullYear()
 
 const tools = ['Codex', 'Claude Code', 'OpenCode', 'ChatGPT', 'Gemini CLI', 'OpenAI 兼容', 'Anthropic 兼容', '自建模型']
 
-const capabilities = [
+const capabilities: HomeCapability[] = [
   {
     title: '统一模型网关',
     body: '统一管理多上游 provider、账号池、模型映射与路由，对外只暴露一个 API 地址。兼容 OpenAI / Anthropic，替换地址与密钥即可接入。',
     highlights: ['多 provider 聚合', '模型映射 · 路由', '限流 · 故障切换', 'OpenAI / Anthropic 兼容'],
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 6h4a4 4 0 0 1 4 4M7 18h4a4 4 0 0 0 4-4"/></svg>',
+    icon: 'swap',
   },
   {
     title: '部门密钥与权限',
     body: '为部门 / 项目签发独立 API Key，绑定可用模型与额度；上游真实密钥集中托管，不下发终端。',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.4"/></svg>',
+    icon: 'key',
   },
   {
     title: 'Token 计量与成本核算',
     body: '记录输入 / 输出 / 总 Token，关联价格、部门、Key 与时间，形成可对账的成本明细。',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18M7 14l3-4 3 3 4-6"/><circle cx="20" cy="7" r="1"/></svg>',
+    icon: 'chartBar',
   },
   {
     title: '智能应用连接器',
     body: '为 Codex、Claude Code、OpenCode 等客户端，按部门可用模型生成配置、环境变量与安装脚本。',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg>',
+    icon: 'terminal',
   },
   {
     title: 'Skill Market',
     body: '以标准清单管理技能的版本、运行时、来源与风险等级，把个人经验沉淀为可审查、可升级的组织能力，支持私有化部署。',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>',
+    icon: 'grid',
   },
 ]
 
@@ -432,10 +428,10 @@ const footerColumns = [
 ]
 
 const visibleSkills = computed(() => featuredSkills.value
-  .filter((skill) => activeCategory.value === 'all' || skill.categoryId === activeCategory.value)
+  .filter((skill) => activeCategory.value === 'all' || skill.category === activeCategory.value)
   .slice(0, 9))
 const filteredSkillCount = computed(() => featuredSkills.value
-  .filter((skill) => activeCategory.value === 'all' || skill.categoryId === activeCategory.value).length)
+  .filter((skill) => activeCategory.value === 'all' || skill.category === activeCategory.value).length)
 
 function buildPath(points: number[], width: number, height: number) {
   const max = Math.max(...points) * 1.15
@@ -480,21 +476,13 @@ onMounted(async () => {
   await Promise.allSettled([authStore.checkAuth(), appStore.fetchPublicSettings()])
   try {
     const registry = await fetchSkillMarket()
+    marketRegistry.value = registry
     skillCount.value = registry.skills.length
     marketCategories.value = registry.categories.map((category) => ({
       id: category.id,
       name: category.name || getSkillCategoryName(category.id, registry),
     }))
-    featuredSkills.value = registry.skills.map((skill: SkillMarketEntry) => ({
-      id: skill.id,
-      name: getSkillDisplayName(skill),
-      categoryId: skill.category,
-      category: getSkillCategoryName(skill.category, registry),
-      description: getSkillDisplayDescription(skill),
-      version: skill.version,
-      risk: getSkillRiskLabel(skill.riskLevel),
-      riskLevel: skill.riskLevel || 'medium',
-    }))
+    featuredSkills.value = registry.skills
   } catch (error) {
     marketError.value = error instanceof Error ? error.message : '市场索引加载失败'
   } finally {
@@ -519,6 +507,39 @@ onBeforeUnmount(() => {
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap');
 
 .tp-home {
+  --color-ground: #ffffff;
+  --color-ground-2: #f7faf8;
+  --color-panel: #ffffff;
+  --color-panel-2: #eaf7f1;
+  --color-line: rgb(12 82 58 / 12%);
+  --color-line-strong: rgb(12 82 58 / 24%);
+  --color-fg: #10231c;
+  --color-muted: #526d63;
+  --color-faint: #71877e;
+  --color-primary: #00a878;
+  --color-primary-2: #008f66;
+  --color-primary-fg: #ffffff;
+  --color-primary-soft: rgb(0 168 120 / 10%);
+  --color-accent: #168aad;
+  --color-header: rgb(255 255 255 / 88%);
+  --color-ambient: rgb(0 168 120 / 8%);
+  --color-band: rgb(247 250 248 / 88%);
+  --color-card: rgb(255 255 255 / 94%);
+  --color-chip: #f1f7f4;
+  --color-grid-dot: rgb(12 82 58 / 10%);
+  --color-cta-dot: rgb(12 82 58 / 12%);
+  --color-shadow: rgb(16 52 38 / 10%);
+  --radius: 14px;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--color-ground);
+  color: var(--color-fg);
+  font-family: 'Inter', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.tp-home.dark-mode {
   --color-ground: #0a0e0d;
   --color-ground-2: #0e1513;
   --color-panel: #121b18;
@@ -531,15 +552,16 @@ onBeforeUnmount(() => {
   --color-primary: #2fd4a0;
   --color-primary-2: #23b98a;
   --color-primary-fg: #04140e;
+  --color-primary-soft: rgb(47 212 160 / 11%);
   --color-accent: #4fd6e0;
-  --radius: 14px;
-  min-height: 100vh;
-  overflow-x: clip;
-  background: var(--color-ground);
-  color: var(--color-fg);
-  font-family: 'Inter', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  --color-header: rgb(10 14 13 / 80%);
+  --color-ambient: rgb(47 212 160 / 10%);
+  --color-band: rgb(14 21 19 / 40%);
+  --color-card: rgb(18 27 24 / 50%);
+  --color-chip: rgb(14 21 19 / 60%);
+  --color-grid-dot: rgb(120 190 165 / 10%);
+  --color-cta-dot: rgb(120 190 165 / 12%);
+  --color-shadow: rgb(0 0 0 / 46%);
 }
 
 .tp-home *, .tp-home *::before, .tp-home *::after { box-sizing: border-box; }
@@ -553,48 +575,34 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid transparent;
   transition: background 0.25s ease, border-color 0.25s ease;
 }
-.tp-header.scrolled { border-color: var(--color-line); background: rgb(10 14 13 / 80%); backdrop-filter: blur(24px); }
+.tp-header.scrolled { border-color: var(--color-line); background: var(--color-header); box-shadow: 0 10px 30px -24px var(--color-shadow); backdrop-filter: blur(24px); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; width: min(1152px, 100%); height: 64px; margin: 0 auto; padding: 0 32px; }
-.tp-logo { display: inline-flex; align-items: center; gap: 10px; }
-.tp-logo-box { position: relative; display: grid; width: 32px; height: 32px; place-items: center; overflow: hidden; border: 1px solid rgb(47 212 160 / 30%); border-radius: 9px; background: var(--color-panel); transition: border-color 0.2s ease; }
-.tp-logo:hover .tp-logo-box { border-color: rgb(47 212 160 / 60%); }
-.tp-logo-box svg { width: 18px; height: 18px; fill: none; }
-.mark-axis { stroke: var(--color-primary); stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 2 2.6; opacity: 0.4; }
-.mark-port { fill: var(--color-ground-2); stroke: var(--color-primary); stroke-width: 1.6; stroke-linejoin: round; }
-.mark-token { fill: var(--color-primary); }
-.mark-hole { fill: var(--color-ground-2); }
-.mark-accent { fill: var(--color-accent); }
-.tp-wordmark { font: 700 15px/1 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: -0.025em; }
-.tp-wordmark em { color: var(--color-primary); font-style: normal; }
+.tp-logo { display: inline-flex; align-items: center; }
 .desktop-nav { display: flex; align-items: center; gap: 32px; }
 .desktop-nav a, .nav-login { color: var(--color-muted); font-size: 14px; line-height: 20px; transition: color 0.18s ease; }
 .desktop-nav a:hover, .nav-login:hover { color: var(--color-fg); }
-.desktop-actions { display: flex; align-items: center; gap: 12px; }
-.nav-login { padding: 10px 20px; font-weight: 500; letter-spacing: -0.025em; }
-.tp-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border: 0; border-radius: 10px; font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: -0.025em; transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
+.nav-actions, .desktop-actions { display: flex; align-items: center; gap: 8px; }
+.nav-login { padding: 10px 12px; font-weight: 500; letter-spacing: 0; }
+.theme-control, .menu-button { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border: 1px solid var(--color-line-strong); border-radius: 10px; background: var(--color-card); color: var(--color-muted); cursor: pointer; transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease; }
+.theme-control:hover, .menu-button:hover { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary); }
+.tp-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border: 0; border-radius: 10px; font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0; transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
 .tp-button.primary { background: var(--color-primary); color: var(--color-primary-fg); box-shadow: 0 0 0 1px rgb(47 212 160 / 40%); }
 .tp-button.primary:hover { transform: translateY(-1px); background: var(--color-primary-2); box-shadow: 0 8px 30px -8px rgb(47 212 160 / 55%); }
 .tp-button.outline { border: 1px solid var(--color-line-strong); background: transparent; color: var(--color-fg); }
 .tp-button.outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .tp-button.small { padding: 10px 20px; }
 .tp-button.large { padding: 12px 24px; }
-.menu-button { display: none; width: 40px; height: 40px; place-items: center; border: 1px solid var(--color-line-strong); border-radius: 10px; background: transparent; color: var(--color-fg); cursor: pointer; }
-.menu-button span { position: absolute; width: 20px; height: 1px; background: currentColor; transition: transform 0.25s ease, opacity 0.2s ease; }
-.menu-button span:nth-child(1) { transform: translateY(-6px); }
-.menu-button span:nth-child(3) { transform: translateY(6px); }
-.menu-button span:nth-child(1).open { transform: rotate(45deg); }
-.menu-button span:nth-child(2).open { opacity: 0; }
-.menu-button span:nth-child(3).open { transform: rotate(-45deg); }
+.menu-button { display: none; }
 .mobile-nav { display: none; }
 
 .hero-section { position: relative; overflow: hidden; padding: 144px 0 80px; }
-.hero-ambient { position: absolute; top: 0; left: 50%; width: 820px; height: 520px; border-radius: 50%; background: rgb(47 212 160 / 10%); filter: blur(140px); transform: translateX(-50%); pointer-events: none; }
+.hero-ambient { position: absolute; top: 0; left: 50%; width: 820px; height: 520px; border-radius: 50%; background: var(--color-ambient); filter: blur(140px); transform: translateX(-50%); pointer-events: none; }
 .hero-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--color-line) 1px, transparent 1px), linear-gradient(90deg, var(--color-line) 1px, transparent 1px); background-size: 64px 64px; opacity: 0.4; mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%); pointer-events: none; }
 .hero-layout { position: relative; display: grid; grid-template-columns: 1.05fr 1fr; align-items: center; gap: 56px; width: min(1152px, 100%); margin: 0 auto; padding: 0 32px; }
 .hero-copy { min-width: 0; }
-.hero-status { display: flex; align-items: center; width: max-content; gap: 8px; margin: 0; padding: 6px 14px; border: 1px solid var(--color-line-strong); border-radius: 999px; background: rgb(18 27 24 / 60%); color: var(--color-muted); font: 500 12px/16px 'JetBrains Mono', 'Noto Sans SC', monospace; }
+.hero-status { display: flex; align-items: center; width: max-content; gap: 8px; margin: 0; padding: 6px 14px; border: 1px solid var(--color-line-strong); border-radius: 999px; background: var(--color-card); color: var(--color-muted); font: 500 12px/16px 'JetBrains Mono', 'Noto Sans SC', monospace; }
 .hero-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--color-primary); animation: tp-pulse 2s ease-in-out infinite; }
-.hero-copy h1 { margin: 24px 0 0; font-size: 48px; line-height: 1.15; font-weight: 600; letter-spacing: -0.025em; }
+.hero-copy h1 { margin: 24px 0 0; font-size: 48px; line-height: 1.15; font-weight: 600; letter-spacing: 0; }
 .hero-copy h1 span { display: block; white-space: nowrap; }
 .hero-copy h1 em { color: var(--color-primary); font-style: normal; }
 .hero-lead { max-width: 576px; margin: 24px 0 0; color: var(--color-muted); font-size: 18px; line-height: 1.625; }
@@ -607,24 +615,24 @@ onBeforeUnmount(() => {
 .hero-stats dd { margin: 4px 0 0; color: var(--color-faint); font-size: 12px; line-height: 1.375; white-space: nowrap; }
 .hero-visual { min-width: 0; transition-delay: 120ms; }
 
-.tool-strip { border-block: 1px solid var(--color-line); background: rgb(14 21 19 / 40%); }
+.tool-strip { border-block: 1px solid var(--color-line); background: var(--color-band); }
 .tool-strip-inner { width: min(1152px, 100%); margin: 0 auto; padding: 32px; }
-.tool-strip p { margin: 0; text-align: center; color: var(--color-faint); font: 500 12px/16px 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0.22em; text-transform: uppercase; }
+.tool-strip p { margin: 0; text-align: center; color: var(--color-faint); font: 500 12px/16px 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0; text-transform: uppercase; }
 .tool-strip-inner > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px 32px; margin-top: 24px; }
-.tool-strip span { color: rgb(140 166 156 / 70%); font: 400 14px/20px 'JetBrains Mono', 'Noto Sans SC', monospace; transition: color 0.18s ease; }
+.tool-strip span { color: color-mix(in srgb, var(--color-muted) 76%, transparent); font: 400 14px/20px 'JetBrains Mono', 'Noto Sans SC', monospace; transition: color 0.18s ease; }
 .tool-strip span:hover { color: var(--color-fg); }
 
 .section-shell { width: min(1152px, 100%); margin: 0 auto; padding: 96px 32px; }
-.section-band { border-block: 1px solid var(--color-line); background: rgb(14 21 19 / 40%); }
+.section-band { border-block: 1px solid var(--color-line); background: var(--color-band); }
 .section-heading { max-width: 680px; }
-.section-label { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--color-muted); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
-.section-label span { color: var(--color-faint); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.2em; }
+.section-label { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--color-muted); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: uppercase; }
+.section-label span { color: var(--color-faint); font-family: 'JetBrains Mono', monospace; letter-spacing: 0; }
 .section-label i { width: 24px; height: 1px; background: var(--color-line-strong); }
-.section-heading h2, .token-copy h2, .cta-content h2 { margin: 20px 0 0; font-size: 36px; line-height: 1.28; font-weight: 600; letter-spacing: -0.035em; }
+.section-heading h2, .token-copy h2, .cta-content h2 { margin: 20px 0 0; font-size: 36px; line-height: 1.28; font-weight: 600; letter-spacing: 0; }
 .section-heading > p:last-child, .token-copy > p { margin: 16px 0 0; color: var(--color-muted); font-size: 15px; line-height: 1.75; }
 
 .feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 16px; margin-top: 48px; }
-.feature-card { display: flex; flex-direction: column; min-height: 250px; padding: 24px; border: 1px solid var(--color-line); border-radius: var(--radius); background: rgb(18 27 24 / 50%); transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease; }
+.feature-card { display: flex; flex-direction: column; min-height: 250px; padding: 24px; border: 1px solid var(--color-line); border-radius: var(--radius); background: var(--color-card); box-shadow: 0 16px 40px -32px var(--color-shadow); transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease; }
 .feature-card:hover { transform: translateY(-4px); border-color: var(--color-line-strong); background: var(--color-panel); }
 .feature-card.featured { grid-column: span 2; }
 .feature-card.featured { flex-direction: row; gap: 32px; }
@@ -634,16 +642,16 @@ onBeforeUnmount(() => {
 .feature-icon :deep(svg) { width: 20px; height: 20px; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .feature-card h3 { margin: 20px 0 0; font-size: 18px; font-weight: 500; }
 .feature-card p { margin: 10px 0 0; color: var(--color-muted); font-size: 14px; line-height: 1.7; }
-.feature-card li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--color-line); border-radius: 10px; background: rgb(14 21 19 / 60%); color: var(--color-muted); font-size: 14px; }
+.feature-card li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--color-line); border-radius: 10px; background: var(--color-chip); color: var(--color-muted); font-size: 14px; }
 .feature-card li i { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--color-primary); }
 
 .token-layout { display: grid; grid-template-columns: 1fr 1.4fr; align-items: center; gap: 48px; }
 .token-copy small { display: block; margin-top: 12px; color: var(--color-faint); font: 400 11px/1.5 'JetBrains Mono', 'Noto Sans SC', monospace; }
 .token-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 30px; }
-.token-metrics div { padding: 16px; border: 1px solid var(--color-line); border-radius: 12px; background: rgb(18 27 24 / 60%); }
-.token-metrics span { color: var(--color-faint); font: 400 12px/1.4 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0.08em; text-transform: uppercase; }
+.token-metrics div { padding: 16px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-card); }
+.token-metrics span { color: var(--color-faint); font: 400 12px/1.4 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0; text-transform: uppercase; }
 .token-metrics b { display: block; margin-top: 8px; font: 700 24px/1.2 'JetBrains Mono', monospace; }
-.token-panel { padding: 24px; border: 1px solid var(--color-line); border-radius: var(--radius); background: rgb(18 27 24 / 60%); }
+.token-panel { padding: 24px; border: 1px solid var(--color-line); border-radius: var(--radius); background: var(--color-card); box-shadow: 0 18px 44px -36px var(--color-shadow); }
 .token-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .token-panel-head > div:first-child { display: flex; flex-direction: column; gap: 4px; }
 .token-panel-head b { font-size: 14px; font-weight: 500; }
@@ -664,63 +672,50 @@ onBeforeUnmount(() => {
 .chart-legend i.budget { width: 12px; height: 8px; border: 1px dashed var(--color-accent); border-radius: 999px; }
 
 .connector-section .section-heading { margin-bottom: 48px; }
-.market-band { background: rgb(14 21 19 / 40%); }
+.market-band { background: var(--color-band); }
 .market-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
 .market-summary { flex: 0 0 auto; color: var(--color-faint); font: 400 12px/1.5 'JetBrains Mono', 'Noto Sans SC', monospace; }
 .market-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 40px; }
 .market-filters button { min-height: 32px; padding: 6px 14px; border: 1px solid var(--color-line); border-radius: 999px; background: transparent; color: var(--color-muted); font: 400 12px/1 'JetBrains Mono', 'Noto Sans SC', monospace; cursor: pointer; transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease; }
 .market-filters button:hover { border-color: var(--color-line-strong); color: var(--color-fg); }
-.market-filters button.active { border-color: rgb(47 212 160 / 50%); background: rgb(47 212 160 / 15%); color: var(--color-primary); }
+.market-filters button.active { border-color: color-mix(in srgb, var(--color-primary) 50%, transparent); background: var(--color-primary-soft); color: var(--color-primary); }
 .skill-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 32px; }
-.skill-card { display: flex; flex-direction: column; min-height: 220px; padding: 20px; border: 1px solid var(--color-line); border-radius: var(--radius); background: rgb(18 27 24 / 50%); transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease; }
-.skill-card:hover { transform: translateY(-4px); border-color: rgb(47 212 160 / 40%); background: var(--color-panel); }
-.skill-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.skill-meta span, .skill-meta em { padding: 5px 9px; border: 1px solid var(--color-line-strong); border-radius: 999px; color: var(--color-muted); font: 400 10px/1 'JetBrains Mono', 'Noto Sans SC', monospace; font-style: normal; letter-spacing: 0.08em; }
-.skill-meta em.risk-low { border-color: rgb(47 212 160 / 40%); color: var(--color-primary); }
-.skill-meta em.risk-medium { border-color: rgb(79 214 224 / 40%); color: var(--color-accent); }
-.skill-meta em.risk-high { border-color: rgb(251 113 133 / 40%); color: #fda4af; }
-.skill-card h3 { margin: 18px 0 0; font-size: 16px; font-weight: 500; }
-.skill-card > p { display: -webkit-box; margin: 10px 0 0; overflow: hidden; color: var(--color-muted); font-size: 14px; line-height: 1.7; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-.skill-card footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--color-line); }
-.skill-card footer span { min-width: 0; overflow: hidden; color: var(--color-faint); font: 400 11px/1.4 'JetBrains Mono', monospace; text-overflow: ellipsis; white-space: nowrap; }
-.skill-card footer i { color: rgb(47 212 160 / 70%); font-style: normal; }
-.skill-card footer b { flex: 0 0 auto; color: var(--color-primary); font: 400 12px/1 'JetBrains Mono', 'Noto Sans SC', monospace; opacity: 0; transition: opacity 0.2s ease; }
-.skill-card:hover footer b { opacity: 1; }
-.loading-grid article { height: 220px; border: 1px solid var(--color-line); border-radius: var(--radius); background: linear-gradient(90deg, rgb(18 27 24 / 40%), var(--color-panel), rgb(18 27 24 / 40%)); background-size: 200% 100%; animation: tp-loading 1.5s ease infinite; }
-.market-error { margin-top: 32px; padding: 20px; border: 1px solid var(--color-line); border-radius: var(--radius); background: rgb(18 27 24 / 50%); color: var(--color-muted); font-size: 14px; }
+.skill-card-link { display: block; min-width: 0; }
+.loading-grid article { height: 290px; border: 1px solid var(--color-line); border-radius: var(--radius); background: linear-gradient(90deg, var(--color-card), var(--color-panel), var(--color-card)); background-size: 200% 100%; animation: tp-loading 1.5s ease infinite; }
+.market-error { margin-top: 32px; padding: 20px; border: 1px solid var(--color-line); border-radius: var(--radius); background: var(--color-card); color: var(--color-muted); font-size: 14px; }
 .market-count { margin: 30px 0 0; text-align: center; color: var(--color-faint); font: 400 12px/1.5 'JetBrains Mono', 'Noto Sans SC', monospace; }
 
 .deployment-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 48px; }
-.deployment-card { display: flex; flex-direction: column; min-height: 380px; padding: 24px; border: 1px solid var(--color-line); border-radius: var(--radius); background: rgb(18 27 24 / 50%); transition: transform 0.25s ease, border-color 0.25s ease; }
+.deployment-card { display: flex; flex-direction: column; min-height: 380px; padding: 24px; border: 1px solid var(--color-line); border-radius: var(--radius); background: var(--color-card); transition: transform 0.25s ease, border-color 0.25s ease; }
 .deployment-card:hover { transform: translateY(-4px); border-color: var(--color-line-strong); }
 .deployment-card.featured { border-color: rgb(47 212 160 / 50%); background: var(--color-panel); box-shadow: 0 0 50px -20px rgb(47 212 160 / 50%); }
 .deployment-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .deployment-head h3 { margin: 0; font-size: 18px; font-weight: 500; }
-.deployment-head span { padding: 6px 10px; border: 1px solid var(--color-line-strong); border-radius: 999px; color: var(--color-faint); font: 400 10px/1 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0.08em; }
+.deployment-head span { padding: 6px 10px; border: 1px solid var(--color-line-strong); border-radius: 999px; color: var(--color-faint); font: 400 10px/1 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0; }
 .deployment-card.featured .deployment-head span { border-color: transparent; background: rgb(47 212 160 / 15%); color: var(--color-primary); }
 .deployment-card > p { margin: 14px 0 0; color: var(--color-muted); font-size: 14px; line-height: 1.7; }
 .deployment-card ul { display: grid; gap: 12px; margin: 24px 0; padding: 0; list-style: none; }
 .deployment-card li { display: flex; align-items: flex-start; gap: 10px; color: var(--color-muted); font-size: 14px; }
-.deployment-card li i { width: 7px; height: 12px; flex: 0 0 7px; border-right: 2px solid var(--color-primary); border-bottom: 2px solid var(--color-primary); transform: rotate(45deg); }
+.deployment-card li :deep(svg) { flex: 0 0 16px; color: var(--color-primary); }
 .deployment-action { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; margin-top: auto; border: 1px solid var(--color-line-strong); border-radius: 10px; font-size: 14px; font-weight: 500; }
 .deployment-action:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .deployment-action.primary { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-fg); }
 
 .cta-shell { padding-top: 0; }
 .final-cta { position: relative; overflow: hidden; padding: 64px 40px; border: 1px solid var(--color-line-strong); border-radius: 24px; background: var(--color-ground-2); text-align: center; }
-.cta-glow { position: absolute; top: 50%; left: 50%; width: 600px; height: 400px; border-radius: 50%; background: rgb(47 212 160 / 10%); filter: blur(120px); transform: translate(-50%, -50%); }
-.cta-grid { position: absolute; inset: 0; background-image: radial-gradient(circle, rgb(120 190 165 / 12%) 1px, transparent 1.4px); background-size: 22px 22px; opacity: 0.35; }
+.cta-glow { position: absolute; top: 50%; left: 50%; width: 600px; height: 400px; border-radius: 50%; background: var(--color-ambient); filter: blur(120px); transform: translate(-50%, -50%); }
+.cta-grid { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--color-cta-dot) 1px, transparent 1.4px); background-size: 22px 22px; opacity: 0.35; }
 .cta-content { position: relative; max-width: 720px; margin: 0 auto; }
-.cta-content > p { margin: 0; color: var(--color-primary); font-size: 14px; font-weight: 500; letter-spacing: 0.08em; }
+.cta-content > p { margin: 0; color: var(--color-primary); font-size: 14px; font-weight: 500; letter-spacing: 0; }
 .cta-content h2 { font-size: 36px; }
 .cta-content > span { display: block; max-width: 600px; margin: 16px auto 0; color: var(--color-muted); font-size: 15px; line-height: 1.7; }
 .cta-content > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 32px; }
 
-.tp-footer { border-top: 1px solid var(--color-line); background: rgb(14 21 19 / 40%); }
+.tp-footer { border-top: 1px solid var(--color-line); background: var(--color-band); }
 .footer-inner { display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px; width: min(1152px, 100%); margin: 0 auto; padding: 64px 32px; }
 .footer-brand p { max-width: 300px; margin: 16px 0 0; color: var(--color-faint); font-size: 14px; line-height: 1.7; }
 .footer-column { display: flex; flex-direction: column; align-items: flex-start; gap: 11px; }
-.footer-column b { margin-bottom: 5px; color: var(--color-muted); font: 400 12px/1.4 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0.08em; text-transform: uppercase; }
+.footer-column b { margin-bottom: 5px; color: var(--color-muted); font: 400 12px/1.4 'JetBrains Mono', 'Noto Sans SC', monospace; letter-spacing: 0; text-transform: uppercase; }
 .footer-column a { color: var(--color-faint); font-size: 14px; transition: color 0.18s ease; }
 .footer-column a:hover { color: var(--color-fg); }
 .footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1152px, 100%); margin: 0 auto; padding: 24px 32px 32px; border-top: 1px solid var(--color-line); }
@@ -749,8 +744,8 @@ onBeforeUnmount(() => {
 @media (max-width: 767px) {
   .desktop-nav, .desktop-actions { display: none; }
   .menu-button { position: relative; display: grid; }
-  .mobile-nav { display: block; max-height: 0; overflow: hidden; border-bottom: 1px solid transparent; background: rgb(10 14 13 / 95%); backdrop-filter: blur(24px); opacity: 0; transition: max-height 0.3s ease, opacity 0.2s ease, border-color 0.2s ease; }
-  .mobile-nav.open { max-height: 420px; border-color: var(--color-line); opacity: 1; }
+  .mobile-nav { display: block; max-height: 0; overflow: hidden; border-bottom: 1px solid transparent; background: var(--color-header); backdrop-filter: blur(24px); opacity: 0; pointer-events: none; visibility: hidden; transition: max-height 0.3s ease, opacity 0.2s ease, border-color 0.2s ease, visibility 0s linear 0.3s; }
+  .mobile-nav.open { max-height: 420px; border-color: var(--color-line); opacity: 1; pointer-events: auto; visibility: visible; transition-delay: 0s; }
   .mobile-nav nav { display: flex; flex-direction: column; gap: 4px; width: min(1152px, 100%); margin: 0 auto; padding: 16px 20px 20px; }
   .mobile-nav nav > a { min-height: 44px; padding: 13px 12px; border-radius: 9px; color: var(--color-muted); font-size: 14px; }
   .mobile-nav nav > a:hover { background: var(--color-panel); color: var(--color-fg); }
@@ -786,13 +781,19 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 440px) {
+  .hero-copy h1 { font-size: 33px; }
+  .hero-copy h1 span { white-space: nowrap; }
   .tool-strip-inner > div { gap: 12px 18px; }
   .token-metrics { grid-template-columns: 1fr; }
   .range-tabs button { min-width: 38px; padding-inline: 8px; }
-  .skill-card { min-height: 200px; }
+  .skill-card-link { min-height: 0; }
   .deployment-card { min-height: 350px; }
   .footer-inner { gap: 32px 24px; }
   .footer-bottom div { flex-wrap: wrap; gap: 12px 20px; }
+}
+
+@media (max-width: 360px) {
+  .hero-copy h1 { font-size: 29px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

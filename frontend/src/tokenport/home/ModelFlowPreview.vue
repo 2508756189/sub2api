@@ -87,8 +87,8 @@ function outputPath(y: number) {
 </script>
 
 <style scoped>
-.flow-preview { position: relative; width: 100%; overflow: hidden; padding: 16px; border: 1px solid var(--color-line); border-radius: var(--radius); background: rgb(14 21 19 / 60%); }
-.flow-grid { position: absolute; inset: 0; background-image: radial-gradient(circle at center, rgb(120 190 165 / 10%) 1px, transparent 1.4px); background-size: 22px 22px; opacity: 0.5; pointer-events: none; }
+.flow-preview { position: relative; width: 100%; overflow: hidden; padding: 16px; border: 1px solid var(--color-line); border-radius: var(--radius); background: var(--color-band); box-shadow: 0 18px 44px -36px var(--color-shadow); }
+.flow-grid { position: absolute; inset: 0; background-image: radial-gradient(circle at center, var(--color-grid-dot) 1px, transparent 1.4px); background-size: 22px 22px; opacity: 0.5; pointer-events: none; }
 svg { position: relative; display: block; width: 100%; }
 .base-line { fill: none; stroke: var(--color-line-strong); stroke-width: 1.2; }
 .base-line.soft { stroke: var(--color-line); }

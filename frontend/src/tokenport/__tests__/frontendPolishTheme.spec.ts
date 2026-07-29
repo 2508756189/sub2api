@@ -137,4 +137,10 @@ describe('frontend-theme R3 定制面回归全站刻度', () => {
     expect(tokenPortHome).toContain('<Icon :name="feature.icon"')
     expect(tokenPortHome).not.toContain('v-html="feature.icon"')
   })
+
+  it('首页次按钮避开 Tailwind outline 工具类冲突', () => {
+    expect(tokenPortHome).not.toMatch(/class="[^"]*tp-button outline/)
+    expect(tokenPortHome).toContain('class="tp-button secondary large"')
+    expect(tokenPortHome).toContain('.tp-button.secondary')
+  })
 })

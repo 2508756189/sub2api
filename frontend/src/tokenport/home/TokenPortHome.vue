@@ -68,7 +68,7 @@
             </p>
             <div class="hero-actions">
               <router-link :to="entryPath" class="tp-button primary large">预约演示</router-link>
-              <a href="#platform" class="tp-button outline large">查看平台能力</a>
+              <a href="#platform" class="tp-button secondary large">查看平台能力</a>
             </div>
             <dl class="hero-stats">
               <div><dt>5</dt><dd>核心能力</dd></div>
@@ -281,7 +281,7 @@
             <span>用一次面向你团队与合规需求的演示，看 TokenPort 如何统一治理企业 AI 供给、成本与能力资产。</span>
             <div>
               <router-link :to="entryPath" class="tp-button primary large">预约演示</router-link>
-              <a :href="docUrl || '#platform'" class="tp-button outline large">阅读文档</a>
+              <a :href="docUrl || '#platform'" class="tp-button secondary large">阅读文档</a>
             </div>
           </div>
         </div>
@@ -588,8 +588,8 @@ onBeforeUnmount(() => {
 .tp-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border: 0; border-radius: 10px; font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0; transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
 .tp-button.primary { background: var(--color-primary); color: var(--color-primary-fg); box-shadow: 0 0 0 1px rgb(47 212 160 / 40%); }
 .tp-button.primary:hover { transform: translateY(-1px); background: var(--color-primary-2); box-shadow: 0 8px 30px -8px rgb(47 212 160 / 55%); }
-.tp-button.outline { border: 1px solid var(--color-line-strong); background: transparent; color: var(--color-fg); }
-.tp-button.outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.tp-button.secondary { border: 1px solid var(--color-line-strong); background: var(--color-card); color: var(--color-fg); }
+.tp-button.secondary:hover { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary); }
 .tp-button.small { padding: 10px 20px; }
 .tp-button.large { padding: 12px 24px; }
 .menu-button { display: none; }

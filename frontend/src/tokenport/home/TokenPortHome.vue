@@ -1,5 +1,5 @@
 <template>
-  <div class="home-shell">
+  <div ref="homeRoot" class="home-shell">
     <header class="topbar">
       <router-link to="/home" class="brand-link">
         <img :src="brandLogo" alt="天翼云 TokenPort" />
@@ -9,16 +9,27 @@
         </span>
       </router-link>
 
-      <nav aria-label="首页导航">
-        <a href="#platform" class="nav-link nav-link-optional">核心能力</a>
-        <a href="#cost" class="nav-link nav-link-optional">Token 经营</a>
-        <router-link to="/skill-market" class="nav-link">Skill Market</router-link>
-        <a href="#deploy" class="nav-link nav-link-optional">部署交付</a>
+      <button
+        type="button"
+        class="menu-control"
+        :aria-expanded="menuOpen"
+        :aria-label="menuOpen ? '关闭导航菜单' : '打开导航菜单'"
+        @click="menuOpen = !menuOpen"
+      >
+        <Icon :name="menuOpen ? 'x' : 'menu'" size="md" />
+      </button>
+
+      <nav :class="{ open: menuOpen }" aria-label="首页导航">
+        <a href="#platform" class="nav-link nav-link-optional" @click="closeMenu">核心能力</a>
+        <a href="#cost" class="nav-link nav-link-optional" @click="closeMenu">Token 经营</a>
+        <router-link to="/skill-market" class="nav-link" @click="closeMenu">Skill Market</router-link>
+        <a href="#deploy" class="nav-link nav-link-optional" @click="closeMenu">部署交付</a>
         <router-link
           to="/available-channels"
           class="nav-link nav-link-optional"
           :class="{ 'is-gated': !isAuthenticated }"
           :title="isAuthenticated ? undefined : '需登录后查看，登录成功将回到此页'"
+          @click="closeMenu"
         >
           模型与渠道
           <Icon v-if="!isAuthenticated" name="lock" size="sm" class="gate-icon" />
@@ -29,6 +40,7 @@
           target="_blank"
           rel="noopener noreferrer"
           class="nav-link nav-link-optional"
+          @click="closeMenu"
         >Docs</a>
         <button
           type="button"
@@ -39,7 +51,7 @@
         >
           <Icon :name="isDark ? 'sun' : 'moon'" size="sm" />
         </button>
-        <router-link :to="entryPath" class="primary-link compact">
+        <router-link :to="entryPath" class="primary-link compact" @click="closeMenu">
           {{ isAuthenticated ? '进入控制台' : '登录平台' }}
           <Icon name="arrowRight" size="sm" />
         </router-link>
@@ -49,7 +61,7 @@
     <main>
       <section class="hero-band">
         <div class="hero-grid" aria-hidden="true" />
-        <div class="hero-inner">
+        <div class="hero-inner reveal-item is-visible">
           <div class="hero-copy">
             <p class="status-label"><i />企业级 AI 运营底座</p>
             <h1>
@@ -85,7 +97,7 @@
         </div>
       </section>
 
-      <section class="tool-strip" aria-label="支持的模型协议与客户端">
+      <section class="tool-strip reveal-item" aria-label="支持的模型协议与客户端">
         <p>统一团队正在使用的模型与工具栈</p>
         <div>
           <span v-for="item in TOKENPORT_PRODUCT.clients" :key="item">{{ item }}</span>
@@ -95,7 +107,7 @@
       </section>
 
       <section id="platform" class="content-section">
-        <div class="section-inner">
+        <div class="section-inner reveal-item">
           <div class="section-heading">
             <p class="section-label"><span>01</span> 核心能力</p>
             <h2>面向 AI 供给到使用的同一控制面</h2>
@@ -105,6 +117,7 @@
             <article
               v-for="(item, index) in capabilities"
               :key="item.title"
+              class="reveal-item"
               :class="{ featured: index === 0 }"
             >
               <div class="capability-icon" v-html="item.icon" />
@@ -121,7 +134,7 @@
       </section>
 
       <section id="cost" class="content-section section-alt">
-        <div class="section-inner split-section">
+        <div class="section-inner split-section reveal-item">
           <div class="section-heading">
             <p class="section-label"><span>02</span> Token 经营</p>
             <h2>把每一次调用变成可核算的经营数据</h2>
@@ -139,7 +152,7 @@
       </section>
 
       <section class="content-section console-section">
-        <div class="section-inner">
+        <div class="section-inner reveal-item">
           <div class="section-heading horizontal">
             <div>
               <p class="section-label"><span>03</span> 平台控制台</p>
@@ -153,8 +166,8 @@
         </div>
       </section>
 
-      <section class="content-section section-alt">
-        <div class="section-inner">
+      <section id="connectors" class="content-section section-alt">
+        <div class="section-inner reveal-item">
           <div class="section-heading connector-heading">
             <p class="section-label"><span>04</span> 智能应用连接器</p>
             <h2>选择客户端，生成可以检查的接入配置</h2>
@@ -167,7 +180,7 @@
       </section>
 
       <section id="skill-market" class="content-section market-section">
-        <div class="section-inner">
+        <div class="section-inner reveal-item">
           <div class="section-heading horizontal">
             <div>
               <p class="section-label"><span>05</span> Skill Market</p>
@@ -181,14 +194,25 @@
           <p class="market-intro">
             通过中文说明、版本、来源、运行时、风险等级和 SHA256 校验管理能力包。浏览器不会静默安装，用户确认后执行透明安装脚本。
           </p>
-          <div v-if="categoryNames.length" class="market-categories">
-            <span v-for="category in categoryNames" :key="category">{{ category }}</span>
+          <div v-if="marketCategories.length" class="market-categories" aria-label="Skill 分类筛选">
+            <button
+              type="button"
+              :class="{ active: activeCategory === 'all' }"
+              @click="activeCategory = 'all'"
+            >全部</button>
+            <button
+              v-for="category in marketCategories"
+              :key="category.id"
+              type="button"
+              :class="{ active: activeCategory === category.id }"
+              @click="activeCategory = category.id"
+            >{{ category.name }}</button>
           </div>
           <div v-if="marketLoading" class="market-grid loading-grid" aria-label="Skill Market 加载中">
             <article v-for="index in 6" :key="index" />
           </div>
-          <div v-else-if="featuredSkills.length" class="market-grid">
-            <article v-for="skill in featuredSkills" :key="skill.id">
+          <div v-else-if="visibleSkills.length" class="market-grid">
+            <article v-for="skill in visibleSkills" :key="skill.id" class="reveal-item">
               <div class="skill-meta">
                 <span>{{ skill.category }}</span>
                 <em>{{ skill.risk }}</em>
@@ -206,7 +230,7 @@
       </section>
 
       <section class="content-section architecture-section">
-        <div class="section-inner">
+        <div class="section-inner reveal-item">
           <div class="section-heading">
             <p class="section-label"><span>06</span> 系统架构</p>
             <h2>一个平台连接企业用户、AI 工具与模型资源</h2>
@@ -232,14 +256,14 @@
       </section>
 
       <section id="deploy" class="content-section section-alt">
-        <div class="section-inner">
+        <div class="section-inner reveal-item">
           <div class="section-heading">
             <p class="section-label"><span>07</span> 部署与交付</p>
             <h2>统一平台直接使用，也支持企业资源独立部署</h2>
             <p>根据数据边界、模型资源和运维要求，选择托管服务、私有化部署或企业定制。</p>
           </div>
           <div class="deployment-grid">
-            <article v-for="item in deployments" :key="item.title" :class="{ featured: item.featured }">
+            <article v-for="item in deployments" :key="item.title" class="reveal-item" :class="{ featured: item.featured }">
               <div><h3>{{ item.title }}</h3><span>{{ item.tag }}</span></div>
               <p>{{ item.description }}</p>
               <ul><li v-for="point in item.points" :key="point"><i />{{ point }}</li></ul>
@@ -249,7 +273,7 @@
         </div>
       </section>
 
-      <section class="final-cta">
+      <section class="final-cta reveal-item">
         <div>
           <p class="section-label light">TOKENPORT</p>
           <h2>让模型资源可管理，让每一个 Token 有归属</h2>
@@ -263,21 +287,32 @@
     </main>
 
     <footer class="site-footer">
-      <div>
-        <img :src="brandLogo" alt="" />
-        <span><b>{{ siteName }}</b><small>统一接入 · 统一治理 · 统一核算 · 统一交付</small></span>
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div>
+            <img :src="brandLogo" alt="" />
+            <span><b>{{ siteName }}</b><small>智能应用与技能接入平台</small></span>
+          </div>
+          <p>统一接入、统一治理、统一核算、统一交付，让模型和智能体能力成为可管理的企业资源。</p>
+        </div>
+        <div v-for="column in footerColumns" :key="column.title" class="footer-column">
+          <b>{{ column.title }}</b>
+          <a v-for="link in column.links" :key="link.label" :href="link.href">{{ link.label }}</a>
+        </div>
       </div>
-      <p>© {{ currentYear }} {{ siteName }}</p>
-      <p>
-        基于 <a :href="TOKENPORT_BRAND.upstreamUrl" target="_blank" rel="noopener">Sub2API</a>
-        持续构建，遵循原项目许可证。
-      </p>
+      <div class="footer-bottom">
+        <p>© {{ currentYear }} {{ siteName }}</p>
+        <p>
+          基于 <a :href="TOKENPORT_BRAND.upstreamUrl" target="_blank" rel="noopener">Sub2API</a>
+          持续构建，遵循原项目许可证。
+        </p>
+      </div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import { useThemeToggle } from '@/composables/useThemeToggle'
 import Icon from '@/components/icons/Icon.vue'
@@ -311,15 +346,20 @@ const props = withDefaults(defineProps<{ siteLogo?: string; docUrl?: string }>()
 const skillCount = ref(0)
 const marketLoading = ref(true)
 const marketError = ref('')
-const categoryNames = ref<string[]>([])
+const marketCategories = ref<Array<{ id: string; name: string }>>([])
+const activeCategory = ref('all')
+const menuOpen = ref(false)
+const homeRoot = ref<HTMLElement | null>(null)
 const featuredSkills = ref<Array<{
   id: string
   name: string
+  categoryId: string
   category: string
   description: string
   version: string
   risk: string
 }>>([])
+let revealObserver: IntersectionObserver | null = null
 const { isDark, toggleTheme } = useThemeToggle()
 
 const siteName = computed(() => resolveTokenPortName(appStore.cachedPublicSettings?.site_name || appStore.siteName))
@@ -331,6 +371,28 @@ const entryPath = computed(() => isAuthenticated.value
   ? (authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
   : '/login')
 const currentYear = new Date().getFullYear()
+const visibleSkills = computed(() => featuredSkills.value
+  .filter((skill) => activeCategory.value === 'all' || skill.categoryId === activeCategory.value)
+  .slice(0, 6))
+
+function closeMenu() {
+  menuOpen.value = false
+}
+
+function observeRevealItems() {
+  if (!homeRoot.value || typeof IntersectionObserver === 'undefined') return
+  revealObserver?.disconnect()
+  revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return
+      entry.target.classList.add('is-visible')
+      revealObserver?.unobserve(entry.target)
+    })
+  }, { threshold: 0.08, rootMargin: '0px 0px -48px' })
+
+  homeRoot.value.querySelectorAll<HTMLElement>('.reveal-item:not(.is-visible)')
+    .forEach((element) => revealObserver?.observe(element))
+}
 
 const capabilities = [
   {
@@ -396,20 +458,55 @@ const deployments = [
   },
 ]
 
+const footerColumns = [
+  {
+    title: '核心能力',
+    links: [
+      { label: '统一模型网关', href: '#platform' },
+      { label: 'Token 经营', href: '#cost' },
+      { label: '智能应用连接器', href: '#connectors' },
+      { label: 'Skill Market', href: '/skill-market' },
+    ],
+  },
+  {
+    title: '适用对象',
+    links: [
+      { label: '企业管理者', href: '#cost' },
+      { label: '研发与产品团队', href: '#connectors' },
+      { label: 'AI 运维团队', href: '#platform' },
+      { label: '私有化客户', href: '#deploy' },
+    ],
+  },
+  {
+    title: '部署交付',
+    links: [
+      { label: '平台服务', href: '#deploy' },
+      { label: '私有化部署', href: '#deploy' },
+      { label: '企业定制', href: '#deploy' },
+      { label: '模型与渠道', href: '/available-channels' },
+    ],
+  },
+]
+
 onMounted(async () => {
+  await nextTick()
+  observeRevealItems()
   await Promise.allSettled([authStore.checkAuth(), appStore.fetchPublicSettings()])
   try {
     const registry = await fetchSkillMarket()
     skillCount.value = registry.skills.length
-    categoryNames.value = registry.categories
-      .map((category) => category.name || getSkillCategoryName(category.id, registry))
-      .filter(Boolean)
-      .slice(0, 7)
-    featuredSkills.value = registry.skills.slice(0, 6).map((skill: SkillMarketEntry) => {
+    marketCategories.value = registry.categories
+      .map((category) => ({
+        id: category.id,
+        name: category.name || getSkillCategoryName(category.id, registry),
+      }))
+      .filter((category) => Boolean(category.name))
+    featuredSkills.value = registry.skills.map((skill: SkillMarketEntry) => {
       const description = getSkillDisplayDescription(skill).trim()
       return {
         id: skill.id,
         name: getSkillDisplayName(skill),
+        categoryId: skill.category,
         category: getSkillCategoryName(skill.category, registry),
         description: description.length > 92 ? `${description.slice(0, 92)}…` : description,
         version: skill.version,
@@ -420,8 +517,17 @@ onMounted(async () => {
     marketError.value = error instanceof Error ? error.message : '市场索引加载失败'
   } finally {
     marketLoading.value = false
+    await nextTick()
+    observeRevealItems()
   }
 })
+
+watch(activeCategory, async () => {
+  await nextTick()
+  observeRevealItems()
+})
+
+onBeforeUnmount(() => revealObserver?.disconnect())
 </script>
 
 <style scoped>
@@ -473,7 +579,8 @@ onMounted(async () => {
 .topbar nav,
 .primary-link,
 .text-link,
-.site-footer > div {
+.footer-brand > div,
+.footer-brand > div span {
   display: flex;
   align-items: center;
 }
@@ -494,7 +601,7 @@ onMounted(async () => {
 }
 
 .brand-link span,
-.site-footer > div span {
+.footer-brand > div span {
   flex-direction: column;
   align-items: flex-start;
 }
@@ -503,6 +610,18 @@ onMounted(async () => {
 .brand-link small { margin-top: 2px; color: var(--muted); font-size: 11px; }
 
 .topbar nav { gap: 6px; }
+
+.menu-control {
+  display: none;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--tp-radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
 
 .nav-link {
   display: inline-flex;
@@ -801,7 +920,20 @@ onMounted(async () => {
 
 .market-intro { max-width: 860px; }
 .market-categories { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
-.market-categories span { min-height: 29px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 12px; line-height: 29px; }
+.market-categories button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+.market-categories button:hover { border-color: color-mix(in srgb, var(--brand) 36%, var(--line)); color: var(--ink); }
+.market-categories button.active { border-color: color-mix(in srgb, var(--brand) 48%, var(--line)); background: color-mix(in srgb, var(--brand) 12%, var(--surface)); color: var(--brand-deep); font-weight: 700; }
 .market-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin-top: 24px; }
 .market-grid article {
   display: flex;
@@ -867,14 +999,32 @@ onMounted(async () => {
 .final-cta h2 { max-width: 800px; font-size: 36px; }
 .final-cta p:last-child { margin: 14px 0 0; color: #a9c3b7; font-size: 14px; }
 
-.site-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px max(24px, calc((100vw - 1180px) / 2)); color: var(--muted); font-size: 12px; }
-.site-footer > div { gap: 10px; }
-.site-footer > div b { color: var(--ink); font-size: 14px; }
-.site-footer > div small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.site-footer { padding: 58px 24px 24px; border-top: 1px solid var(--line); background: var(--soft-2); color: var(--muted); font-size: 12px; }
+.footer-inner { display: grid; grid-template-columns: 1.45fr repeat(3, minmax(130px, 0.72fr)); gap: 48px; width: min(1180px, 100%); margin: 0 auto; }
+.footer-brand > div { gap: 10px; }
+.footer-brand b { color: var(--ink); font-size: 15px; }
+.footer-brand small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.footer-brand > p { max-width: 330px; margin: 18px 0 0; color: var(--muted); font-size: 13px; line-height: 1.75; }
+.footer-column { display: flex; flex-direction: column; align-items: flex-start; gap: 11px; }
+.footer-column > b { margin-bottom: 4px; color: var(--ink); font: 700 11px/1.4 ui-monospace, Consolas, monospace; }
+.footer-column > a { color: var(--muted); font-size: 12px; text-decoration: none; transition: color 0.16s ease; }
+.footer-column > a:hover { color: var(--brand-deep); }
+.footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1180px, 100%); margin: 42px auto 0; padding-top: 20px; border-top: 1px solid var(--line); }
 .site-footer p { margin: 0; }
 .site-footer a { color: var(--brand-deep); text-decoration: none; }
 
 @keyframes tp-loading { to { background-position: -200% 0; } }
+
+.reveal-item {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.66s cubic-bezier(0.22, 1, 0.36, 1), transform 0.66s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-item.is-visible {
+  opacity: 1;
+  transform: none;
+}
 
 @media (max-width: 1120px) {
   .topbar .nav-link-optional { display: none; }
@@ -894,17 +1044,40 @@ onMounted(async () => {
   .capability-grid article.featured { grid-template-columns: 46px 1fr; grid-column: 1 / -1; }
   .capability-grid article.featured ul { grid-column: 2; }
   .section-heading.horizontal { align-items: flex-start; flex-direction: column; gap: 20px; }
-  .site-footer { align-items: flex-start; flex-direction: column; }
+  .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footer-brand { grid-column: 1 / -1; }
 }
 
 @media (max-width: 720px) {
   .topbar nav > .nav-link-optional { display: none; }
   .topbar { padding-inline: 16px; }
   .brand-link small { display: none; }
-  .topbar nav { gap: 5px; }
-  .nav-link { padding-inline: 6px; font-size: 12px; }
-  .primary-link.compact { width: 40px; padding: 0; overflow: hidden; color: transparent; gap: 0; }
-  .primary-link.compact :deep(svg) { color: #fff; }
+  .menu-control { display: grid; margin-left: auto; }
+  .topbar nav {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 16px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+    max-height: 0;
+    padding: 0 12px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: var(--tp-radius-panel);
+    background: var(--surface);
+    box-shadow: var(--tp-elev-3);
+    opacity: 0;
+    pointer-events: none;
+    transition: max-height 0.26s ease, padding 0.26s ease, opacity 0.2s ease;
+  }
+  .topbar nav.open { max-height: 520px; padding: 12px; border-color: var(--line); opacity: 1; pointer-events: auto; }
+  .topbar nav.open > .nav-link-optional { display: flex; }
+  .nav-link { width: 100%; justify-content: flex-start; min-height: 42px; padding-inline: 12px; font-size: 13px; }
+  .icon-control,
+  .primary-link.compact { width: 100%; min-height: 42px; }
   .hero-inner { width: calc(100% - 32px); padding: 54px 0 44px; }
   .hero-copy h1 { font-size: 38px; }
   .lead { font-size: 15px; }
@@ -914,6 +1087,7 @@ onMounted(async () => {
   .section-heading h2,
   .final-cta h2 { font-size: 30px; }
   .final-cta { align-items: flex-start; flex-direction: column; padding: 56px 20px; }
+  .footer-bottom { align-items: flex-start; flex-direction: column; }
 }
 
 @media (max-width: 560px) {
@@ -927,5 +1101,11 @@ onMounted(async () => {
   .capability-grid article.featured { display: flex; }
   .value-points div { grid-template-columns: 1fr; gap: 5px; }
   .market-grid article { min-height: 210px; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .footer-brand { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-item { opacity: 1; transform: none; transition: none; }
 }
 </style>

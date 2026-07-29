@@ -6,6 +6,7 @@ import tokenPortHome from '@/tokenport/home/TokenPortHome.vue?raw'
 import consolePreview from '@/tokenport/home/ConsolePreview.vue?raw'
 import skillMarketView from '@/views/user/SkillMarketView.vue?raw'
 import skillMarketCatalog from '@/tokenport/market/SkillMarketCatalog.vue?raw'
+import skillMarketCard from '@/tokenport/market/SkillMarketCard.vue?raw'
 import settingsView from '@/views/admin/SettingsView.vue?raw'
 
 // .css 的 ?raw 导入在 vitest 里会被 CSS 管线截空,改用 fs 直读。
@@ -26,7 +27,6 @@ describe('frontend-theme R2 品牌令牌单一来源', () => {
 
   it.each([
     ['AuthLayout', authLayout],
-    ['TokenPortHome', tokenPortHome],
     ['ConsolePreview', consolePreview],
   ])('%s 不再持有局部 --brand 字面量,改为引用全局令牌', (_name, source) => {
     expect(source).not.toMatch(/--brand:\s*#[0-9a-fA-F]/)
@@ -39,9 +39,16 @@ describe('frontend-theme R2 品牌令牌单一来源', () => {
     expect(consoleCss).not.toContain('#36dcc0')
   })
 
-  it('TokenPortHome 的强调色全部走主题令牌', () => {
-    expect(tokenPortHome).not.toContain('#7fe0bc')
-    expect(tokenPortHome).not.toContain('#41d0a1')
+  it('TokenPortHome 提供纯白主题并在 dark 覆盖中锁定 Figma 深色令牌', () => {
+    expect(tokenPortHome).toContain('--color-ground: #ffffff')
+    expect(tokenPortHome).toContain('--color-panel: #ffffff')
+    expect(tokenPortHome).toContain('.tp-home.dark-mode')
+    expect(tokenPortHome).toContain('--color-ground: #0a0e0d')
+    expect(tokenPortHome).toContain('--color-panel: #121b18')
+    expect(tokenPortHome).toContain('--color-primary: #2fd4a0')
+    expect(tokenPortHome).toContain('--color-accent: #4fd6e0')
+    expect(tokenPortHome).toContain('--radius: 14px')
+    expect(tokenPortHome).toContain('useThemeToggle')
   })
 })
 
@@ -80,7 +87,6 @@ describe('frontend-theme R3 圆角与层级刻度', () => {
   })
 
   it.each([
-    ['TokenPortHome', tokenPortHome],
     ['ConsolePreview', consolePreview],
   ])('%s 的圆角与卡片阴影走令牌,不再各写各的', (_name, source) => {
     // 实测这两个文件曾并存 10/12/14/16/18 五种半径与多组同透明度不同模糊的阴影。
@@ -90,8 +96,14 @@ describe('frontend-theme R3 圆角与层级刻度', () => {
     expect(source).toContain('var(--tp-elev-')
   })
 
+  it('TokenPortHome 的主面板圆角引用 Figma radius 令牌', () => {
+    expect(tokenPortHome).toContain('border-radius: var(--radius)')
+    expect(tokenPortHome).not.toContain('var(--tp-elev-')
+  })
+
   it('技能市场卡片有静置层级与悬停抬升(此前是无阴影的纯描边)', () => {
-    expect(skillMarketCatalog).toContain('tp-elev-raise')
+    expect(skillMarketCard).toContain('var(--tp-elev-1')
+    expect(skillMarketCard).toContain('var(--tp-elev-2')
   })
 })
 
@@ -111,5 +123,24 @@ describe('frontend-theme R3 定制面回归全站刻度', () => {
 
   it('SkillMarketView 未登录壳不再使用 emerald 边框', () => {
     expect(skillMarketView).not.toContain('emerald')
+  })
+
+  it('首页和正式目录共用同一 Skill Market 卡片结构', () => {
+    expect(tokenPortHome).toContain("import SkillMarketCard from '@/tokenport/market/SkillMarketCard.vue'")
+    expect(skillMarketCatalog).toContain("import SkillMarketCard from './SkillMarketCard.vue'")
+    for (const field of ['skill.version', 'skill.runtime', 'skill.archive.size', 'skill.archive.sha256']) {
+      expect(skillMarketCard).toContain(field)
+    }
+  })
+
+  it('首页功能图标统一使用 Icon 组件而不是 v-html SVG', () => {
+    expect(tokenPortHome).toContain('<Icon :name="feature.icon"')
+    expect(tokenPortHome).not.toContain('v-html="feature.icon"')
+  })
+
+  it('首页次按钮避开 Tailwind outline 工具类冲突', () => {
+    expect(tokenPortHome).not.toMatch(/class="[^"]*tp-button outline/)
+    expect(tokenPortHome).toContain('class="tp-button secondary large"')
+    expect(tokenPortHome).toContain('.tp-button.secondary')
   })
 })

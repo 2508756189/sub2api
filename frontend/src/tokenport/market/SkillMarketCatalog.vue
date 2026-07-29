@@ -61,50 +61,23 @@
     </div>
     <div v-else-if="!filteredSkills.length" class="rounded-xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-800/70 dark:text-gray-400">没有符合条件的技能。</div>
     <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <article
+      <SkillMarketCard
         v-for="skill in filteredSkills"
         :key="skill.id"
-        class="group flex min-h-[280px] flex-col rounded-xl border border-primary-950/10 bg-white p-5 tp-elev-raise transition duration-200 hover:-translate-y-0.5 hover:border-primary-300 dark:border-dark-700 dark:bg-dark-800/70 dark:hover:border-primary-600"
+        :skill="skill"
+        :registry="registry"
       >
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex min-w-0 items-start gap-3">
-            <div class="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-sky-500 text-sm font-extrabold text-white shadow-sm">
-              {{ skillInitial(skill) }}
-            </div>
-            <div class="min-w-0">
-              <h2 class="truncate text-base font-bold tracking-tight text-gray-950 dark:text-white">{{ getSkillDisplayName(skill) }}</h2>
-              <p class="mt-1 truncate text-xs text-gray-400 dark:text-gray-500">{{ getSkillCategoryName(skill.category, registry) }} · v{{ skill.version }}</p>
-            </div>
-          </div>
-          <span :class="['flex-none rounded-full px-2.5 py-1 text-xs font-semibold', riskClass(skill.riskLevel)]">{{ getSkillRiskLabel(skill.riskLevel) }}</span>
-        </div>
-        <p class="mt-4 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-300">{{ getSkillDisplayDescription(skill) }}</p>
-        <div class="mt-4 flex flex-wrap gap-1.5">
-          <span
-            v-for="tag in (skill.tags || []).slice(0, 3)"
-            :key="tag"
-            class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-dark-700 dark:text-gray-300"
-          >{{ tag }}</span>
-          <span
-            v-for="rt in (skill.runtime || []).slice(0, 2)"
-            :key="rt"
-            class="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 dark:bg-sky-900/25 dark:text-sky-300"
-          >{{ rt }}</span>
-        </div>
-        <div class="mt-auto flex items-end justify-between gap-3 border-t border-gray-100 pt-4 dark:border-dark-700">
-          <div class="text-xs text-gray-400 dark:text-gray-500">
-            <span>{{ formatSize(skill.archive.size) }}</span>
-            <span class="mx-2">·</span>
-            <span class="font-mono">{{ shortHash(skill.archive.sha256) }}</span>
-          </div>
-          <!-- 移动端触控目标 ≥40px(frontend-a11y R4);桌面端保持紧凑的 btn-sm 尺度。 -->
+        <template #action>
           <button
             type="button"
-            class="btn btn-secondary btn-sm min-h-[40px] text-sm sm:min-h-0"
+            class="skill-card-action"
             @click="selectedSkill = skill"
-          >查看详情</button>
-        </div>
-      </article>
+          >
+            查看详情
+            <Icon name="arrowRight" size="xs" />
+          </button>
+        </template>
+      </SkillMarketCard>
     </div>
 
     <p v-if="registry" class="text-right text-xs text-gray-400">市场更新：{{ formatGeneratedAt(registry.generatedAt) }}</p>
@@ -123,14 +96,13 @@
 import { computed, onMounted, ref } from 'vue'
 import Icon from '@/components/icons/Icon.vue'
 import Select from '@/components/common/Select.vue'
+import SkillMarketCard from './SkillMarketCard.vue'
 import SkillDetailDialog from './SkillDetailDialog.vue'
 import {
   DEFAULT_SKILL_MARKET_REGISTRY_URL,
   fetchSkillMarketWithSource,
   getSkillCategoryName,
-  getSkillDisplayDescription,
   getSkillDisplayName,
-  getSkillRiskLabel,
   skillSupportsRuntime,
   type SkillMarketEntry,
   type SkillMarketRegistry,
@@ -203,28 +175,8 @@ async function load() {
   }
 }
 
-function riskClass(level?: string) {
-  if (level === 'high') return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-  if (level === 'medium') return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-  return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-}
-
-function formatSize(size?: number) {
-  return size ? `${Math.round(size / 1024)} KB` : '—'
-}
-
 function formatGeneratedAt(value: string) {
   return value ? new Date(value).toLocaleString('zh-CN') : '—'
-}
-
-function skillInitial(skill: SkillMarketEntry) {
-  const name = getSkillDisplayName(skill).trim()
-  return name ? name.slice(0, 1).toUpperCase() : 'S'
-}
-
-function shortHash(hash?: string) {
-  if (!hash) return '—'
-  return `${hash.slice(0, 6)}…${hash.slice(-4)}`
 }
 
 onMounted(load)

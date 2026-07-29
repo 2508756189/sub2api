@@ -6,9 +6,8 @@
   <div v-else class="min-h-screen bg-[#f4f8f6] text-gray-950 dark:bg-dark-950 dark:text-gray-100">
     <header class="border-b border-primary-950/10 bg-white/90 dark:border-dark-700 dark:bg-dark-900/90">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
-        <router-link to="/home" class="flex items-center gap-3">
-          <img :src="brandLogo" alt="天翼云 TokenPort" class="h-9 w-9 rounded-xl object-cover shadow-sm" />
-          <span><b class="block text-base">{{ siteName }}</b><small class="text-xs text-gray-500">{{ siteSubtitle }}</small></span>
+        <router-link to="/home" aria-label="返回 TokenPort 首页">
+          <TokenPortLogo :src="brandLogo" :name="siteName" :subtitle="siteSubtitle" />
         </router-link>
         <div class="flex items-center gap-3">
           <button
@@ -20,8 +19,14 @@
           >
             <Icon :name="isDark ? 'sun' : 'moon'" size="sm" />
           </button>
-          <router-link to="/home" class="btn btn-secondary">返回首页</router-link>
-          <router-link to="/login" class="btn btn-primary">登录控制台</router-link>
+          <router-link to="/home" class="btn btn-secondary px-2.5 sm:px-4" aria-label="返回首页">
+            <Icon name="home" size="sm" />
+            <span class="hidden sm:inline">返回首页</span>
+          </router-link>
+          <router-link to="/login" class="btn btn-primary px-2.5 sm:px-4" aria-label="登录控制台">
+            <Icon name="login" size="sm" />
+            <span class="hidden sm:inline">登录控制台</span>
+          </router-link>
         </div>
       </div>
     </header>
@@ -38,6 +43,7 @@
 import { computed, onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import TokenPortLogo from '@/tokenport/brand/TokenPortLogo.vue'
 import { useAppStore, useAuthStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
 import { useThemeToggle } from '@/composables/useThemeToggle'

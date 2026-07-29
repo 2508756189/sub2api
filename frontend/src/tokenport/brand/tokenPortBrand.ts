@@ -4,7 +4,7 @@ export const TOKENPORT_BRAND = {
   proposition: '统一管理模型、Token 与智能体能力',
   upstreamName: 'Sub2API',
   upstreamUrl: 'https://github.com/Wei-Shaw/sub2api',
-  logo: '/ctyun-logo.svg',
+  logo: '/tokenport-logo.svg',
 } as const
 
 export const TOKENPORT_PRODUCT = {

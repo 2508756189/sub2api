@@ -26,7 +26,6 @@ describe('frontend-theme R2 品牌令牌单一来源', () => {
 
   it.each([
     ['AuthLayout', authLayout],
-    ['TokenPortHome', tokenPortHome],
     ['ConsolePreview', consolePreview],
   ])('%s 不再持有局部 --brand 字面量,改为引用全局令牌', (_name, source) => {
     expect(source).not.toMatch(/--brand:\s*#[0-9a-fA-F]/)
@@ -39,9 +38,13 @@ describe('frontend-theme R2 品牌令牌单一来源', () => {
     expect(consoleCss).not.toContain('#36dcc0')
   })
 
-  it('TokenPortHome 的强调色全部走主题令牌', () => {
-    expect(tokenPortHome).not.toContain('#7fe0bc')
-    expect(tokenPortHome).not.toContain('#41d0a1')
+  it('TokenPortHome 锁定 Figma Make 最终稿的独立深色令牌', () => {
+    expect(tokenPortHome).toContain('--color-ground: #0a0e0d')
+    expect(tokenPortHome).toContain('--color-panel: #121b18')
+    expect(tokenPortHome).toContain('--color-primary: #2fd4a0')
+    expect(tokenPortHome).toContain('--color-accent: #4fd6e0')
+    expect(tokenPortHome).toContain('--radius: 14px')
+    expect(tokenPortHome).not.toContain('useThemeToggle')
   })
 })
 
@@ -80,7 +83,6 @@ describe('frontend-theme R3 圆角与层级刻度', () => {
   })
 
   it.each([
-    ['TokenPortHome', tokenPortHome],
     ['ConsolePreview', consolePreview],
   ])('%s 的圆角与卡片阴影走令牌,不再各写各的', (_name, source) => {
     // 实测这两个文件曾并存 10/12/14/16/18 五种半径与多组同透明度不同模糊的阴影。
@@ -88,6 +90,11 @@ describe('frontend-theme R3 圆角与层级刻度', () => {
     expect(source).not.toMatch(/border-radius:\s*10px/)
     expect(source).toContain('var(--tp-radius-')
     expect(source).toContain('var(--tp-elev-')
+  })
+
+  it('TokenPortHome 的主面板圆角引用 Figma radius 令牌', () => {
+    expect(tokenPortHome).toContain('border-radius: var(--radius)')
+    expect(tokenPortHome).not.toContain('var(--tp-elev-')
   })
 
   it('技能市场卡片有静置层级与悬停抬升(此前是无阴影的纯描边)', () => {

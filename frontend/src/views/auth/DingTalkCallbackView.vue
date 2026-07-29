@@ -8,6 +8,12 @@
         <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
           {{ isProcessing ? t('auth.dingtalk.callbackProcessing') : t('auth.dingtalk.callbackHint') }}
         </p>
+        <div
+          v-if="isProcessing"
+          class="mx-auto mt-4 h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
+          role="status"
+          :aria-label="t('common.loading')"
+        ></div>
       </div>
 
       <transition name="fade">

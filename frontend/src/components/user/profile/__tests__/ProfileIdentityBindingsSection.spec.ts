@@ -115,6 +115,9 @@ describe('ProfileIdentityBindingsSection', () => {
     userApiMocks.sendEmailBindingCode.mockReset()
     userApiMocks.bindEmailIdentity.mockReset()
     userApiMocks.unbindAuthIdentity.mockReset()
+    // 解绑前有 window.confirm 守卫(frontend-feedback R2)。默认放行,
+    // 取消路径由「用户取消解绑确认时不调用接口」单独覆盖。
+    vi.stubGlobal('confirm', vi.fn(() => true))
   })
 
   afterEach(() => {
@@ -575,6 +578,35 @@ describe('ProfileIdentityBindingsSection', () => {
 
     expect(userApiMocks.unbindAuthIdentity).toHaveBeenCalledWith('linuxdo')
     expect(wrapper.get('[data-testid="profile-binding-linuxdo-status"]').text()).toBe('Not bound')
+  })
+
+  it('用户取消解绑确认时不调用接口', async () => {
+    vi.stubGlobal('confirm', vi.fn(() => false))
+
+    const wrapper = mount(ProfileIdentityBindingsSection, {
+      global: {
+        plugins: [pinia],
+      },
+      props: {
+        user: createUser({
+          email_bound: true,
+          linuxdo_bound: true,
+          auth_bindings: {
+            email: { bound: true },
+            linuxdo: { bound: true, display_name: 'linuxdo-handle', can_unbind: true },
+          },
+        }),
+        compact: true,
+        linuxdoEnabled: true,
+        oidcEnabled: false,
+        wechatEnabled: false,
+      },
+    })
+
+    await wrapper.get('[data-testid="profile-binding-linuxdo-unbind"]').trigger('click')
+
+    expect(userApiMocks.unbindAuthIdentity).not.toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="profile-binding-linuxdo-status"]').text()).not.toBe('Not bound')
   })
 
   it('localizes third-party unbind guidance from note_key', () => {

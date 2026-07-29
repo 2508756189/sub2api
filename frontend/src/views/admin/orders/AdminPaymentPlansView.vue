@@ -180,6 +180,7 @@ async function toggleForSale(plan: SubscriptionPlan) {
   try {
     await adminPaymentAPI.updatePlan(plan.id, { for_sale: !plan.for_sale })
     plan.for_sale = !plan.for_sale
+    appStore.showSuccess(t('common.saved'))
   } catch (err: unknown) {
     appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error')))
   }

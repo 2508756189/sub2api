@@ -628,6 +628,7 @@ const toggleEnabled = async (rule: ErrorPassthroughRule) => {
   try {
     await adminAPI.errorPassthrough.toggleEnabled(rule.id, !rule.enabled)
     rule.enabled = !rule.enabled
+    appStore.showSuccess(t('common.saved'))
   } catch (error: any) {
     appStore.showError(error.response?.data?.detail || t('admin.errorPassthrough.failedToToggle'))
     console.error('Error toggling rule:', error)

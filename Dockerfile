@@ -13,7 +13,7 @@ ARG ALPINE_IMAGE=alpine:3.21
 ARG POSTGRES_IMAGE=postgres:18-alpine
 ARG GOPROXY=https://goproxy.cn,direct
 ARG GOSUMDB=sum.golang.google.cn
-ARG NPM_CONFIG_REGISTRY=
+ARG NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 
 # -----------------------------------------------------------------------------
 # Stage 1: Frontend Builder
@@ -22,6 +22,8 @@ ARG NPM_CONFIG_REGISTRY=
 # it on the native host arch instead of under QEMU emulation for the target.
 FROM --platform=${BUILDPLATFORM} ${NODE_IMAGE} AS frontend-builder
 ARG NPM_CONFIG_REGISTRY
+ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
+ENV COREPACK_NPM_REGISTRY=${NPM_CONFIG_REGISTRY}
 
 WORKDIR /app/frontend
 

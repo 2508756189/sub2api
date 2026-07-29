@@ -35,7 +35,8 @@ vi.mock('@/api/admin', () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
-      updateSortOrder: vi.fn()
+      updateSortOrder: vi.fn(),
+      getLiveCapability: vi.fn(() => Promise.resolve({ supported: false })), // Live 能力探测，避免 mount 时 unhandled rejection
     },
     accounts: {
       list: vi.fn(),

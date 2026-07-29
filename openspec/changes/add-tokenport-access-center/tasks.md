@@ -1,0 +1,65 @@
+# Tasks
+
+来源：`token-platform/docs/architecture/access-center-audit-20260726.md` 第五节推进顺序。已完成项标注提交。
+
+## 0. 已完成（先于本 spec 落地的无争议修复）
+
+- [x] 0.1 B1 bash `$HOME` 单引号（`5ddd5ed3`，含回归测试）
+- [x] 0.2 B2 PowerShell `-AsHashtable` 5.1 兼容（`5ddd5ed3`）
+- [x] 0.3 B3 Windows 技能脚本 `$HOME`、`"$SkillId:"` 解析期失败（`5ddd5ed3`）
+- [x] 0.4 B6 registry 流水线补 teleagentArchive、schema 1.2（state-of-art-skills `build_market.py` + 测试）
+- [x] 0.5 B4 标准归档布局改为 `<id>/` 前缀并全量重建 sha256（同上），端到端验证解压落点
+- [x] 0.6 H7 TeleAgent 准备脚本双重引号（本 change 配套提交，spec 断言防回归）
+- [x] 0.7 H5 bash 技能脚本单引号化 + `toSkillInstallSelection` 白名单校验（同上）
+- [x] 0.8 B2 同批 medium：PS 写盘去 BOM、TOML 空文件 `$null` 崩溃、JSON 数组并集（同上，PS 5.1 实机双跑验证）
+
+## 1. 决策关闭（阻塞后续实现，见 design.md Open Questions）
+
+- [x] 1.1 向 CC Switch 侧确认 deeplink 三问（usageScript 语义 / config 落盘方式 / 未知参数行为），回写 design.md（2026-07-26 依据 cc-switch v3.18.0 源码 + 旧 tag 抽查确认；结论见 design.md「CC Switch deeplink 契约确认记录」，R3 已按结论改写并新增 usageScript 契约 Requirement）
+- [ ] 1.2 用真实 gemini-cli 验证 direct 路径 `/v1beta` 取舍，敲定 `resolveClientEndpoint` 的 gemini/antigravity 规则
+- [x] 1.3 WebSocket 形态已拍板（2026-07-27）→ **D12 transport 开关**。核实发现开关那半早已完整可用，`codex-ws` 客户端类型从未被 `clientTabs` 产出（三处不可达条件），已删除并加回归断言（`accessCenterFiles.spec.ts` 的 D12 describe 块）
+- [~] 1.4 拍板 Codex OAuth 接管边界与 supportsSkills 范围
+  - [x] 认证边界已拍板（2026-07-27）→ **D13 不接管**。理由：用户的用量归属与订阅计费跟着凭据走，静默改写等同替用户换账本。现状核实：写入 `auth.json` 走合并不是覆盖、既有 `tokens` 保留、改前有备份——方向本就正确，缺的是告知。connector-delivery R6 已按结论重写
+  - [ ] supportsSkills 范围**仍待定**：OpenCode / Gemini CLI / Grok CLI 不支持技能是有意还是漏配
+
+## 2. Blocker 收尾（决策后立即动手）
+
+- [ ] 2.1 B5 Codex TOML：按 connector-delivery R4 实现同名表/根键检测中止；模板改完整 table；补「已存在 TokenPort 配置」的确认输出（条目 20）
+- [ ] 2.2 sync-skill-market.ps1 补 sha256 复核（对照 index.json 而非纯 Copy-Item）
+- [x] 2.3 修复 usageScript 形态回归：access-center 曾发 `({endpoint, key})`（CC Switch 查询必报「缺少 request 配置」），已改回上游合规的 `({request, extractor})` 模板（`buildCcsUsageScript()`，1.1 确认后落地，spec 断言防回归）
+
+## 3. High 批次
+
+- [ ] 3.1 H1 密钥可见性：高级编辑强制显示、TeleAgent 文案改明文警示、下载确认（client-access-center R2）
+- [ ] 3.2 H2/H3 endpoint：实现共享 `resolveClientEndpoint` 并替换三套归一化函数，按 1.2 结论修 gemini/antigravity；同步改 `accessCenterFiles.spec.ts:23` 断言；一并处理 antigravity 平台 usage 查询 URL 错位（`{{baseUrl}}/v1/usage` 会带上 `/antigravity` 前缀，可用 `usageBaseUrl` 覆盖，CCS ≥ v3.9.0，见 R3 新 Scenario）
+- [ ] 3.3 H4 切 tab 清空已选技能并提示（skill-delivery R4）
+- [ ] 3.4 H6 registry 信任模型：fallback 默认关 + 来源显示 + content-type/结构校验 + curl `-fL`（skill-delivery R3/R2）
+- [ ] 3.5 H8 CMD tab：禁用一键脚本按钮 + title 提示（或 EncodedCommand 方案，二选一写回 spec）；`codexConfigDir` 补 `'cmd'` 分支
+- [ ] 3.6 D13 认证告知落地（connector-delivery R6）：检测 `auth.json` 已含 `tokens` 时，界面与脚本输出并存说明 + **计费来源从 ChatGPT 订阅额度变为 API Key 扣费**的提示；脚本输出补**还原命令**（现仅打印备份路径）；「让 API Key 优先」作为默认关闭的显式开关，勾选处标注计费变化。MUST NOT 默认写 `preferred_auth_method`、MUST NOT 删 `tokens`
+
+## 4. Medium 批次（按 spec 逐条）
+
+- [ ] 4.1 CCS payload 按 clientType 过滤、grokbuild model 进顶层、OpenCode 改为纯 URL 参数不发 settings.json 形态 config（connector-delivery R3 已按确认结论改写）；UI 版本提示按白名单口径：opencode ≥ v3.12.0、grokbuild ≥ v3.18.0
+- [ ] 4.2 deeplink 接管探测 + `keys.ccSwitchNotInstalled` 复用 + 「复制 CCS 链接」兜底（client-access-center R4；已确认协议无回执，focus 启发式是唯一信号）
+- [ ] 4.3 高级编辑 path 键 dirty 跟踪（client-access-center R3）
+- [ ] 4.4 备份保留策略 N=5、同秒不覆盖、原始备份保护、还原命令输出（connector-delivery R5）
+- [ ] 4.5 CCS 模式隐藏技能选择器并修文案（skill-delivery R8）
+- [ ] 4.6 SkillMarketSelector 错误态分离可重试 + 空态文案（skill-delivery R6）
+- [ ] 4.7 riskLevel=high 二次确认与安装留痕（skill-delivery R7）
+- [ ] 4.8 降级四态与模型加载错误归因（client-access-center R5）
+- [ ] 4.9 Grok tab 独立选项（不复用「Codex 模型」标签），无效控件隐藏
+
+## 5. 工程化
+
+- [ ] 5.1 `ClientAccessCenterDialog` 组件测试：platform × clientTab 全组合断言 ccsConfig 非空可 parse、deeplink 参数、非 claude 不带档位、坏 JSON 走 showError
+- [ ] 5.2 TokenPort spec 纳入 `FRONTEND_CRITICAL_VITEST`；`check_tokenport_ci_parity.ps1` 补 `test-integration` 与 `govulncheck`
+- [ ] 5.3 CI 闸门顺序：先推 sync 分支、GitHub CI 过后再 fast-forward 产品分支（token-platform 同步脚本）
+- [ ] 5.4 FileConfig 加显式 `kind`/`writeTarget` 字段，删除 `isSkillInstallFile`/`isWritableClientFile` 的字符串匹配
+- [ ] 5.5 合并两个 psQuote 到共享模块；删 `codex-ws` 死分支与 `configFormat:'toml'` 死类型；渲染 `FileConfig.hint`
+- [ ] 5.6 access-center 文案迁独立 i18n 命名空间；清理孤儿 key（client-access-center R6）
+
+## 6. 文档
+
+- [ ] 6.1 `docs/sub2api-connector-customization.md` 降级为 Phase 1 历史记录并指向本 change
+- [ ] 6.2 deployment-standard §5 替换为 客户端×交付模式×平台 矩阵化验收清单（条目 37–38）
+- [ ] 6.3 产品名/CC Switch 写法全仓统一（条目 40–41）

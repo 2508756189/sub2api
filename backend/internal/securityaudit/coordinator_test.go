@@ -23,14 +23,20 @@ func (f *fakeLegacyEngine) Check(context.Context, Request) (*LegacyDecision, err
 }
 
 type fakePromptEngine struct {
-	mode      Mode
-	decision  *PromptDecision
-	err       error
-	enqueues  atomic.Int64
-	evaluates atomic.Int64
+	mode          Mode
+	decision      *PromptDecision
+	localDecision *PromptDecision
+	err           error
+	enqueues      atomic.Int64
+	evaluates     atomic.Int64
+	localChecks   atomic.Int64
 }
 
 func (f *fakePromptEngine) EffectiveMode() Mode { return f.mode }
+func (f *fakePromptEngine) CheckLocalSecrets(context.Context, Request) (*PromptDecision, error) {
+	f.localChecks.Add(1)
+	return f.localDecision, nil
+}
 func (f *fakePromptEngine) Enqueue(context.Context, Request) error {
 	f.enqueues.Add(1)
 	return f.err
@@ -173,4 +179,21 @@ func TestCoordinatorAsyncEnqueueFailuresNeverChangeResponseOrDownstreamDispatch(
 		require.Equal(t, int64(1), prompt.enqueues.Load())
 		require.Zero(t, prompt.evaluates.Load())
 	}
+}
+
+func TestCoordinatorBlocksLocalSecretBeforeAnyOtherAuditOrDispatch(t *testing.T) {
+	legacy := &fakeLegacyEngine{decision: &LegacyDecision{Allowed: true}}
+	prompt := &fakePromptEngine{
+		mode:          ModeBlocking,
+		localDecision: &PromptDecision{Kind: DecisionBlock, ErrorCode: ErrorCodeSecretDetected},
+	}
+	decision := NewCoordinator(legacy, prompt).Check(context.Background(), Request{Body: []byte(`{"messages":[{"role":"user","content":"sk-demo-abcdefghijklmnopqrstuvwx"}]}`)})
+
+	require.Equal(t, DecisionBlock, decision.Kind)
+	require.Equal(t, ErrorCodeSecretDetected, decision.ErrorCode)
+	require.Contains(t, decision.ClientMessage, "平台 Key")
+	require.Equal(t, int64(1), prompt.localChecks.Load())
+	require.Zero(t, legacy.calls.Load())
+	require.Zero(t, prompt.enqueues.Load())
+	require.Zero(t, prompt.evaluates.Load())
 }

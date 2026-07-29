@@ -623,10 +623,13 @@ func ProvideOpsIngressRejectAggregator(opsRepo OpsRepository, opsService *OpsSer
 }
 
 // ProvideSettingService wires SettingService with group reader and proxy repo.
-func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config) *SettingService {
+func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config, billingModeService *BillingModeService) *SettingService {
 	svc := NewSettingService(settingRepo, cfg)
 	svc.SetDefaultSubscriptionGroupReader(groupRepo)
 	svc.SetProxyRepository(proxyRepo)
+	if billingModeService != nil {
+		svc.SetBillingConfigResolver(billingModeService.SetCurrentResolver())
+	}
 	if err := svc.LoadForwardedClientIPSettings(context.Background()); err != nil {
 		logger.LegacyPrintf("service.setting", "Warning: load forwarded client IP settings failed: %v", err)
 	}
@@ -640,6 +643,47 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 	return svc
 }
 
+func ProvideBillingModeService(repo BillingModeRepository, cfg *config.Config, rdb *redis.Client) *BillingModeService {
+	var cacheFlush func(context.Context) error
+	if rdb != nil {
+		cacheFlush = func(ctx context.Context) error {
+			return rdb.FlushDB(ctx).Err()
+		}
+	}
+	svc := NewBillingModeService(repo, cfg, cacheFlush)
+	if err := svc.Load(context.Background()); err != nil {
+		logger.LegacyPrintf("service.billing_mode", "Warning: load billing mode failed: %v", err)
+	}
+	return svc
+}
+
+func ProvideBillingService(cfg *config.Config, pricingService *PricingService, billingModeService *BillingModeService) *BillingService {
+	svc := NewBillingService(cfg, pricingService)
+	if billingModeService != nil {
+		svc.SetBillingConfigResolver(billingModeService.SetCurrentResolver())
+	}
+	return svc
+}
+
+func ProvideBatchImagePublicService(
+	repo BatchImageRepository,
+	accountRepo AccountRepository,
+	groupRepo GroupRepository,
+	userGroupRateRepo UserGroupRateRepository,
+	queue BatchImageQueue,
+	pricing *BatchImageModelPricingResolver,
+	billingRepo UsageBillingRepository,
+	authCache APIKeyAuthCacheInvalidator,
+	cfg *config.Config,
+	billingModeService *BillingModeService,
+) *BatchImagePublicService {
+	svc := NewBatchImagePublicService(repo, accountRepo, groupRepo, userGroupRateRepo, queue, pricing, billingRepo, authCache, cfg)
+	if billingModeService != nil {
+		svc.SetBillingConfigResolver(billingModeService.SetCurrentResolver())
+	}
+	return svc
+}
+
 // ProvideBillingCacheService wires BillingCacheService with its RPM dependencies.
 func ProvideBillingCacheService(
 	cache BillingCache,
@@ -650,8 +694,13 @@ func ProvideBillingCacheService(
 	rateRepo UserGroupRateRepository,
 	cfg *config.Config,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
+	billingModeService *BillingModeService,
 ) *BillingCacheService {
-	return NewBillingCacheService(cache, userRepo, subRepo, apiKeyRepo, rpmCache, rateRepo, cfg, userPlatformQuotaRepo)
+	svc := NewBillingCacheService(cache, userRepo, subRepo, apiKeyRepo, rpmCache, rateRepo, cfg, userPlatformQuotaRepo)
+	if billingModeService != nil {
+		svc.SetBillingConfigResolver(billingModeService.SetCurrentResolver())
+	}
+	return svc
 }
 
 // ProvideAPIKeyService wires APIKeyService and connects rate-limit cache invalidation.
@@ -689,7 +738,8 @@ var ProviderSet = wire.NewSet(
 	NewUsageService,
 	NewDashboardService,
 	ProvidePricingService,
-	NewBillingService,
+	ProvideBillingModeService,
+	ProvideBillingService,
 	ProvideBillingCacheService,
 	NewAnnouncementService,
 	NewAdminService,
@@ -698,7 +748,7 @@ var ProviderSet = wire.NewSet(
 	ProvideImageStorageSettingService,
 	ProvideImageTaskService,
 	ProvideBatchImageModelPricingResolver,
-	NewBatchImagePublicService,
+	ProvideBatchImagePublicService,
 	NewBatchImageDownloadService,
 	ProvideBatchImageCleanupService,
 	ProvideBatchImageWorkerRuntime,

@@ -111,6 +111,7 @@ type BillingCacheService struct {
 	userRPMCache          UserRPMCache
 	userGroupRateRepo     UserGroupRateRepository
 	cfg                   *config.Config
+	billingConfigResolver func() config.BillingConfig
 	circuitBreaker        *billingCircuitBreaker
 	userPlatformQuotaRepo UserPlatformQuotaRepository
 
@@ -126,6 +127,10 @@ type BillingCacheService struct {
 	cacheWriteDropFullLastLog   int64
 	cacheWriteDropClosedCount   uint64
 	cacheWriteDropClosedLastLog int64
+}
+
+func (s *BillingCacheService) SetBillingConfigResolver(resolver func() config.BillingConfig) {
+	s.billingConfigResolver = resolver
 }
 
 // NewBillingCacheService 创建计费缓存服务
@@ -861,10 +866,19 @@ func (s *BillingCacheService) checkRPM(ctx context.Context, user *User, group *G
 }
 
 func (s *BillingCacheService) minimumBalanceReserve() float64 {
-	if s == nil || s.cfg == nil || s.cfg.Billing.MinimumBalanceReserve <= 0 {
+	if s == nil {
 		return 0
 	}
-	return s.cfg.Billing.MinimumBalanceReserve
+	billing := config.BillingConfig{}
+	if s.billingConfigResolver != nil {
+		billing = s.billingConfigResolver()
+	} else if s.cfg != nil {
+		billing = s.cfg.Billing
+	}
+	if billing.MinimumBalanceReserve <= 0 {
+		return 0
+	}
+	return billing.MinimumBalanceReserve
 }
 
 func (s *BillingCacheService) balanceBelowEligibilityThreshold(balance float64) bool {

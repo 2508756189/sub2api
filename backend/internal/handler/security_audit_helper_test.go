@@ -54,6 +54,11 @@ type turnCountingEngine struct {
 }
 
 func (e *turnCountingEngine) EffectiveMode() securityaudit.Mode { return e.mode }
+
+func (e *turnCountingEngine) CheckLocalSecrets(context.Context, securityaudit.Request) (*securityaudit.PromptDecision, error) {
+	return nil, nil
+}
+
 func (e *turnCountingEngine) Enqueue(context.Context, securityaudit.Request) error {
 	e.enqueues.Add(1)
 	return nil

@@ -59,6 +59,7 @@ type SettingHandler struct {
 	paymentService           *service.PaymentService
 	userAttributeService     *service.UserAttributeService
 	notificationEmailService *service.NotificationEmailService
+	billingModeService       *service.BillingModeService
 	totpService              *service.TotpService
 	userService              *service.UserService
 }

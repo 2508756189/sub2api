@@ -259,6 +259,7 @@ async function toggleEnabled(row: ChannelMonitor) {
   try {
     await adminAPI.channelMonitor.update(row.id, { enabled: next })
     row.enabled = next
+    appStore.showSuccess(t('common.saved'))
   } catch (err: unknown) {
     appStore.showError(extractApiErrorMessage(err, t('common.error')))
   }

@@ -6891,6 +6891,7 @@
         <!-- Tab: Email -->
         <!-- Tab: Payment -->
         <div v-show="activeTab === 'payment'" class="space-y-6">
+          <BillingModeSettings />
           <!-- Payment System Settings -->
           <div class="card">
             <div
@@ -6948,7 +6949,7 @@
                       v-model="form.payment_product_name_prefix"
                       type="text"
                       class="input"
-                      placeholder="Sub2API"
+                  placeholder="TokenPort"
                     />
                   </div>
                   <div>
@@ -6970,7 +6971,7 @@
                       class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300"
                     >
                       {{
-                        (form.payment_product_name_prefix || "Sub2API") +
+                      (form.payment_product_name_prefix || "TokenPort") +
                         " 100 " +
                         (form.payment_product_name_suffix || "CNY")
                       }}
@@ -7980,6 +7981,7 @@ import Select from "@/components/common/Select.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import PaymentProviderList from "@/components/payment/PaymentProviderList.vue";
 import PaymentProviderDialog from "@/components/payment/PaymentProviderDialog.vue";
+import BillingModeSettings from "@/tokenport/billing/BillingModeSettings.vue";
 import GroupBadge from "@/components/common/GroupBadge.vue";
 import GroupOptionItem from "@/components/common/GroupOptionItem.vue";
 import Toggle from "@/components/common/Toggle.vue";
@@ -8717,7 +8719,7 @@ const form = reactive<SettingsForm>({
   default_subscriptions: [],
   force_email_on_third_party_signup: false,
   default_user_rpm_limit: 0,
-  site_name: "Sub2API",
+  site_name: "TokenPort",
   site_logo: "",
   site_subtitle: "Subscription to API Conversion Platform",
   api_base_url: "",
@@ -11374,7 +11376,7 @@ async function loadProviders() {
     // Normalize supported_types: backend returns null when the list is empty
     // (Go nil slice → JSON null). Without this, ProviderCard's isSelected()
     // throws TypeError on null.includes(), causing the card to vanish.
-    providers.value = (res.data || []).map((p) => ({
+    providers.value = (res.data || []).map((p: any) => ({
       ...p,
       supported_types: Array.isArray(p.supported_types)
         ? p.supported_types
@@ -11467,6 +11469,7 @@ async function handleToggleField(
   try {
     await adminAPI.payment.updateProvider(provider.id, payload);
     await loadProviders();
+    appStore.showSuccess(t("common.saved"));
   } catch (err: unknown) {
     appStore.showError(extractI18nErrorMessage(err, t, "payment.errors", t("common.error")));
   }
@@ -11495,6 +11498,7 @@ async function handleToggleType(provider: ProviderInstance, type: string) {
       supported_types: updated,
     } as any);
     await loadProviders();
+    appStore.showSuccess(t("common.saved"));
   } catch (err: unknown) {
     appStore.showError(extractI18nErrorMessage(err, t, "payment.errors", t("common.error")));
   }
@@ -11930,11 +11934,17 @@ watch(
 
 /* ============ 系统设置 Tab 导航 ============ */
 .settings-tabs-shell {
-  @apply sticky z-20 -mx-1 rounded-2xl border border-white/80 bg-white/90 p-1.5 backdrop-blur-xl;
+  @apply sticky z-20 -mx-1 rounded-2xl border border-white/80 bg-white/90 p-1.5 backdrop-blur-xl dark:border-dark-700/80 dark:bg-dark-900/90;
   top: 4.75rem;
   box-shadow:
     0 12px 28px rgb(15 23 42 / 0.07),
     0 1px 0 rgb(255 255 255 / 0.9) inset;
+}
+
+.dark .settings-tabs-shell {
+  box-shadow:
+    0 12px 28px rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.04) inset;
 }
 
 .settings-tabs-scroll {

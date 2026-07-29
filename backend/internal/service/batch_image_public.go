@@ -82,16 +82,21 @@ type BatchImageOwner struct {
 }
 
 type BatchImagePublicService struct {
-	Repo              BatchImageRepository
-	AccountRepo       BatchImageAccountSelectionRepository
-	GroupRepo         BatchImageGroupPricingRepository
-	UserGroupRateRepo BatchImageUserGroupRateRepository
-	Queue             BatchImageQueue
-	ProviderRegistry  *BatchImageProviderRegistry
-	Pricing           BatchImagePricingResolver
-	BillingRepo       UsageBillingRepository
-	AuthCache         APIKeyAuthCacheInvalidator
-	Config            *config.Config
+	Repo                  BatchImageRepository
+	AccountRepo           BatchImageAccountSelectionRepository
+	GroupRepo             BatchImageGroupPricingRepository
+	UserGroupRateRepo     BatchImageUserGroupRateRepository
+	Queue                 BatchImageQueue
+	ProviderRegistry      *BatchImageProviderRegistry
+	Pricing               BatchImagePricingResolver
+	BillingRepo           UsageBillingRepository
+	AuthCache             APIKeyAuthCacheInvalidator
+	Config                *config.Config
+	BillingConfigResolver func() config.BillingConfig
+}
+
+func (s *BatchImagePublicService) SetBillingConfigResolver(resolver func() config.BillingConfig) {
+	s.BillingConfigResolver = resolver
 }
 
 type BatchImagePricingSnapshot struct {
@@ -120,6 +125,7 @@ type BatchImagePublicBatch struct {
 	EstimatedCost   float64  `json:"estimated_cost"`
 	HoldAmount      float64  `json:"hold_amount"`
 	ActualCost      *float64 `json:"actual_cost"`
+	Currency        string   `json:"currency"`
 	CreatedAt       int64    `json:"created_at"`
 	SubmittedAt     *int64   `json:"submitted_at"`
 	SettledAt       *int64   `json:"settled_at"`
@@ -278,7 +284,7 @@ func (s *BatchImagePublicService) Submit(ctx context.Context, owner BatchImageOw
 		BillableUnitPrice:       pricingSnapshot.BillableUnitPrice,
 		HoldUnitPrice:           pricingSnapshot.HoldUnitPrice,
 		PricingSnapshotVersion:  1,
-		Currency:                "USD",
+		Currency:                s.billingCurrency(),
 		HoldID:                  &holdID,
 		IdempotencyKey:          batchImageOptionalStringPtr(idempotencyKey),
 		RequestHash:             batchImageStringPtr(requestHash),
@@ -1054,6 +1060,7 @@ func (s *BatchImagePublicService) resolvePricingSnapshot(ctx context.Context, ow
 		}
 		unit = resolvedUnit
 	}
+	unit *= s.billingExchangeRate()
 	// 定价不变式：hold 比例不得低于 discount 比例，否则成功率足够高时
 	// actualCost > holdAmount，结算永远失败、冻结余额无法解冻。
 	// 管理端已校验新配置，此处兜底钳制存量脏数据。
@@ -1089,6 +1096,26 @@ func (s *BatchImagePublicService) resolvePricingSnapshot(ctx context.Context, ow
 
 func (s *BatchImagePublicService) enabled() bool {
 	return s != nil && s.Repo != nil && s.AccountRepo != nil && s.Config != nil && s.Config.BatchImage.Enabled
+}
+
+func (s *BatchImagePublicService) billingCurrency() string {
+	if s != nil && s.BillingConfigResolver != nil {
+		return s.BillingConfigResolver().CurrencyCode()
+	}
+	if s == nil || s.Config == nil {
+		return config.BillingCurrencyUSD
+	}
+	return s.Config.Billing.CurrencyCode()
+}
+
+func (s *BatchImagePublicService) billingExchangeRate() float64 {
+	if s != nil && s.BillingConfigResolver != nil {
+		return s.BillingConfigResolver().USDExchangeRate()
+	}
+	if s == nil || s.Config == nil {
+		return 1
+	}
+	return s.Config.Billing.USDExchangeRate()
 }
 
 func (s *BatchImagePublicService) invalidateAuthCache(ctx context.Context, userID int64) {
@@ -1175,6 +1202,7 @@ func BatchImageJobToPublic(job *BatchImageJob) *BatchImagePublicBatch {
 		EstimatedCost:   job.EstimatedCost,
 		HoldAmount:      holdAmount,
 		ActualCost:      job.ActualCost,
+		Currency:        config.NormalizeBillingCurrency(job.Currency),
 		CreatedAt:       job.CreatedAt.Unix(),
 		SubmittedAt:     batchImageUnixPtr(job.SubmittedAt),
 		SettledAt:       batchImageUnixPtr(job.SettledAt),

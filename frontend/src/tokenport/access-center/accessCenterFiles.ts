@@ -1,0 +1,373 @@
+import type { FileConfig } from '@/components/keys/connectorTemplates'
+import type { ConnectorShell } from '@/components/keys/connectorTemplates'
+import { normalizeConnectorOptions, type ConnectorOptions } from '@/constants/connectorPresets'
+import type { SkillInstallSelection } from '@/api/skillMarket'
+
+export function ensureApiVersion(baseUrl: string, version = 'v1'): string {
+  const clean = baseUrl.replace(/\/+$/, '').replace(/\/v1(?:beta)?\/?$/, '')
+  return `${clean}/${version}`
+}
+
+export function buildGeminiFiles(baseUrl: string, apiKey: string, shell: ConnectorShell): FileConfig[] {
+  const endpoint = ensureApiVersion(baseUrl, 'v1beta')
+  if (shell === 'cmd') {
+    return [{ path: 'Command Prompt', content: `set GOOGLE_GEMINI_BASE_URL=${endpoint}\nset GEMINI_API_KEY=${apiKey}` }]
+  }
+  if (shell === 'powershell' || shell === 'windows') {
+    return [{ path: 'PowerShell', content: `$env:GOOGLE_GEMINI_BASE_URL="${endpoint}"\n$env:GEMINI_API_KEY="${apiKey}"` }]
+  }
+  return [{ path: 'Terminal', content: `export GOOGLE_GEMINI_BASE_URL="${endpoint}"\nexport GEMINI_API_KEY="${apiKey}"` }]
+}
+
+export function buildOpenCodeFiles(baseUrl: string, apiKey: string, provider: string): FileConfig[] {
+  return [{
+    path: 'opencode.json',
+    content: JSON.stringify({
+      $schema: 'https://opencode.ai/config.json',
+      provider: {
+        [provider]: {
+          options: { baseURL: baseUrl, apiKey },
+        },
+      },
+    }, null, 2),
+  }]
+}
+
+export function buildTeleAgentFiles(
+  baseUrl: string,
+  apiKey: string,
+  options: ConnectorOptions,
+  selectedSkills: SkillInstallSelection[] = [],
+): FileConfig[] {
+  const model = normalizeConnectorOptions(options).codex.model.trim()
+  const provider = {
+    name: 'TokenPort',
+    protocol: 'OpenAI Compatible',
+    baseUrl: ensureApiVersion(baseUrl),
+    apiKey,
+    ...(model ? { model } : {}),
+  }
+  const files: FileConfig[] = [{
+    path: 'teleagent-provider-fields.json',
+    content: JSON.stringify({
+      purpose: 'TeleAgent provider setup fields',
+      provider,
+    }, null, 2),
+    hint: '在 TeleAgent 的模型提供商中新增 OpenAI Compatible 提供商，按字段保存后刷新模型。TokenPort 不会写入 TeleAgent 安装目录。',
+  }]
+
+  if (selectedSkills.length) {
+    files.push({
+      path: 'teleagent-skill-import-manifest.json',
+      content: JSON.stringify({
+        purpose: 'TeleAgent compatible skill import manifest',
+        verification: 'SHA256',
+        skills: selectedSkills.map((skill) => ({
+          id: skill.id,
+          name: skill.name,
+          archiveUrl: skill.archiveUrl,
+          sha256: skill.sha256,
+          archiveLayout: skill.archiveLayout || 'teleagent-root',
+        })),
+      }, null, 2),
+      hint: '导入清单列出 TeleAgent 兼容 ZIP 的下载地址和 SHA256。该 ZIP 将 SKILL.md 放在根目录，不直接写入应用安装目录。',
+    })
+    files.push({
+      path: 'Prepare TeleAgent skills (PowerShell)',
+      content: buildTeleAgentSkillPreparationScript(selectedSkills),
+      hint: '在 PowerShell 执行后会下载并校验技能 ZIP，然后在 TeleAgent 的“技能 > 导入技能”中选择已验证文件。',
+    })
+  }
+
+  return files
+}
+
+function buildTeleAgentSkillPreparationScript(selectedSkills: SkillInstallSelection[]): string {
+  const lines = [
+    '$ErrorActionPreference = "Stop"',
+    '$downloadDir = Join-Path $HOME "Downloads\\TokenPort-TeleAgent-Skills"',
+    'New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null',
+    '',
+    'function Get-TokenPortTeleAgentSkill {',
+    '  param(',
+    '    [string]$SkillId,',
+    '    [string]$ArchiveUrl,',
+    '    [string]$ExpectedSha',
+    '  )',
+    '  $archivePath = Join-Path $downloadDir "$SkillId.zip"',
+    '  Invoke-WebRequest -Uri $ArchiveUrl -OutFile $archivePath',
+    '  $actualSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()',
+    '  if ($actualSha -ne $ExpectedSha.ToLowerInvariant()) {',
+    '    Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue',
+    // ${} 必不可少：PowerShell 会把 "$SkillId:" 当成驱动器限定变量，整个脚本在解析期就失败。
+    '    throw "SHA256 mismatch for ${SkillId}: $actualSha"',
+    '  }',
+    '  Write-Host "Verified ${SkillId}: $archivePath"',
+    '}',
+    '',
+  ]
+
+  // psQuote 自带外层单引号，这里不能再包一层，否则 PS 把 ''value'' 绑定成空串。
+  selectedSkills.forEach((skill) => {
+    lines.push(
+      `Get-TokenPortTeleAgentSkill -SkillId ${psQuote(skill.id)} -ArchiveUrl ${psQuote(skill.archiveUrl)} -ExpectedSha ${psQuote(skill.sha256)}`,
+    )
+  })
+
+  lines.push('', 'Write-Host "Open TeleAgent > 技能 > 导入技能, then select the verified ZIP file above."')
+  return lines.join('\n')
+}
+
+export function buildGrokFiles(
+  baseUrl: string,
+  apiKey: string,
+  shell: ConnectorShell,
+  options: ConnectorOptions,
+): FileConfig[] {
+  const configDir = shell === 'unix' ? '~/.grok' : '%userprofile%\\.grok'
+  const model = normalizeConnectorOptions(options).codex.model.trim()
+  if (!model) {
+    return [{
+      path: 'Grok Build 配置说明.txt',
+      content: 'Grok Build 的 config.toml 必须指定一个模型。请先从上游可用模型中选择模型，再生成或导入配置。',
+      hint: '未选择模型时不会生成无效配置，也不会自动填入未经验证的模型。',
+    }]
+  }
+
+  const tomlString = (value: string) => JSON.stringify(value)
+  const lines = [
+    '[models]',
+    `default = ${tomlString(model)}`,
+    '',
+    `[model.${tomlString(model)}]`,
+    `model = ${tomlString(model)}`,
+    `base_url = ${tomlString(ensureApiVersion(baseUrl))}`,
+    'name = "TokenPort"',
+    `api_key = ${tomlString(apiKey)}`,
+    'api_backend = "responses"',
+    'context_window = 500000',
+  ]
+
+  return [{
+    path: `${configDir}/config.toml`,
+    content: lines.join('\n'),
+  }]
+}
+
+// cc-switch 用 QuickJS 对整段脚本求值，结果必须是带 request/extractor 的对象字面量；
+// {{baseUrl}}/{{apiKey}} 由 cc-switch 在查询时按供应商 live 配置替换。
+// 内容需保持 ASCII：buildCcSwitchImportDeeplink 用 btoa() 编码，非 Latin-1 会抛异常。
+export function buildCcsUsageScript(): string {
+  return `({
+    request: {
+      url: "{{baseUrl}}/v1/usage",
+      method: "GET",
+      headers: { "Authorization": "Bearer {{apiKey}}" }
+    },
+    extractor: function(response) {
+      const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
+      const unit = response?.unit ?? response?.quota?.unit ?? "USD";
+      return {
+        isValid: response?.is_active ?? response?.isValid ?? true,
+        remaining,
+        unit
+      };
+    }
+  })`
+}
+
+export function isSkillInstallFile(file: FileConfig): boolean {
+  return file.path.startsWith('Install ') && file.path.includes(' skills ')
+}
+
+export function isWritableClientFile(file: FileConfig): boolean {
+  const path = file.path.toLowerCase().replace(/\\/g, '/')
+  return (path.includes('/.codex/') || path.includes('/.claude/') || path.includes('/.grok/')) &&
+    (path.endsWith('.json') || path.endsWith('.toml'))
+}
+
+function encodeBase64Utf8(value: string): string {
+  const bytes = new TextEncoder().encode(value)
+  let binary = ''
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte) })
+  return btoa(binary)
+}
+
+function bashQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`
+}
+
+function psQuote(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`
+}
+
+// $HOME 必须留在单引号外，否则 POSIX shell 不做参数展开，配置会落到当前目录下一个名为 $HOME 的文件夹。
+function bashTarget(path: string): string {
+  const normalized = path.replace(/\\/g, '/')
+  const relative = normalized.match(/^(?:%userprofile%|~)\/(.+)$/i)?.[1]
+  return relative ? `"$HOME"/${bashQuote(relative)}` : bashQuote(normalized)
+}
+
+function powershellPath(path: string): string {
+  const normalized = path.replace(/\//g, '\\')
+  const relative = normalized.match(/^(?:%userprofile%|~)\\(.+)$/i)?.[1]
+  return relative ? `Join-Path $HOME ${psQuote(relative)}` : psQuote(normalized)
+}
+
+export function buildClientInstallScript(files: FileConfig[], shell: ConnectorShell): string {
+  const writable = files.filter(isWritableClientFile)
+  if (!writable.length) return ''
+  return shell === 'unix' ? buildBashInstallScript(writable) : buildPowerShellInstallScript(writable)
+}
+
+function buildPowerShellInstallScript(files: FileConfig[]): string {
+  const lines = [
+    '$ErrorActionPreference = "Stop"',
+    // PS 5.1 的 Set-Content -Encoding UTF8 会写 BOM，Grok/Codex 解析带 BOM 的 TOML/JSON 会失败。
+    '$tokenPortUtf8 = New-Object System.Text.UTF8Encoding($false)',
+    '',
+    'function Backup-TokenPortFile([string]$Target) {',
+    '  if (Test-Path -LiteralPath $Target) {',
+    '    $backup = "$Target.tokenport-backup-$(Get-Date -Format yyyyMMddHHmmss)"',
+    '    Copy-Item -LiteralPath $Target -Destination $backup -Force',
+    '    Write-Host "TokenPort backup written: $backup"',
+    '  }',
+    '}',
+    '',
+    // ConvertFrom-Json -AsHashtable 需要 PowerShell 6+，Windows 自带的 5.1 没有该参数。
+    'function ConvertTo-TokenPortMap($Value) {',
+    '  if ($null -eq $Value) { return $null }',
+    '  if ($Value -is [System.Collections.IDictionary]) {',
+    '    $map = @{}',
+    '    foreach ($key in @($Value.Keys)) { $map[$key] = ConvertTo-TokenPortMap $Value[$key] }',
+    '    return $map',
+    '  }',
+    '  if ($Value -is [System.Management.Automation.PSCustomObject]) {',
+    '    $map = @{}',
+    '    foreach ($property in $Value.PSObject.Properties) { $map[$property.Name] = ConvertTo-TokenPortMap $property.Value }',
+    '    return $map',
+    '  }',
+    '  if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {',
+    '    $items = @()',
+    '    foreach ($item in $Value) { $items += ,(ConvertTo-TokenPortMap $item) }',
+    '    return ,$items',
+    '  }',
+    '  return $Value',
+    '}',
+    '',
+    'function Read-TokenPortJson([string]$Target) {',
+    '  if (-not (Test-Path -LiteralPath $Target)) { return @{} }',
+    '  $raw = Get-Content -LiteralPath $Target -Raw',
+    '  if ([string]::IsNullOrWhiteSpace($raw)) { return @{} }',
+    '  return ConvertTo-TokenPortMap ($raw | ConvertFrom-Json)',
+    '}',
+    '',
+    // 数组做并集而不是整体覆盖：用户已有的 enabledPlugins 等列表项必须保留，
+    // 与界面「保留已有项目设置」的承诺一致。
+    'function Merge-TokenPortArray($Current, $Incoming) {',
+    '  $merged = @() + $Current',
+    '  $seen = @{}',
+    '  foreach ($item in $merged) {',
+    '    $token = if ($null -eq $item) { "null" } else { $item | ConvertTo-Json -Compress -Depth 20 }',
+    '    $seen[$token] = $true',
+    '  }',
+    '  foreach ($item in $Incoming) {',
+    '    $token = if ($null -eq $item) { "null" } else { $item | ConvertTo-Json -Compress -Depth 20 }',
+    '    if (-not $seen.ContainsKey($token)) { $seen[$token] = $true; $merged += ,$item }',
+    '  }',
+    '  return ,$merged',
+    '}',
+    '',
+    'function Merge-TokenPortJson([string]$Target, [string]$Payload) {',
+    '  $incoming = ConvertTo-TokenPortMap ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)) | ConvertFrom-Json)',
+    '  $current = Read-TokenPortJson $Target',
+    '  foreach ($key in @($incoming.Keys)) {',
+    '    if ($incoming[$key] -is [System.Collections.IList] -and $current[$key] -is [System.Collections.IList]) {',
+    '      $current[$key] = Merge-TokenPortArray $current[$key] $incoming[$key]',
+    '    } elseif ($incoming[$key] -is [hashtable] -and $current[$key] -is [hashtable]) {',
+    '      foreach ($child in @($incoming[$key].Keys)) {',
+    '        if ($incoming[$key][$child] -is [System.Collections.IList] -and $current[$key][$child] -is [System.Collections.IList]) {',
+    '          $current[$key][$child] = Merge-TokenPortArray $current[$key][$child] $incoming[$key][$child]',
+    '        } else { $current[$key][$child] = $incoming[$key][$child] }',
+    '      }',
+    '    } else { $current[$key] = $incoming[$key] }',
+    '  }',
+    '  $parent = Split-Path -Parent $Target; if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }',
+    '  Backup-TokenPortFile $Target',
+    '  $json = $current | ConvertTo-Json -Depth 20',
+    '  [IO.File]::WriteAllText($Target, $json + [Environment]::NewLine, $tokenPortUtf8)',
+    '}',
+    '',
+    'function Merge-TokenPortToml([string]$Target, [string]$Payload) {',
+    '  $content = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)).Trim()',
+    '  $begin = "# >>> TokenPort managed config >>>"; $end = "# <<< TokenPort managed config <<<"',
+    '  $block = "$begin`n$content`n$end"',
+    '  $existing = if (Test-Path -LiteralPath $Target) { Get-Content -LiteralPath $Target -Raw } else { "" }',
+    // 0 字节文件 Get-Content -Raw 返回 $null，直接 .Trim()/IsMatch 会崩。
+    '  if ($null -eq $existing) { $existing = "" }',
+    '  $pattern = [regex]::Escape($begin) + ".*?" + [regex]::Escape($end)',
+    '  $next = if ([regex]::IsMatch($existing, $pattern, "Singleline")) { [regex]::Replace($existing, $pattern, $block, "Singleline") } elseif ($existing.Trim()) { $existing.TrimEnd() + "`n`n" + $block } else { $block }',
+    '  $parent = Split-Path -Parent $Target; if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }',
+    '  Backup-TokenPortFile $Target',
+    '  [IO.File]::WriteAllText($Target, $next + [Environment]::NewLine, $tokenPortUtf8)',
+    '}',
+    '',
+  ]
+  files.forEach((file) => {
+    const fn = file.path.toLowerCase().endsWith('.toml') ? 'Merge-TokenPortToml' : 'Merge-TokenPortJson'
+    lines.push(`${fn} -Target (${powershellPath(file.path)}) -Payload ${psQuote(encodeBase64Utf8(file.content))}`)
+  })
+  return lines.join('\n')
+}
+
+function buildBashInstallScript(files: FileConfig[]): string {
+  const lines = [
+    'set -euo pipefail',
+    '',
+    'merge_tokenport_file() {',
+    '  target="$1"; payload="$2"; kind="$3"',
+    '  mkdir -p "$(dirname "$target")"',
+    '  [ ! -f "$target" ] || cp "$target" "${target}.tokenport-backup-$(date +%Y%m%d%H%M%S)"',
+    '  python3 - "$target" "$payload" "$kind" <<\'PY\'',
+    'import base64, json, pathlib, re, sys',
+    'target, payload, kind = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]',
+    'incoming = base64.b64decode(payload).decode("utf-8")',
+    'if kind == "json":',
+    '    current = json.loads(target.read_text(encoding="utf-8-sig")) if target.exists() and target.read_text(encoding="utf-8-sig").strip() else {}',
+    '    patch = json.loads(incoming)',
+    '    def merge_arrays(cur, inc):',
+    '        merged = list(cur)',
+    '        seen = {json.dumps(x, sort_keys=True, ensure_ascii=False) for x in merged}',
+    '        for item in inc:',
+    '            token = json.dumps(item, sort_keys=True, ensure_ascii=False)',
+    '            if token not in seen:',
+    '                seen.add(token); merged.append(item)',
+    '        return merged',
+    '    for key, value in patch.items():',
+    '        if isinstance(value, list) and isinstance(current.get(key), list):',
+    '            current[key] = merge_arrays(current[key], value)',
+    '        elif isinstance(value, dict) and isinstance(current.get(key), dict):',
+    '            for child, child_value in value.items():',
+    '                if isinstance(child_value, list) and isinstance(current[key].get(child), list):',
+    '                    current[key][child] = merge_arrays(current[key][child], child_value)',
+    '                else:',
+    '                    current[key][child] = child_value',
+    '        else: current[key] = value',
+    '    target.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")',
+    'else:',
+    '    begin, end = "# >>> TokenPort managed config >>>", "# <<< TokenPort managed config <<<"',
+    '    block = f"{begin}\\n{incoming.strip()}\\n{end}"',
+    '    current = target.read_text(encoding="utf-8") if target.exists() else ""',
+    '    pattern = re.compile(re.escape(begin) + r".*?" + re.escape(end), re.S)',
+    '    next_text = pattern.sub(block, current) if pattern.search(current) else (current.rstrip() + "\\n\\n" + block if current.strip() else block)',
+    '    target.write_text(next_text + "\\n", encoding="utf-8")',
+    'PY',
+    '}',
+    '',
+  ]
+  files.forEach((file) => {
+    const kind = file.path.toLowerCase().endsWith('.toml') ? 'toml' : 'json'
+    lines.push(`merge_tokenport_file ${bashTarget(file.path)} ${bashQuote(encodeBase64Utf8(file.content))} ${kind}`)
+  })
+  return lines.join('\n')
+}

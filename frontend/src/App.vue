@@ -8,6 +8,7 @@ import { resolveRouteDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useAdminComplianceStore, useAdminSettingsStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
+import { resolveTokenPortLogo } from '@/tokenport/brand/tokenPortBrand'
 import { updateFavicon } from '@/utils/branding'
 
 const router = useRouter()
@@ -31,9 +32,7 @@ function updateDocumentTitle() {
 watch(
   () => appStore.siteLogo,
   (newLogo) => {
-    if (newLogo) {
-      updateFavicon(newLogo)
-    }
+    updateFavicon(resolveTokenPortLogo(newLogo))
   },
   { immediate: true }
 )

@@ -234,6 +234,7 @@ const setAutoRefresh = async (enabled: boolean) => {
   saving.value = true
   try {
     applyState(await adminAPI.accounts.setOllamaCloudUsageAutoRefresh(props.account.id, enabled))
+    appStore.showSuccess(t('common.saved'))
   } catch (error) {
     appStore.showError(extractApiErrorMessage(error, t('admin.accounts.ollamaCloud.autoRefreshFailed')))
   } finally {

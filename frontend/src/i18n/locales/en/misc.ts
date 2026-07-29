@@ -153,14 +153,14 @@ export default {
     // Admin tour steps
     admin: {
       welcome: {
-        title: '👋 Welcome to Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API is a powerful AI service gateway platform that helps you easily manage and distribute AI services.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Create service tiers (VIP, Free Trial, etc.)</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Distribution</b> - Generate independent API Keys for users</li><li>💰 <b>Billing Control</b> - Flexible rate and quota management</li></ul><p style="color: #10b981; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
-        nextBtn: 'Start Setup 🚀',
+        title: 'Welcome to TokenPort',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">TokenPort helps you manage model accounts, API keys, Token usage, and Skills in one console.</p><p style="margin-bottom: 12px;"><b>What you can do:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li><b>Groups</b> - Split resources and permissions by team, project, or environment</li><li><b>Account access</b> - Connect multiple upstream model accounts for stable routing</li><li><b>Keys and quotas</b> - Issue keys and control limits, pricing, and access scope</li><li><b>Usage stats</b> - Track Tokens, cost, and team consumption</li><li><b>Skill Market</b> - Provide reusable Skills to Codex, Claude, and other clients</li></ul><p style="color: #10b981; font-weight: 600;">Next, complete the first setup in a few minutes →</p></div>',
+        nextBtn: 'Start Setup',
         prevBtn: 'Skip'
       },
       groupManage: {
         title: '📦 Step 1: Group Management',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core concept of Sub2API, like a "service package":</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>💰 Each group has independent billing multiplier</li><li>👥 Can be set as public or exclusive</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> You can create "VIP Premium" (high rate) and "Free Trial" (low rate) groups</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups organize resources for departments, projects, customers, or environments.</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>Each group can contain multiple upstream accounts</li><li>Each group has independent billing and quota rules</li><li>Groups can be public or assigned to selected users</li></ul><p style="margin-top: 16px; color: #10b981; font-weight: 600;">Click Group Management on the left sidebar</p></div>'
       },
       createGroup: {
         title: '➕ Create New Group',
@@ -253,8 +253,8 @@ export default {
     // User tour steps
     user: {
       welcome: {
-        title: '👋 Welcome to Sub2API',
-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Hello! Welcome to the Sub2API AI service platform.</p><p style="margin-bottom: 12px;"><b>🎯 Quick Start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Create API Key</li><li>📋 Copy key to your application</li><li>🚀 Start using AI services</li></ul><p style="color: #10b981; font-weight: 600;">Just 1 minute, let\'s get started →</p></div>',
+        title: 'Welcome to TokenPort',
+        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Welcome to TokenPort.</p><p style="margin-bottom: 12px;"><b>Quick start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>Create an API Key</li><li>Open the access center</li><li>Connect your AI client</li></ul><p style="color: #10b981; font-weight: 600;">Get connected in one minute →</p></div>',
         nextBtn: 'Start 🚀',
         prevBtn: 'Skip'
       },
@@ -526,7 +526,7 @@ export default {
       deductBalanceHint: 'Subtract recharged amount from user balance',
       userBalance: 'User Balance',
       orderAmount: 'Order Amount',
-      insufficientBalance: 'Insufficient balance — will deduct to $0',
+      insufficientBalance: 'Insufficient balance - will deduct to CNY 0',
       noDeduction: 'Will NOT deduct user balance',
       forceRefund: 'Force refund (ignore balance check)',
       orderCancelled: 'Order Cancelled',

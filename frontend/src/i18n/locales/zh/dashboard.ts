@@ -139,12 +139,12 @@ export default {
         '此 API 密钥尚未分配分组，请先在密钥列表中点击分组列进行分配，然后才能查看使用配置。',
       openai: {
         description: '将以下配置文件添加到 Codex CLI 配置目录中。',
+        configTomlHint: '如手动复制到 config.toml，请先备份原文件并保留已有 [projects] 等自定义配置；使用下方一键配置脚本会写入 TokenPort 管理块。',
         authModeTitle: 'Codex 认证模式',
         authModeDescription: '兼容模式保留旧版 Codex 配置；API Key Mode 用于授权客户端图片执行器。',
         authModeLegacy: '兼容模式',
         authModeApiKey: 'API Key Mode',
         authModeApiKeyRestartNotice: '保存此配置后，必须完全退出并重启 Codex Desktop 或 CLI，然后新建 task，让客户端重新构建工具注册表。',
-        configTomlHint: '请确保以下内容位于 config.toml 文件的开头部分',
         note: '请确保配置目录存在。macOS/Linux 用户可运行 mkdir -p ~/.codex 创建目录。',
         noteWindows:
           '按 Win+R，输入 %userprofile%\\.codex 打开配置目录。如目录不存在，请先手动创建。'
@@ -216,8 +216,8 @@ export default {
     },
     // 配额和有效期
     quotaLimit: '额度限制',
-    quotaAmount: '额度金额 (USD)',
-    quotaAmountPlaceholder: '输入 USD 额度限制',
+    quotaAmount: '额度金额（人民币）',
+    quotaAmountPlaceholder: '输入人民币额度限制',
     quotaAmountHint: '设置此密钥可消费的最大金额。0 = 无限制。',
     quotaUsed: '已用额度',
     reset: '重置',
@@ -229,9 +229,9 @@ export default {
     rateLimitColumn: '速率限制',
     rateLimitSection: '速率限制',
     resetUsage: '重置',
-    rateLimit5h: '5小时限额 (USD)',
-    rateLimit1d: '日限额 (USD)',
-    rateLimit7d: '7天限额 (USD)',
+    rateLimit5h: '5小时限额（人民币）',
+    rateLimit1d: '日限额（人民币）',
+    rateLimit7d: '7天限额（人民币）',
     rateLimitHint: '设置此密钥在指定时间窗口内的最大消费额。0 = 无限制。',
     rateLimitUsage: '速率限制用量',
     resetRateLimitUsage: '重置速率限制用量',
@@ -722,6 +722,7 @@ export default {
       verifySuccess: '邮箱添加成功',
       removeEmail: '移除',
       removeSuccess: '邮箱已移除',
+      removeConfirm: '确定要移除通知邮箱 {email} 吗？移除后需重新验证才能再次添加。',
       emailDuplicate: '该邮箱已存在',
       maxEmailsReached: '已达到通知邮箱数量上限',
       unverified: '未验证',
@@ -760,6 +761,7 @@ export default {
       replaceSuccess: '主邮箱已更新',
       unbindAction: '解绑',
       unbindSuccess: '{providerName} 已解绑',
+      unbindConfirm: '确定要解绑 {providerName} 吗？解绑后将无法用它登录，请确认你还有其他可用的登录方式。',
       boundCount: '已关联 {count} 条记录',
       status: {
         bound: '已绑定',

@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "description": "Single source of truth for TokenPort upstream-sync conflict resolution. Consumed by token-platform/scripts/resolve_tokenport_sync_conflicts.ps1 and by any human or AI agent following scripts/sync/upstream-conflict-agent-prompt.md. Update this file (not the scripts) when the fork's conflict surface changes.",
+  "productBranch": "tokenport/main",
+  "upstream": {
+    "remote": "upstream",
+    "url": "https://github.com/Wei-Shaw/sub2api.git",
+    "branch": "main"
+  },
+  "gitConfig": {
+    "note": "Documentation of the repo-local settings the pipeline requires. They are applied idempotently by token-platform/scripts/sync_upstream_and_deploy.ps1 and by .github/workflows/tokenport-upstream-sync.yml; agents following the prompt template set them in step 2. Keep all four places in agreement.",
+    "settings": {
+      "rerere.enabled": "true",
+      "rerere.autoupdate": "true",
+      "merge.ours.driver": "true"
+    }
+  },
+  "resolutionRules": [
+    {
+      "strategy": "keep-fork",
+      "reason": "TokenPort rebrands these documents entirely; upstream edits to them are irrelevant to the fork. Normally enforced by .gitattributes merge=ours so they never conflict; if one still conflicts, take the fork side.",
+      "files": [
+        "README.md",
+        "README_CN.md"
+      ]
+    },
+    {
+      "strategy": "replay-fork-delta",
+      "reason": "Append-heavy files where the fork adds keys or providers next to upstream lines. Resolution: take the full upstream side, then re-apply the fork's delta from the merge base as a zero-context patch (git apply --unidiff-zero). If the patch does not apply, both sides changed the same lines - escalate instead of guessing.",
+      "files": [
+        "frontend/src/i18n/locales/en/admin/accounts.ts",
+        "frontend/src/i18n/locales/zh/admin/accounts.ts",
+        "backend/cmd/server/wire_gen.go",
+        "backend/internal/handler/wire.go",
+        "backend/internal/repository/wire.go",
+        "backend/internal/service/wire.go"
+      ],
+      "requiredMarkers": {
+        "frontend/src/i18n/locales/en/admin/accounts.ts": [
+          "ollamaCloud: {",
+          "not configured by TokenPort",
+          "spending limits (CNY)",
+          "TokenPort-compatible instance."
+        ],
+        "frontend/src/i18n/locales/zh/admin/accounts.ts": [
+          "ollamaCloud: {",
+          "TOTP_ENCRYPTION_KEY",
+          "TokenPort"
+        ],
+        "backend/cmd/server/wire_gen.go": [
+          "BillingMode"
+        ],
+        "backend/internal/service/wire.go": [
+          "BillingMode"
+        ]
+      },
+      "postChecks": "wire_gen.go and wire.go must still compile; the dockerized backend test gate (go test -tags=unit ./...) verifies this after resolution."
+    },
+    {
+      "strategy": "theirs-then-regenerate",
+      "reason": "Generated lockfiles: take the upstream side, then regenerate so any fork-side manifest change is reflected deterministically.",
+      "entries": [
+        {
+          "file": "frontend/pnpm-lock.yaml",
+          "command": "corepack pnpm@10.28.2 install --lockfile-only",
+          "cwd": "frontend"
+        }
+      ]
+    },
+    {
+      "strategy": "escalate",
+      "reason": "Every other conflict is semantic (upstream and fork changed the same logic). Never auto-resolve. The pipeline aborts the merge, writes a report plus an agent brief under token-platform/output/sync-reports/, and sends an alert. A human or an AI coding agent resolves it once following scripts/sync/upstream-conflict-agent-prompt.md; git rerere records the resolution so the next pipeline run replays it automatically."
+    }
+  ],
+  "validationGates": {
+    "worktree": "git diff --check && git diff --cached --check",
+    "overlay": "powershell -ExecutionPolicy Bypass -File scripts/check-tokenport-overlay.ps1 (run from the fork root)",
+    "frontend": "corepack pnpm@10.28.2 install --frozen-lockfile && corepack pnpm@10.28.2 lint:check && corepack pnpm@10.28.2 typecheck && corepack pnpm@10.28.2 test:run && corepack pnpm@10.28.2 build (run in frontend/)",
+    "backend": "docker run --rm -v <fork>/backend:/src -w /src golang:1.26.5-alpine go test -tags=unit ./... (token-platform/scripts/check_tokenport_ci_parity.ps1 adds golangci-lint and pnpm-audit parity; GitHub CI additionally runs integration-tagged tests, which only run there)"
+  },
+  "invariants": [
+    "Never force-push, rebase, or rewrite history on any branch.",
+    "Never commit directly to the product branch; all merges land on a sync/upstream-* branch and reach the product branch by fast-forward only.",
+    "Never delete either side's functionality to make a conflict disappear.",
+    "Never edit this policy file, .gitattributes, or CI workflows as a way to bypass a conflict.",
+    "Pushing and CI gating are done by the pipeline or the human operator, not by the resolving agent."
+  ],
+  "maintenance": {
+    "markers": "requiredMarkers entries are brand/feature strings that must survive resolution. Update them here when TokenPort copy or the billing feature changes; scripts read them from this file.",
+    "extending": "To auto-resolve a new recurring conflict, add its file to replay-fork-delta (append-type) or theirs-then-regenerate (generated) after two consecutive manual resolutions prove the pattern is stable."
+  }
+}

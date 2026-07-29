@@ -21,6 +21,13 @@ vi.mock('@/stores/app', () => ({
   })
 }))
 
+vi.mock('@/api/admin/accounts', () => ({
+  accountsAPI: {
+    syncUpstreamModels: vi.fn(),
+    syncUpstreamModelsPreview: vi.fn()
+  }
+}))
+
 vi.mock('@/composables/useClipboard', () => ({
   useClipboard: () => ({
     copyToClipboard
@@ -29,19 +36,20 @@ vi.mock('@/composables/useClipboard', () => ({
 
 import ModelWhitelistSelector from '../ModelWhitelistSelector.vue'
 
-function mountSelector() {
-  return mount(ModelWhitelistSelector, {
+const mountSelector = (props: Record<string, unknown> = {}) =>
+  mount(ModelWhitelistSelector, {
     props: {
       modelValue: [],
-      platform: 'openai'
+      platform: 'openai',
+      ...props
     },
     global: {
       stubs: {
+        Icon: true,
         ModelIcon: true
       }
     }
   })
-}
 
 function findModelRow(wrapper: ReturnType<typeof mountSelector>, modelId: string) {
   const row = wrapper
@@ -60,12 +68,29 @@ describe('ModelWhitelistSelector', () => {
     copyToClipboard.mockClear()
   })
 
+  it('hides live upstream sync for saved Grok OAuth accounts', () => {
+    const wrapper = mountSelector({ platform: 'grok', accountId: 9, accountType: 'oauth' })
+
+    expect(wrapper.find('[data-testid="sync-upstream-models"]').exists()).toBe(false)
+  })
+
+  it('shows live upstream sync for saved Grok API key accounts', () => {
+    const wrapper = mountSelector({ platform: 'grok', accountId: 10, accountType: 'apikey' })
+
+    expect(wrapper.find('[data-testid="sync-upstream-models"]').exists()).toBe(true)
+  })
+
+  it('keeps live upstream sync available for supported non-Grok accounts', () => {
+    const wrapper = mountSelector({ platform: 'openai', accountId: 11, accountType: 'oauth' })
+
+    expect(wrapper.find('[data-testid="sync-upstream-models"]').exists()).toBe(true)
+  })
+
   it('copies a model ID without selecting the model', async () => {
     const wrapper = mountSelector()
     await wrapper.get('div.cursor-pointer').trigger('click')
 
     const row = findModelRow(wrapper, 'gpt-5.6-sol')
-
     const copyButton = row.get('[data-testid="copy-model-id"]')
     expect(copyButton.attributes('aria-label')).toBe('复制 gpt-5.6-sol')
 

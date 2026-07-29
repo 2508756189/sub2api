@@ -26,14 +26,14 @@
             <span class="text-xs text-gray-400 ml-2">{{ t('profile.balanceNotify.thresholdHint') }}</span>
           </label>
           <div class="flex items-center gap-2">
-            <span class="text-gray-500">$</span>
+            <span class="text-gray-500">{{ billingSymbol }}</span>
             <input
               v-model.number="customThreshold"
               type="number"
               min="0"
               step="0.01"
               class="input flex-1"
-              :placeholder="systemDefaultThreshold > 0 ? `${t('profile.balanceNotify.systemDefault')} $${systemDefaultThreshold}` : t('profile.balanceNotify.thresholdPlaceholder')"
+              :placeholder="systemDefaultThreshold > 0 ? `${t('profile.balanceNotify.systemDefault')} ${billingSymbol}${systemDefaultThreshold}` : t('profile.balanceNotify.thresholdPlaceholder')"
             />
             <button
               @click="handleThresholdUpdate"
@@ -164,8 +164,10 @@ import { useAppStore } from '@/stores/app'
 import { userAPI } from '@/api'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import type { NotifyEmailEntry } from '@/types'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 
 const maxTotalEmails = 3
+const billingSymbol = getBillingCurrencySymbol()
 
 interface PendingEmail {
   email: string
@@ -230,6 +232,7 @@ const handleToggle = async () => {
   try {
     const updated = await userAPI.updateProfile({ balance_notify_enabled: notifyEnabled.value })
     authStore.user = updated
+    appStore.showSuccess(t('common.saved'))
   } catch (err: unknown) {
     appStore.showError(extractApiErrorMessage(err, t('common.error')))
     notifyEnabled.value = !notifyEnabled.value
@@ -318,6 +321,8 @@ async function verifyPending(idx: number) {
 }
 
 const handleRemoveEmail = async (email: string) => {
+  // 移除后需重新走验证码流程才能加回,先确认(frontend-feedback R2)。
+  if (!window.confirm(t('profile.balanceNotify.removeConfirm', { email }))) return
   try {
     await userAPI.removeNotifyEmail(email)
     appStore.showSuccess(t('profile.balanceNotify.removeSuccess'))

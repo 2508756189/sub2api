@@ -20,3 +20,8 @@ backend/migrations/*.sql text eol=lf
 
 # Dockerfile
 Dockerfile text eol=lf
+
+# TokenPort 品牌化文档：合并上游时始终保留 fork 版本（需 merge.ours.driver=true，
+# 由 token-platform 同步脚本与 CI 工作流幂等设置）。策略详见 scripts/sync/tokenport-sync-policy.json
+README.md merge=ours
+README_CN.md merge=ours

@@ -4,9 +4,9 @@
       <UsageStatsCards :stats="usageStats" />
       <!-- Charts Section -->
       <div class="space-y-4">
-        <div class="card p-4">
+        <div class="card relative z-30 overflow-visible p-4">
           <div class="flex flex-wrap items-center gap-4">
-            <div class="flex items-center gap-2">
+            <div class="relative z-30 flex items-center gap-2">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.dashboard.timeRange') }}:</span>
               <DateRangePicker
                 v-model:start-date="startDate"

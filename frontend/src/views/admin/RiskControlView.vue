@@ -1897,6 +1897,8 @@ async function unbanUser(row: ContentModerationLog) {
 
 async function deleteFlaggedHash() {
   if (!isFlaggedHashInputValid.value || hashActionLoading.value) return
+  // 与同块的 clearFlaggedHashes 保持一致:删除拦截哈希前需确认。
+  if (!window.confirm(t('admin.riskControl.deleteFlaggedHashConfirm'))) return
   hashActionLoading.value = true
   try {
     const result = await adminAPI.riskControl.deleteFlaggedHash(flaggedHashInput.value)

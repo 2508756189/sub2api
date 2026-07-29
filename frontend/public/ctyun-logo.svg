@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="天翼云">
+  <defs>
+    <linearGradient id="ctyun-g" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1AA3FF"/>
+      <stop offset="0.55" stop-color="#0077E6"/>
+      <stop offset="1" stop-color="#0056B8"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#ctyun-g)"/>
+  <path
+    fill="#FFFFFF"
+    d="M44.8 36.2c.4-1 .6-2.1.6-3.2 0-5.1-4.1-9.2-9.2-9.2-1.5 0-2.9.4-4.2 1-1.7-3.4-5.2-5.7-9.2-5.7-5.7 0-10.3 4.6-10.3 10.3 0 .5 0 1 .1 1.5C9.3 31.6 7 34.6 7 38.2 7 42.9 10.8 46.7 15.5 46.7h28.3c4.1 0 7.4-3.3 7.4-7.4 0-1.2-.3-2.4-.9-3.4-.4.1-.9.3-1.5.3z"
+    opacity="0.96"
+  />
+  <path
+    fill="#D9F0FF"
+    d="M20.2 34.8c0-2.5 2-4.5 4.5-4.5.7 0 1.4.2 2 .5.8-2.3 3-4 5.6-4 3.3 0 5.9 2.6 5.9 5.9 0 .4 0 .8-.1 1.1 2 .5 3.4 2.3 3.4 4.4 0 2.5-2 4.5-4.5 4.5H24.7c-2.5 0-4.5-2-4.5-4.5 0-.8.2-1.6.6-2.3-.4-.4-.6-1-.6-1.6z"
+  />
+</svg>

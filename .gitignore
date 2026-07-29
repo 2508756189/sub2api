@@ -33,6 +33,7 @@ backend/.gocache/
 # ===================
 node_modules/
 frontend/node_modules/
+frontend/.pnpm-store/
 frontend/dist/
 *.local
 *.tsbuildinfo
@@ -91,6 +92,9 @@ temp/
 # 构建产物
 # ===================
 dist/
+!frontend/public/skill-market/dist/
+!frontend/public/skill-market/dist/skills/
+!frontend/public/skill-market/dist/skills/*.zip
 build/
 release/
 
@@ -120,7 +124,12 @@ tests
 !deploy/tests/**
 CLAUDE.md
 .claude
-scripts
+scripts/*
+!scripts/
+!scripts/sync-skill-market.ps1
+!scripts/apply-deepseek-channel-pricing.ps1
+!scripts/sync/
+!scripts/sync/**
 !backend/scripts/
 !backend/scripts/resolve-version.sh
 .code-review-state
@@ -135,6 +144,8 @@ docs/*
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
+!docs/CONNECTOR_CUSTOMIZATION_SYNC.md
+!docs/DEEPSEEK_CHANNEL_PRICING.md
 !docs/ASYNC_IMAGE_TASKS.md
 !docs/legal/
 !docs/legal/*.md

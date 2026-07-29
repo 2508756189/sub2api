@@ -85,6 +85,8 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		GoogleOAuthEnabled:               settings.GoogleOAuthEnabled,
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		PaymentEnabled:                   settings.PaymentEnabled,
+		BillingCurrency:                  settings.BillingCurrency,
+		BillingUSDToCNYRate:              settings.BillingUSDToCNYRate,
 		Version:                          h.version,
 		ServerTimezone:                   timezone.Name(),
 		ServerUTCOffset:                  timezone.UTCOffset(),

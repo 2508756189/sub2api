@@ -183,6 +183,7 @@ import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import { useSubscriptionStore } from '@/stores'
 import type { UserSubscription } from '@/types'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 
 const { t } = useI18n()
 
@@ -254,7 +255,8 @@ function getProgressWidth(used: number | undefined, limit: number | null | undef
 function formatUsage(used: number | undefined, limit: number | null | undefined): string {
   const usedValue = (used || 0).toFixed(2)
   const limitValue = limit?.toFixed(2) || '∞'
-  return `$${usedValue}/$${limitValue}`
+  const symbol = getBillingCurrencySymbol()
+  return `${symbol}${usedValue}/${symbol}${limitValue}`
 }
 
 function formatDaysRemaining(expiresAt: string): string {

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "productDirectory": "frontend/src/tokenport",
+  "mountPoints": [
+    {
+      "file": "frontend/src/views/HomeView.vue",
+      "contains": "TokenPortHome"
+    },
+    {
+      "file": "frontend/src/views/user/SkillMarketView.vue",
+      "contains": "SkillMarketCatalog"
+    },
+    {
+      "file": "frontend/src/components/layout/AppSidebar.vue",
+      "contains": "/skill-market"
+    },
+    {
+      "file": "frontend/src/components/keys/UseKeyModal.vue",
+      "contains": "ClientAccessCenterDialog"
+    },
+    {
+      "file": "frontend/src/views/user/KeysView.vue",
+      "contains": "initial-mode"
+    },
+    {
+      "file": "frontend/src/router/index.ts",
+      "contains": "SkillMarketView.vue"
+    }
+  ]
+}

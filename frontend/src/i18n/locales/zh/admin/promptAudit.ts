@@ -1,7 +1,7 @@
 export default {
   promptAudit: {
     title: '提示词审计',
-    description: '通过 OpenAI 兼容 Qwen3Guard 节点异步复核或同步阻止用户输入；事件的完整提示词会入库保存，仅供管理员复核。',
+    description: '通过 OpenAI 兼容 Qwen3Guard 节点异步复核或同步阻止用户输入；本地密钥防护不将命中文本发送给审计节点，也不保存明文。',
     configVersion: '配置版本 v{version}',
     tabs: { config: '配置', events: '事件' },
     actions: { refresh: '刷新运行态', retry: '重试', Allow: '放行', Warn: '警告', Block: '阻止' },
@@ -20,6 +20,7 @@ export default {
       politically_sensitive_topics: '政治敏感话题',
       copyright_violation: '版权侵犯',
       jailbreak: '越狱',
+      credential_exposure: '密钥泄露',
     },
     scannerDescriptions: {
       violent: '暴力或暴力威胁',
@@ -31,6 +32,7 @@ export default {
       politically_sensitive_topics: '政治敏感话题',
       copyright_violation: '版权侵权',
       jailbreak: '提示注入或越狱尝试',
+      credential_exposure: '疑似 API Key、访问令牌或口令',
     },
     runtime: {
       title: '运行概览',
@@ -54,6 +56,8 @@ export default {
       title: '审计策略', description: '配置适用分组、九类输入风险、Worker 与队列边界。', scope: '适用范围', allGroups: '全部分组', selectedGroups: '指定分组',
       searchGroups: '搜索分组', noGroups: '没有匹配分组', missingGroups: '配置中包含已删除的分组 ID', selectedCount: '已选择 {count} 个分组',
       scanners: 'Qwen3Guard 输入风险分类', workerCount: 'Worker 数量', queueCapacity: '持久队列容量', strategy: '节点策略', strategyHint: '按配置顺序优先尝试，必要时故障切换。',
+      secretGuard: '本地密钥防护', secretGuardDescription: '在网关本地识别疑似密钥或口令；命中时不会访问审计模型或上游提供商。',
+      secretGuardOff: '关闭', secretGuardBlock: '阻断外发', secretGuardBlockHint: '仅保存密钥类别和脱敏说明。正常的 Claude Code、Codex、TeleAgent 请求无需改动；显式粘贴凭证的请求会被阻断。',
     },
     saveBar: { enabled: '启用提示词审计', blocking: '同步阻止', storePass: '保存安全事件', dirty: '有未保存的更改', synced: '配置已同步' },
     blockingConfirm: {
@@ -62,7 +66,7 @@ export default {
       confirm: '理解风险并开启',
     },
     events: {
-      title: '审计事件', description: '按身份、入口、风险、Hash 和时间复核事件，详情中可查看完整提示词。', decision: '判定', risk: '风险等级', endpoint: '入口', groupId: '分组 ID', userId: '用户 ID', apiKeyId: 'API Key ID', keyword: '关键词',
+      title: '审计事件', description: '按身份、入口、风险、Hash 和时间复核事件。本地密钥防护事件仅保留类别和脱敏说明，不保存完整提示词。', decision: '判定', risk: '风险等级', endpoint: '入口', groupId: '分组 ID', userId: '用户 ID', apiKeyId: 'API Key ID', keyword: '关键词',
       startAt: '开始时间', endAt: '结束时间', deleteSelected: '删除选中项（{count}）', deleteByFilter: '按筛选删除',
       filterDeleteDialogTitle: '按筛选删除审计事件', filterDeleteDialogDesc: '选择删除的时间范围与风险条件后即可执行删除；删除不可恢复。如需提前查看匹配数量，可先获取删除预览。',
       filterTimeRange: '删除时间范围', filterTimeRangeHint: '将删除所选截止时间之前产生的事件；预览后新产生的事件不受影响。',
@@ -74,7 +78,7 @@ export default {
       selectAll: '选择当前页全部事件', selectEvent: '选择事件 {id}', time: '时间', identity: '用户 / 邮箱 / API Key', user: '用户名', email: '用户邮箱', apiKey: 'API Key 名称', group: '分组', route: '入口 / 模型', result: '判定 / 风险', preview: '脱敏预览', empty: '没有符合条件的事件。',
       passEventsDisabled: '当前未开启“保存安全事件”：安全请求仍会完成审计，但不会出现在事件列表中；Flag 和 Critical 风险事件仍会保存。', openConfiguration: '前往配置',
       detailTitle: '提示词审计事件详情', tabs: { summary: '审计摘要', risks: '具体风险', technical: '技术信息' },
-      promptFull: '完整提示词（未脱敏）',
+      promptFull: '完整提示词（未脱敏）', localSecretPromptLabel: '提示词存储状态', localSecretPromptWithheld: '本地密钥防护未保存完整提示词；仅保留风险类别和脱敏说明。',
       promptFullHint: '完整提示词已随事件入库，仅供管理员复核触发内容；请按敏感数据妥善处理，切勿外泄。',
       guardReturn: '模型审计返回',
       guardReturnHint: '展示 Guard 归一化后的结构化结果（判定、分类、分数与脱敏证据），不含原始响应体。',

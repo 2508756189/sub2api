@@ -1,0 +1,1624 @@
+{
+  "schemaVersion": "1.2",
+  "generatedAt": "2026-07-26T17:29:57Z",
+  "repository": "https://github.com/2508756189/state-of-art-skills",
+  "categories": [
+    {
+      "id": "engineering",
+      "name": "工程研发",
+      "description": "代码开发、评审、工程协作和跨 Agent 兼容能力"
+    },
+    {
+      "id": "product",
+      "name": "产品与研究",
+      "description": "需求分析、内容研究、PRD、用户访谈和优先级判断"
+    },
+    {
+      "id": "design",
+      "name": "设计体验",
+      "description": "前端设计、网页分析、视觉体系和产品品味优化"
+    },
+    {
+      "id": "knowledge",
+      "name": "知识与记忆",
+      "description": "文档转换、上下文管理、长期记忆和知识沉淀"
+    },
+    {
+      "id": "workflow",
+      "name": "组织协作",
+      "description": "多智能体会议、团队协作和复合工作流"
+    }
+  ],
+  "skills": [
+    {
+      "id": "anbeime-agent-team",
+      "name": "anbeime-agent-team",
+      "description": "统一管理多智能体角色的团队协作框架，支持智能体动态组合、灵活协作和扩展新角色。智能体本质上是\"角色定义\"，可以根据任务需求灵活组建团队，实现从会议决策到系统构建的完整能力。智能体角色明确分工：有干活的、有指挥的、有挑毛病的，能实时看到沟通过程，共享数据库记忆，确保上下文一致。",
+      "category": "workflow",
+      "tags": [
+        "multi-agent",
+        "team",
+        "collaboration"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/anbeime-agent-team",
+        "claude": "~/.claude/skills/anbeime-agent-team",
+        "portable": "~/.agents/skills/anbeime-agent-team"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/2508756189/state-of-art-skills/tree/main/skills/anbeime-agent-team",
+      "riskLevel": "medium",
+      "path": "skills/anbeime-agent-team",
+      "detail": {
+        "displayName": "多智能体团队框架",
+        "summary": "组织多个角色型智能体协作完成复杂任务，并保留明确的角色分工与交付链路。",
+        "useCases": [
+          "技术方案评审",
+          "复杂系统构建",
+          "多角色任务分派"
+        ],
+        "capabilities": [
+          "角色编排",
+          "协作流程",
+          "共享上下文"
+        ],
+        "requirements": [
+          "支持 Skill 的智能体客户端"
+        ],
+        "permissions": [
+          "按任务需要读写项目文件"
+        ],
+        "markdownPath": "details/anbeime-agent-team.md"
+      },
+      "archive": {
+        "path": "dist/skills/anbeime-agent-team.zip",
+        "sha256": "f6bef34277b955bb80116c1e2a40a0f7492946a346990460cfd03e298d8db1c0",
+        "size": 36110
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/anbeime-agent-team.zip",
+        "sha256": "a48c7ed37f499e8617a051941d294b922c21352a3a3263c69133612c45ec5a65",
+        "size": 35844
+      }
+    },
+    {
+      "id": "anbeime-content-research-writer",
+      "name": "anbeime-content-research-writer",
+      "description": "Assists in writing high-quality content by conducting research, adding citations, improving hooks, iterating on outlines, and providing real-time feedback on each section. Transforms your writing process from solo effort to collaborative partnership.",
+      "category": "product",
+      "tags": [
+        "research",
+        "writing",
+        "content"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/anbeime-content-research-writer",
+        "claude": "~/.claude/skills/anbeime-content-research-writer",
+        "portable": "~/.agents/skills/anbeime-content-research-writer"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/2508756189/state-of-art-skills/tree/main/skills/anbeime-content-research-writer",
+      "riskLevel": "low",
+      "path": "skills/anbeime-content-research-writer",
+      "detail": {
+        "displayName": "内容研究写作助手",
+        "summary": "将调研、引用、提纲和章节迭代整合为可复用的内容生产流程。",
+        "useCases": [
+          "研究报告",
+          "行业文章",
+          "方案材料"
+        ],
+        "capabilities": [
+          "资料研究",
+          "引用整理",
+          "内容润色"
+        ],
+        "requirements": [
+          "需要联网研究时由客户端提供网络能力"
+        ],
+        "permissions": [
+          "读取参考资料",
+          "写入内容文件"
+        ],
+        "markdownPath": "details/anbeime-content-research-writer.md"
+      },
+      "archive": {
+        "path": "dist/skills/anbeime-content-research-writer.zip",
+        "sha256": "c8aa0cce604b897a8f7598d515c0897d8a4e9c3478f1b08fdf8dc0d3182c5ef1",
+        "size": 5885
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/anbeime-content-research-writer.zip",
+        "sha256": "b60749447da250f5eed4507a4807aecd4ebb5d998568e25f38197ea46e674f38",
+        "size": 5821
+      }
+    },
+    {
+      "id": "anbeime-frontend-design",
+      "name": "anbeime-frontend-design",
+      "description": "Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, or applications. Generates creative, polished code that avoids generic AI aesthetics.",
+      "category": "design",
+      "tags": [
+        "frontend",
+        "ui",
+        "design"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/anbeime-frontend-design",
+        "claude": "~/.claude/skills/anbeime-frontend-design",
+        "portable": "~/.agents/skills/anbeime-frontend-design"
+      },
+      "version": "0.1.0",
+      "license": "Complete terms in LICENSE.txt",
+      "source": "https://github.com/2508756189/state-of-art-skills/tree/main/skills/anbeime-frontend-design",
+      "riskLevel": "low",
+      "path": "skills/anbeime-frontend-design",
+      "detail": {
+        "displayName": "前端体验设计",
+        "summary": "面向生产级前端界面的设计与实现规范，强化布局、层级和交互质感。",
+        "useCases": [
+          "业务后台",
+          "产品页面",
+          "交互组件"
+        ],
+        "capabilities": [
+          "界面设计",
+          "组件实现",
+          "响应式优化"
+        ],
+        "requirements": [
+          "前端项目或页面需求"
+        ],
+        "permissions": [
+          "读取和修改前端源文件"
+        ],
+        "markdownPath": "details/anbeime-frontend-design.md"
+      },
+      "archive": {
+        "path": "dist/skills/anbeime-frontend-design.zip",
+        "sha256": "ab5ea085fd2de1c84b5de7a27c7df43ee9d9d0887f891860350a765a5e70fe46",
+        "size": 2292
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/anbeime-frontend-design.zip",
+        "sha256": "b2863dbf29d93fee1cf6616a4d16680427397d3856dfa7916049fddf7b8a5576",
+        "size": 2244
+      }
+    },
+    {
+      "id": "anbeime-multi-agent-meeting",
+      "name": "anbeime-multi-agent-meeting",
+      "description": "模拟多个AI智能体协作开会并进行决策讨论的场景。适用于需要从多个专业角度分析问题、进行辩论和达成共识的场景，如项目决策、技术方案评审、商业策略制定等。",
+      "category": "workflow",
+      "tags": [
+        "meeting",
+        "decision",
+        "multi-agent"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/anbeime-multi-agent-meeting",
+        "claude": "~/.claude/skills/anbeime-multi-agent-meeting",
+        "portable": "~/.agents/skills/anbeime-multi-agent-meeting"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/2508756189/state-of-art-skills/tree/main/skills/anbeime-multi-agent-meeting",
+      "riskLevel": "medium",
+      "path": "skills/anbeime-multi-agent-meeting",
+      "detail": {
+        "displayName": "多智能体会议",
+        "summary": "模拟多个专业角色讨论并形成有依据的会议结论和行动项。",
+        "useCases": [
+          "架构决策",
+          "产品定价",
+          "风险评估"
+        ],
+        "capabilities": [
+          "角色讨论",
+          "观点对比",
+          "决策纪要"
+        ],
+        "requirements": [
+          "明确的会议主题和目标"
+        ],
+        "permissions": [
+          "读取会议背景资料",
+          "写入会议记录"
+        ],
+        "markdownPath": "details/anbeime-multi-agent-meeting.md"
+      },
+      "archive": {
+        "path": "dist/skills/anbeime-multi-agent-meeting.zip",
+        "sha256": "a34ef922c0efceaec6658db4c6d4a14d8bea8f30f848b812e40f85dbfdb61b98",
+        "size": 17917
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/anbeime-multi-agent-meeting.zip",
+        "sha256": "1a1ea6d4c23af90eb349ed46423bc6e931dfebe2be44b0dde8900da45796ded9",
+        "size": 17469
+      }
+    },
+    {
+      "id": "anbeime-pptx-generator",
+      "name": "anbeime-pptx-generator",
+      "description": "Generate editable .pptx presentations from structured JSON using python-pptx, validation helpers, layout guides, and reusable style templates. Use when the user needs a real PowerPoint artifact instead of only outline text.",
+      "category": "knowledge",
+      "tags": [
+        "pptx",
+        "presentations",
+        "documents"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/anbeime-pptx-generator",
+        "claude": "~/.claude/skills/anbeime-pptx-generator",
+        "portable": "~/.agents/skills/anbeime-pptx-generator"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/2508756189/state-of-art-skills/tree/main/skills/anbeime-pptx-generator",
+      "riskLevel": "medium",
+      "path": "skills/anbeime-pptx-generator",
+      "detail": {
+        "displayName": "PPT 生成器",
+        "summary": "从结构化内容生成可编辑 PowerPoint，并提供布局、图表和校验能力。",
+        "useCases": [
+          "路演汇报",
+          "项目计划",
+          "方案展示"
+        ],
+        "capabilities": [
+          "PPTX 生成",
+          "图表表格",
+          "文件校验"
+        ],
+        "requirements": [
+          "Python 3",
+          "python-pptx、Pillow、openpyxl"
+        ],
+        "permissions": [
+          "读取模板和素材",
+          "写入 PPTX 文件"
+        ],
+        "markdownPath": "details/anbeime-pptx-generator.md"
+      },
+      "archive": {
+        "path": "dist/skills/anbeime-pptx-generator.zip",
+        "sha256": "5c738173dfc3f260151525470a35a1dd310b8809e4f5cd3a5eea259f1119c460",
+        "size": 18230
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/anbeime-pptx-generator.zip",
+        "sha256": "9666c5a1e53b192a94cf9242a905ca16b2f39ee236be6c2531df7ff4fbc3398a",
+        "size": 17724
+      }
+    },
+    {
+      "id": "anbeime-product-manager-toolkit",
+      "name": "anbeime-product-manager-toolkit",
+      "description": "Comprehensive toolkit for product managers including RICE prioritization, customer interview analysis, PRD templates, discovery frameworks, and go-to-market strategies. Use for feature prioritization, user research synthesis, requirement documentation, and product strategy development.",
+      "category": "product",
+      "tags": [
+        "product",
+        "prd",
+        "prioritization"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/anbeime-product-manager-toolkit",
+        "claude": "~/.claude/skills/anbeime-product-manager-toolkit",
+        "portable": "~/.agents/skills/anbeime-product-manager-toolkit"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/2508756189/state-of-art-skills/tree/main/skills/anbeime-product-manager-toolkit",
+      "riskLevel": "low",
+      "path": "skills/anbeime-product-manager-toolkit",
+      "detail": {
+        "displayName": "产品经理工具包",
+        "summary": "覆盖需求分析、优先级、访谈与 PRD 产出的产品管理工具集。",
+        "useCases": [
+          "需求评审",
+          "RICE 排序",
+          "PRD 编写"
+        ],
+        "capabilities": [
+          "需求分析",
+          "用户研究",
+          "路线规划"
+        ],
+        "requirements": [
+          "产品背景或需求材料"
+        ],
+        "permissions": [
+          "读取业务资料",
+          "写入产品文档"
+        ],
+        "markdownPath": "details/anbeime-product-manager-toolkit.md"
+      },
+      "archive": {
+        "path": "dist/skills/anbeime-product-manager-toolkit.zip",
+        "sha256": "f67594df81c20ebf4768e4d7a010cef2dbbbc13c7584ba8afe3191192fdacd36",
+        "size": 17661
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/anbeime-product-manager-toolkit.zip",
+        "sha256": "3cc9606e69eaa69b7dccaeb04121b8a5d967ed17fcb7565aec1bda850583128c",
+        "size": 17405
+      }
+    },
+    {
+      "id": "anbeime-web-design-analyzer",
+      "name": "anbeime-web-design-analyzer",
+      "description": "分析网页截图，提取设计系统（Design System）并生成结构化数据和可用的 AI Coding Prompt。适用于 UI/UX 设计师和前端工程师需要从现有网页设计中提取设计规范、配色方案、排版系统和组件风格的场景。",
+      "category": "design",
+      "tags": [
+        "design-system",
+        "screenshot",
+        "frontend"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/anbeime-web-design-analyzer",
+        "claude": "~/.claude/skills/anbeime-web-design-analyzer",
+        "portable": "~/.agents/skills/anbeime-web-design-analyzer"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/2508756189/state-of-art-skills/tree/main/skills/anbeime-web-design-analyzer",
+      "riskLevel": "high",
+      "path": "skills/anbeime-web-design-analyzer",
+      "detail": {
+        "displayName": "网页设计分析器",
+        "summary": "从网页截图提取设计系统、排版和组件规律，辅助复刻与改版。",
+        "useCases": [
+          "竞品页面分析",
+          "设计系统提取",
+          "前端提示词生成"
+        ],
+        "capabilities": [
+          "截图分析",
+          "视觉规范提取",
+          "实现建议"
+        ],
+        "requirements": [
+          "清晰网页截图",
+          "Pillow>=10.0.0",
+          "OpenAI API 凭证与联网能力"
+        ],
+        "permissions": [
+          "读取图片",
+          "将截图发送到 OpenAI API",
+          "写入分析文档"
+        ],
+        "markdownPath": "details/anbeime-web-design-analyzer.md"
+      },
+      "archive": {
+        "path": "dist/skills/anbeime-web-design-analyzer.zip",
+        "sha256": "ca352f1839b3ac1c1d091a563d7dc4ee45facfb9dbc0efbaea31e823af487d90",
+        "size": 14730
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/anbeime-web-design-analyzer.zip",
+        "sha256": "a8398fddd101d6ff601e5461e0c5aa5ff6583c8cb4f5d0d3781ad59572c8bc0d",
+        "size": 14450
+      }
+    },
+    {
+      "id": "codebase-design",
+      "name": "codebase-design",
+      "description": "Shared vocabulary for designing deep modules. Use when the user wants to design or improve a module's interface, find deepening opportunities, decide where a seam goes, make code more testable or AI-navigable, or when another skill needs the deep-module vocabulary.",
+      "category": "engineering",
+      "tags": [
+        "architecture",
+        "interfaces",
+        "modules",
+        "maintainability"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/codebase-design",
+        "claude": "~/.claude/skills/codebase-design",
+        "portable": "~/.agents/skills/codebase-design"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/codebase-design",
+      "riskLevel": "medium",
+      "path": "skills/codebase-design",
+      "detail": {
+        "displayName": "代码库模块设计",
+        "summary": "用深模块、接口、接缝、杠杆和局部性等概念改善模块边界、可测试性与维护性。",
+        "useCases": [
+          "模块重构",
+          "接口设计",
+          "架构可维护性评审"
+        ],
+        "capabilities": [
+          "模块深度分析",
+          "接口边界设计",
+          "接缝识别",
+          "替代方案比较"
+        ],
+        "requirements": [
+          "目标代码库或明确的模块设计问题"
+        ],
+        "permissions": [
+          "读取代码和架构资料",
+          "按用户确认修改设计相关文件"
+        ],
+        "markdownPath": "details/codebase-design.md"
+      },
+      "archive": {
+        "path": "dist/skills/codebase-design.zip",
+        "sha256": "e57bb8d72b22ff934829b2d49f0d1bd9a2afc3b0bdafa4a650d3ec5760a39342",
+        "size": 6784
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/codebase-design.zip",
+        "sha256": "082d8c485c88eb3cc8c5b8a04ef30ef0f7432dbc550f36f17b7244c4754130f7",
+        "size": 6624
+      }
+    },
+    {
+      "id": "compound",
+      "name": "compound",
+      "description": "Coordinate multi-step engineering workflows across planning, implementation, review, and verification. Use when the user wants a compound agent workflow, parallel workstreams, or a structured loop for feature delivery rather than a single direct edit.",
+      "category": "engineering",
+      "tags": [
+        "workflow",
+        "engineering",
+        "review"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/compound",
+        "claude": "~/.claude/skills/compound",
+        "portable": "~/.agents/skills/compound"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/everyinc/compound-engineering-plugin",
+      "riskLevel": "low",
+      "path": "skills/compound",
+      "detail": {
+        "displayName": "复合工程工作流",
+        "summary": "将计划、实现、复查和验证组织成可追踪的复合工程流程。",
+        "useCases": [
+          "跨模块功能",
+          "复杂缺陷修复",
+          "交付前审查"
+        ],
+        "capabilities": [
+          "任务拆分",
+          "结果整合",
+          "验证闭环"
+        ],
+        "requirements": [
+          "明确的工程目标"
+        ],
+        "permissions": [
+          "按任务需要访问代码和测试"
+        ],
+        "markdownPath": "details/compound.md"
+      },
+      "archive": {
+        "path": "dist/skills/compound.zip",
+        "sha256": "f8fea5958cb4fd1932956936a4572c0b63e8fc1f463fc9807be978a22f6c7b15",
+        "size": 1113
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/compound.zip",
+        "sha256": "51e488375879b33d375cbe4471f593135790f51c2a798d08f4a57ebbd6c1eb7a",
+        "size": 1095
+      }
+    },
+    {
+      "id": "dashmotion",
+      "name": "dashmotion",
+      "description": "Create dark-themed, animated technical diagrams as self-contained HTML+SVG files — flowcharts whose connectors visibly flow, and architecture diagrams where requests travel as light dots through the system (Diagrid/Temporal landing-page style). Use this skill whenever the user asks for a flowchart, workflow, pipeline, process diagram, state machine, system architecture, infrastructure, cloud, microservices, or network topology diagram — and especially when they mention \"animated\", \"flowing\", \"dynamic\", \"alive\", \"GIF-like\", or want a diagram for a landing page, README, docs, or product demo. Also use it to convert Mermaid source (a mermaid code block or .mmd file) into an animated diagram — \"animate this mermaid\", \"make this flowchart move\". Prefer this over static diagram output whenever the diagram represents anything that moves: requests, events, data, jobs, messages, or control flow.",
+      "category": "design",
+      "tags": [
+        "diagram",
+        "architecture",
+        "workflow",
+        "mermaid",
+        "html"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/dashmotion",
+        "claude": "~/.claude/skills/dashmotion",
+        "portable": "~/.agents/skills/dashmotion"
+      },
+      "version": "2.2.4",
+      "license": "MIT",
+      "source": "https://github.com/csthink/dashmotion/tree/ae2fe4f28c60caa53da8b15fa3537f4ea576f4ad",
+      "riskLevel": "medium",
+      "path": "skills/dashmotion",
+      "detail": {
+        "displayName": "动态技术图生成器",
+        "summary": "将流程、系统架构或 Mermaid 输入生成带动画、自包含且可离线打开的 HTML/SVG 技术图。",
+        "useCases": [
+          "系统架构说明",
+          "业务流程演示",
+          "README 或方案中的动态图"
+        ],
+        "capabilities": [
+          "确定性布局",
+          "Mermaid 流程和状态图转换",
+          "结构校验"
+        ],
+        "requirements": [
+          "Python 3 用于渲染和结构检查"
+        ],
+        "permissions": [
+          "读取图定义或 Mermaid 文件",
+          "写入 HTML 图文件"
+        ],
+        "markdownPath": "details/dashmotion.md"
+      },
+      "archive": {
+        "path": "dist/skills/dashmotion.zip",
+        "sha256": "c52c8a08fe67ca83f6c44ec3c4192e1664dede5b0bd66a30e124efc2dd390494",
+        "size": 55112
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/dashmotion.zip",
+        "sha256": "fa3e2c05ef1a2952569492398b2144d7203116a82edd1e42af6a0374c6e6dd66",
+        "size": 54870
+      }
+    },
+    {
+      "id": "diagnosing-bugs",
+      "name": "diagnosing-bugs",
+      "description": "Diagnosis loop for hard bugs and performance regressions. Use when the user says \"diagnose\"/\"debug this\", or reports something broken/throwing/failing/slow.",
+      "category": "engineering",
+      "tags": [
+        "debugging",
+        "production",
+        "performance",
+        "triage"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/diagnosing-bugs",
+        "claude": "~/.claude/skills/diagnosing-bugs",
+        "portable": "~/.agents/skills/diagnosing-bugs"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/diagnosing-bugs",
+      "riskLevel": "medium",
+      "path": "skills/diagnosing-bugs",
+      "detail": {
+        "displayName": "系统化故障排查",
+        "summary": "通过可重复反馈回路、最小复现、假设验证和回归检查定位复杂缺陷与性能回退。",
+        "useCases": [
+          "生产故障定位",
+          "接口或页面异常",
+          "性能回退排查"
+        ],
+        "capabilities": [
+          "反馈回路设计",
+          "最小复现",
+          "假设与证据验证",
+          "回归检查"
+        ],
+        "requirements": [
+          "可运行的测试、接口、日志或其他可观测信号"
+        ],
+        "permissions": [
+          "按任务读取代码、日志和测试",
+          "可选运行只读诊断脚本"
+        ],
+        "markdownPath": "details/diagnosing-bugs.md"
+      },
+      "archive": {
+        "path": "dist/skills/diagnosing-bugs.zip",
+        "sha256": "4ed2508d73f91c6085d53b41f6d7f1639cf7e02fcf3e5f220a7ae77ab560c67d",
+        "size": 6088
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/diagnosing-bugs.zip",
+        "sha256": "30c903d7aa9e541f68e4158022ee4956465de78305c5aaf835cf32337251c31f",
+        "size": 5960
+      }
+    },
+    {
+      "id": "differential-review",
+      "name": "differential-review",
+      "description": "Performs security-focused differential review of code changes (PRs, commits, diffs). Adapts analysis depth to codebase size, uses git history for context, calculates blast radius, checks test coverage, and generates comprehensive markdown reports. Automatically detects and prevents security regressions.",
+      "category": "engineering",
+      "tags": [
+        "security",
+        "code-review",
+        "diff"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/differential-review",
+        "claude": "~/.claude/skills/differential-review",
+        "portable": "~/.agents/skills/differential-review"
+      },
+      "version": "0.1.0",
+      "license": "CC-BY-SA-4.0",
+      "source": "https://github.com/trailofbits/skills/tree/cfe5d7b1619e47fb5b38b7e2561dad7e5f1e89af/plugins/differential-review/skills/differential-review",
+      "riskLevel": "medium",
+      "path": "skills/differential-review",
+      "detail": {
+        "displayName": "安全差分评审",
+        "summary": "Trail of Bits 出品：对 PR、commit 或 diff 做安全回归评审，计算影响面与测试覆盖，生成结构化报告。",
+        "useCases": [
+          "PR 安全评审",
+          "上线前变更审计",
+          "安全回归排查"
+        ],
+        "capabilities": [
+          "差分分析",
+          "爆炸半径计算",
+          "对抗性视角",
+          "报告生成"
+        ],
+        "requirements": [
+          "Git 仓库与待评审的变更"
+        ],
+        "permissions": [
+          "读取代码与 Git 历史",
+          "运行只读 git 命令",
+          "写评审报告"
+        ],
+        "markdownPath": "details/differential-review.md"
+      },
+      "archive": {
+        "path": "dist/skills/differential-review.zip",
+        "sha256": "1785f23dfd59a0ca4d2c4a7361540076a516f15d6b2bdd0d50a3374d4243ff1f",
+        "size": 22916
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/differential-review.zip",
+        "sha256": "8fda384992717fbc38f0f8901d2e2a5c696a1e97a5d00d78435a123fc763b8fc",
+        "size": 22596
+      }
+    },
+    {
+      "id": "domain-modeling",
+      "name": "domain-modeling",
+      "description": "Build and sharpen a project's domain model. Use when the user wants to pin down domain terminology or a ubiquitous language, record an architectural decision, or when another skill needs to maintain the domain model.",
+      "category": "engineering",
+      "tags": [
+        "domain",
+        "architecture",
+        "glossary",
+        "adr"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/domain-modeling",
+        "claude": "~/.claude/skills/domain-modeling",
+        "portable": "~/.agents/skills/domain-modeling"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/domain-modeling",
+      "riskLevel": "medium",
+      "path": "skills/domain-modeling",
+      "detail": {
+        "displayName": "领域建模",
+        "summary": "澄清业务术语、边界和架构决策，并在用户确认后沉淀到领域上下文与 ADR。",
+        "useCases": [
+          "停车充电业务建模",
+          "领域术语统一",
+          "架构决策记录"
+        ],
+        "capabilities": [
+          "术语澄清",
+          "边界场景推演",
+          "上下文维护",
+          "ADR 判断"
+        ],
+        "requirements": [
+          "明确的业务背景和目标代码库"
+        ],
+        "permissions": [
+          "读取业务代码和文档",
+          "经确认后写入 CONTEXT.md 或 ADR"
+        ],
+        "markdownPath": "details/domain-modeling.md"
+      },
+      "archive": {
+        "path": "dist/skills/domain-modeling.zip",
+        "sha256": "c04f08f1b91a079dd4e9605f91f2ebffaeecab63b5c3f6f2e59282f0dc0793a6",
+        "size": 5735
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/domain-modeling.zip",
+        "sha256": "44f2b0faf0e86728d3e3eab4fd973fb53ce141d2a8195398f8ac010b0c1a5f29",
+        "size": 5575
+      }
+    },
+    {
+      "id": "ecc",
+      "name": "ecc",
+      "description": "Build and maintain cross-agent compatibility for skills, prompts, commands, and workflows across Codex, Claude Code, Gemini CLI, and other coding-agent harnesses. Use when adapting agent instructions between runtimes or designing portable skill repositories.",
+      "category": "engineering",
+      "tags": [
+        "compatibility",
+        "codex",
+        "claude"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/ecc",
+        "claude": "~/.claude/skills/ecc",
+        "portable": "~/.agents/skills/ecc"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/affaan-m/ecc",
+      "riskLevel": "low",
+      "path": "skills/ecc",
+      "detail": {
+        "displayName": "跨 Agent 兼容套件",
+        "summary": "维护 Codex、Claude Code 等不同智能体运行时之间的技能兼容。",
+        "useCases": [
+          "跨客户端迁移",
+          "Skill 适配",
+          "配置一致性检查"
+        ],
+        "capabilities": [
+          "兼容分析",
+          "格式适配",
+          "运行时映射"
+        ],
+        "requirements": [
+          "目标运行时的配置目录"
+        ],
+        "permissions": [
+          "读取和写入 Skill 配置文件"
+        ],
+        "markdownPath": "details/ecc.md"
+      },
+      "archive": {
+        "path": "dist/skills/ecc.zip",
+        "sha256": "b6b4793596c222dae66eeb239c9dd49613b43a8f65a267f3b8a4457adf4b6cfa",
+        "size": 1134
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/ecc.zip",
+        "sha256": "e8f433b0791f6ba19d7a9adbfc14c324c2fe91ad1773cd789ffb4b30152314da",
+        "size": 1126
+      }
+    },
+    {
+      "id": "headroom",
+      "name": "headroom",
+      "description": "Manage context pressure and workspace headroom for long agent runs. Use when a task is getting context-heavy, when summaries are stale or oversized, when many files/logs/search results compete for attention, or when the user asks to keep an agent run efficient without losing important state.",
+      "category": "knowledge",
+      "tags": [
+        "context",
+        "planning",
+        "memory"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/headroom",
+        "claude": "~/.claude/skills/headroom",
+        "portable": "~/.agents/skills/headroom"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/chopratejas/headroom",
+      "riskLevel": "low",
+      "path": "skills/headroom",
+      "detail": {
+        "displayName": "上下文余量管理",
+        "summary": "在长任务中管理上下文余量、信息取舍和执行节奏。",
+        "useCases": [
+          "长周期开发",
+          "大文档分析",
+          "多阶段任务"
+        ],
+        "capabilities": [
+          "上下文预算",
+          "资料压缩",
+          "阶段交接"
+        ],
+        "requirements": [
+          "支持长任务的智能体客户端"
+        ],
+        "permissions": [
+          "读取当前任务上下文"
+        ],
+        "markdownPath": "details/headroom.md"
+      },
+      "archive": {
+        "path": "dist/skills/headroom.zip",
+        "sha256": "c5cc52e6ae8c400c2040b31fdcdc3ad7e9562fa9894d867615e786e9e7d1e6bb",
+        "size": 1257
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/headroom.zip",
+        "sha256": "2e6dc9a92f0e57cfb9399e0c2002fe5d79cd6ee417e726ff193be3fa64abe383",
+        "size": 1239
+      }
+    },
+    {
+      "id": "markitdown",
+      "name": "markitdown",
+      "description": "Convert local documents, PDFs, Office files, images, audio, HTML, CSV, JSON, XML, ZIPs, or URLs into clean Markdown using Microsoft MarkItDown or safe local fallbacks. Use when the user asks to extract document content, prepare files for LLM context, compare source documents, or preserve evidence from heterogeneous files.",
+      "category": "knowledge",
+      "tags": [
+        "documents",
+        "markdown",
+        "conversion"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/markitdown",
+        "claude": "~/.claude/skills/markitdown",
+        "portable": "~/.agents/skills/markitdown"
+      },
+      "version": "0.1.0",
+      "license": "review-required",
+      "source": "https://github.com/microsoft/markitdown",
+      "riskLevel": "medium",
+      "path": "skills/markitdown",
+      "detail": {
+        "displayName": "文档转 Markdown",
+        "summary": "将 Office、PDF、网页和多媒体资料转换为便于 AI 使用的 Markdown。",
+        "useCases": [
+          "文档入库",
+          "资料清洗",
+          "AI 知识处理"
+        ],
+        "capabilities": [
+          "多格式解析",
+          "Markdown 转换",
+          "批量处理"
+        ],
+        "requirements": [
+          "Python 3 和对应格式解析依赖"
+        ],
+        "permissions": [
+          "读取源文件",
+          "写入 Markdown 文件"
+        ],
+        "markdownPath": "details/markitdown.md"
+      },
+      "archive": {
+        "path": "dist/skills/markitdown.zip",
+        "sha256": "414c72a401fbfa1217f3e84e589ce6ec8bf085b5c1ba1c3ba402aee45a72b89f",
+        "size": 1187
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/markitdown.zip",
+        "sha256": "cea402e61ca6aaf116e34198ba3fda8ba533de8529a5b71bc542ab5899a8520c",
+        "size": 1165
+      }
+    },
+    {
+      "id": "mcp-builder",
+      "name": "mcp-builder",
+      "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).",
+      "category": "engineering",
+      "tags": [
+        "mcp",
+        "server",
+        "scaffolding"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/mcp-builder",
+        "claude": "~/.claude/skills/mcp-builder",
+        "portable": "~/.agents/skills/mcp-builder"
+      },
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "source": "https://github.com/anthropics/skills/tree/b29e7cf65e5cb78a5ac33d582270551bc74a14eb/skills/mcp-builder",
+      "riskLevel": "medium",
+      "path": "skills/mcp-builder",
+      "detail": {
+        "displayName": "MCP 服务器构建",
+        "summary": "Anthropic 官方 MCP 服务器开发指南：从工具设计、Python/TypeScript 实现到评测脚本的完整构建流程。",
+        "useCases": [
+          "封装外部 API 为 MCP",
+          "MCP 工具设计评审",
+          "MCP 服务器评测"
+        ],
+        "capabilities": [
+          "最佳实践参考",
+          "Python/Node 脚手架",
+          "评测脚本"
+        ],
+        "requirements": [
+          "Python 3 或 Node.js 开发环境"
+        ],
+        "permissions": [
+          "读写 MCP 服务器代码",
+          "运行本地评测脚本"
+        ],
+        "markdownPath": "details/mcp-builder.md"
+      },
+      "archive": {
+        "path": "dist/skills/mcp-builder.zip",
+        "sha256": "0b775580f86b98b6412bc9fd2993c9a6652c2d8cd3265304eaaae6ab83db4165",
+        "size": 42388
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/mcp-builder.zip",
+        "sha256": "f905334371787d5cf8d601cda81a60b90d3d4d12ef7b871e3ab28ec2146fa4dd",
+        "size": 42148
+      }
+    },
+    {
+      "id": "mcp-security-audit",
+      "name": "mcp-security-audit",
+      "description": "Audit MCP client and server configuration files for exposed credentials, unsafe shell launchers, unpinned package runners, insecure remote URLs, and unapproved servers. Use for Codex config.toml, Claude-style .mcp.json files, desktop MCP configuration, or repository MCP governance reviews.",
+      "category": "engineering",
+      "tags": [
+        "mcp",
+        "security",
+        "supply-chain",
+        "governance"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/mcp-security-audit",
+        "claude": "~/.claude/skills/mcp-security-audit",
+        "portable": "~/.agents/skills/mcp-security-audit"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/github/awesome-copilot/tree/e95bd8c4ba65454121f86a7ad0d3ed17ab0bcf37/skills/mcp-security-audit",
+      "riskLevel": "medium",
+      "path": "skills/mcp-security-audit",
+      "detail": {
+        "displayName": "MCP 配置安全审计",
+        "summary": "只读检查 MCP 配置中的凭证暴露、Shell 启动、未固定依赖、远程明文地址和批准清单漂移。",
+        "useCases": [
+          "Codex MCP 配置审计",
+          "Claude MCP 上线前检查",
+          "Agent 工具供应链治理"
+        ],
+        "capabilities": [
+          "JSON/TOML 解析",
+          "脱敏安全检查",
+          "批准清单核验"
+        ],
+        "requirements": [
+          "Python 3.11+",
+          "待审计的 MCP 配置文件"
+        ],
+        "permissions": [
+          "只读访问指定配置文件"
+        ],
+        "markdownPath": "details/mcp-security-audit.md"
+      },
+      "archive": {
+        "path": "dist/skills/mcp-security-audit.zip",
+        "sha256": "9a8a93cc62bceda296b0e04a9fbf73452c93ee421516c95221e9c086ce225d30",
+        "size": 6498
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/mcp-security-audit.zip",
+        "sha256": "51c6732606a582f1840cbbf5fed583c6f36aa07b608a8faa4005ca805625a8f5",
+        "size": 6384
+      }
+    },
+    {
+      "id": "react-best-practices",
+      "name": "vercel-react-best-practices",
+      "description": "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.",
+      "category": "engineering",
+      "tags": [
+        "react",
+        "nextjs",
+        "performance"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/react-best-practices",
+        "claude": "~/.claude/skills/react-best-practices",
+        "portable": "~/.agents/skills/react-best-practices"
+      },
+      "version": "1.0.0",
+      "license": "MIT",
+      "source": "https://github.com/vercel-labs/agent-skills/tree/7c180d9044c9ae2b442b567aad4e42a28dd5ed62/skills/react-best-practices",
+      "riskLevel": "low",
+      "path": "skills/react-best-practices",
+      "detail": {
+        "displayName": "React 性能最佳实践",
+        "summary": "Vercel 工程团队官方 React/Next.js 性能规则集：70 条按影响力分级的规则，写码与评审两用。",
+        "useCases": [
+          "React 组件优化",
+          "Next.js 数据获取",
+          "bundle 体积治理"
+        ],
+        "capabilities": [
+          "性能规则检索",
+          "反模式识别",
+          "重构建议"
+        ],
+        "requirements": [
+          "React 或 Next.js 项目"
+        ],
+        "permissions": [
+          "读取前端代码",
+          "按任务修改前端文件"
+        ],
+        "markdownPath": "details/react-best-practices.md"
+      },
+      "archive": {
+        "path": "dist/skills/react-best-practices.zip",
+        "sha256": "b73dd7ee4a58c653a628b299ae87f1943324b3a685c2f1425246afd990d37b74",
+        "size": 97421
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/react-best-practices.zip",
+        "sha256": "9079bfdb9d90e00b4b37c57e8dbbdfa396894960bef9ce0e18f92dc7c3408a77",
+        "size": 94229
+      }
+    },
+    {
+      "id": "resolving-merge-conflicts",
+      "name": "resolving-merge-conflicts",
+      "description": "Use when you need to resolve an in-progress git merge/rebase conflict.",
+      "category": "engineering",
+      "tags": [
+        "git",
+        "merge",
+        "rebase",
+        "conflict-resolution"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/resolving-merge-conflicts",
+        "claude": "~/.claude/skills/resolving-merge-conflicts",
+        "portable": "~/.agents/skills/resolving-merge-conflicts"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/resolving-merge-conflicts",
+      "riskLevel": "medium",
+      "path": "skills/resolving-merge-conflicts",
+      "detail": {
+        "displayName": "Git 冲突处理",
+        "summary": "按主来源、冲突意图、自动化检查和仓库完成流程处理 merge 或 rebase 冲突。",
+        "useCases": [
+          "合并冲突",
+          "变基冲突",
+          "冲突后的验证"
+        ],
+        "capabilities": [
+          "冲突状态检查",
+          "主来源核对",
+          "逐块处理",
+          "完成前验证"
+        ],
+        "requirements": [
+          "处于 merge 或 rebase 状态的 Git 仓库"
+        ],
+        "permissions": [
+          "读取 Git 状态和提交历史",
+          "按用户授权修改冲突文件和暂存区"
+        ],
+        "markdownPath": "details/resolving-merge-conflicts.md"
+      },
+      "archive": {
+        "path": "dist/skills/resolving-merge-conflicts.zip",
+        "sha256": "8be25783632cff62b9228de22f20fc6eb52f360c4d99c8e5c7bd401083e74aac",
+        "size": 1955
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/resolving-merge-conflicts.zip",
+        "sha256": "5b92c268cbb409e2f41df03cd99076625627948deb56d909cf849199086dad1a",
+        "size": 1799
+      }
+    },
+    {
+      "id": "security-best-practices",
+      "name": "security-best-practices",
+      "description": "Perform language and framework specific security best-practice reviews and suggest improvements. Trigger only when the user explicitly requests security best practices guidance, a security review/report, or secure-by-default coding help. Trigger only for supported languages (python, javascript/typescript, go). Do not trigger for general code review, debugging, or non-security tasks.",
+      "category": "engineering",
+      "tags": [
+        "security",
+        "best-practices",
+        "review"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/security-best-practices",
+        "claude": "~/.claude/skills/security-best-practices",
+        "portable": "~/.agents/skills/security-best-practices"
+      },
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "source": "https://github.com/openai/skills/tree/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices",
+      "riskLevel": "low",
+      "path": "skills/security-best-practices",
+      "detail": {
+        "displayName": "安全最佳实践审查",
+        "summary": "OpenAI 官方安全基线技能：按检测到的语言与框架（Python/JS/TS/Go、Vue/React/Django 等）加载安全编码基线做审查。",
+        "useCases": [
+          "安全编码指导",
+          "存量代码安全审查",
+          "漏洞报告与修复建议"
+        ],
+        "capabilities": [
+          "语言框架识别",
+          "安全基线检索",
+          "针对性改进建议"
+        ],
+        "requirements": [
+          "支持语言：Python、JavaScript/TypeScript、Go"
+        ],
+        "permissions": [
+          "读取项目代码"
+        ],
+        "markdownPath": "details/security-best-practices.md"
+      },
+      "archive": {
+        "path": "dist/skills/security-best-practices.zip",
+        "sha256": "35c038cd195f415ef0760c3d5209044f949f0401e02d9c340f9077fd1bcdc756",
+        "size": 140645
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/security-best-practices.zip",
+        "sha256": "f3f009384e91442f4d23759fea7cf2ff05a195f45cd291de3c07ae4661d0a5b5",
+        "size": 140021
+      }
+    },
+    {
+      "id": "skill-creator",
+      "name": "skill-creator",
+      "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.",
+      "category": "workflow",
+      "tags": [
+        "skills",
+        "meta",
+        "evals"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/skill-creator",
+        "claude": "~/.claude/skills/skill-creator",
+        "portable": "~/.agents/skills/skill-creator"
+      },
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "source": "https://github.com/anthropics/skills/tree/b29e7cf65e5cb78a5ac33d582270551bc74a14eb/skills/skill-creator",
+      "riskLevel": "medium",
+      "path": "skills/skill-creator",
+      "detail": {
+        "displayName": "技能创建器",
+        "summary": "Anthropic 官方元技能：引导创建、改进、评测符合 Agent Skills 规范的技能包，并可量化对比效果。",
+        "useCases": [
+          "新建技能",
+          "优化技能描述",
+          "技能效果评测"
+        ],
+        "capabilities": [
+          "技能脚手架",
+          "打包校验",
+          "评测与报告"
+        ],
+        "requirements": [
+          "Python 3",
+          "评测功能需要可调用的 agent CLI"
+        ],
+        "permissions": [
+          "读写技能目录",
+          "运行本地评测脚本"
+        ],
+        "markdownPath": "details/skill-creator.md"
+      },
+      "archive": {
+        "path": "dist/skills/skill-creator.zip",
+        "sha256": "2868f676c8560aaaef04bdaae8ed0bc833144c0cdf366c134fd6e5c134811532",
+        "size": 72984
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/skill-creator.zip",
+        "sha256": "995a07458271b6b02c7b543fc3eac1f3965e66b1f7926e2b91a02b0887ab1ae9",
+        "size": 72480
+      }
+    },
+    {
+      "id": "supermemory",
+      "name": "supermemory",
+      "description": "Supermemory is a state-of-the-art memory and context infrastructure for AI agents. Use this skill when building applications that need persistent memory, user personalization, long-term context retention, or semantic search across knowledge bases. It provides Memory API for learned user context, User Profiles for static/dynamic facts, and RAG for semantic search. Perfect for chatbots, assistants, and knowledge-intensive applications.",
+      "category": "knowledge",
+      "tags": [
+        "memory",
+        "knowledge",
+        "retrieval"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/supermemory",
+        "claude": "~/.claude/skills/supermemory",
+        "portable": "~/.agents/skills/supermemory"
+      },
+      "version": "0.1.1",
+      "license": "MIT",
+      "source": "https://github.com/supermemoryai/supermemory/tree/5a3ff85ea559a3f6ac32237a38de5042dc4bdd1a/skills/supermemory",
+      "riskLevel": "medium",
+      "path": "skills/supermemory",
+      "detail": {
+        "displayName": "长期记忆与知识检索",
+        "summary": "沉淀项目事实、决策和知识片段，并在后续任务中检索复用。",
+        "useCases": [
+          "项目记忆",
+          "决策追踪",
+          "知识检索"
+        ],
+        "capabilities": [
+          "信息采集",
+          "语义检索",
+          "上下文复用"
+        ],
+        "requirements": [
+          "按配置提供记忆存储能力"
+        ],
+        "permissions": [
+          "读取待沉淀内容",
+          "访问配置的记忆服务"
+        ],
+        "markdownPath": "details/supermemory.md"
+      },
+      "archive": {
+        "path": "dist/skills/supermemory.zip",
+        "sha256": "be25453aa5d877f1f227d8f1ade08f4b079c6daa3892ca14530e50998bccbbbc",
+        "size": 29714
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/supermemory.zip",
+        "sha256": "3431d9027abf7a8c1fede2c245a531184895edd68a956df567820e0b5651e4bb",
+        "size": 29546
+      }
+    },
+    {
+      "id": "taste-skill",
+      "name": "design-taste-frontend",
+      "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces that do not look templated. Real design systems when applicable, audit-first on redesigns, strict pre-flight check.",
+      "category": "design",
+      "tags": [
+        "taste",
+        "ui",
+        "frontend",
+        "landing-page",
+        "anti-slop"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/taste-skill",
+        "claude": "~/.claude/skills/taste-skill",
+        "portable": "~/.agents/skills/taste-skill"
+      },
+      "version": "1.0.0",
+      "license": "MIT",
+      "source": "https://github.com/leonxlnx/taste-skill/tree/e988add20dab0fa97d7a76781c48961c8184288e/skills/taste-skill",
+      "riskLevel": "medium",
+      "path": "skills/taste-skill",
+      "detail": {
+        "displayName": "反模板前端设计",
+        "summary": "面向落地页、作品集和站点改版的反模板化前端设计：先读需求推断设计方向，再匹配真实设计体系，产出不像 AI 模板的界面。",
+        "useCases": [
+          "落地页设计",
+          "作品集网站",
+          "现有站点改版"
+        ],
+        "capabilities": [
+          "设计方向推断",
+          "设计体系匹配",
+          "暗色模式与可访问性检查",
+          "AI 痕迹清除"
+        ],
+        "requirements": [
+          "前端项目或页面需求",
+          "按所选设计体系安装对应 npm 包"
+        ],
+        "permissions": [
+          "读取界面资料",
+          "按任务修改前端文件",
+          "经确认执行 npm 安装命令"
+        ],
+        "markdownPath": "details/taste-skill.md"
+      },
+      "archive": {
+        "path": "dist/skills/taste-skill.zip",
+        "sha256": "9fd4cdd50f7714f9008f86e84d0fc35d2a62bc0bd5a16fc39b9fdf2c05164303",
+        "size": 35697
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/taste-skill.zip",
+        "sha256": "29a0cd03520dfa6de6e7ef44c72829df4275c2f9c9d97f5d729810192b73d5ee",
+        "size": 35649
+      }
+    },
+    {
+      "id": "test-driven-development",
+      "name": "test-driven-development",
+      "description": "Use when implementing any feature or bugfix, before writing implementation code",
+      "category": "engineering",
+      "tags": [
+        "tdd",
+        "testing",
+        "workflow"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/test-driven-development",
+        "claude": "~/.claude/skills/test-driven-development",
+        "portable": "~/.agents/skills/test-driven-development"
+      },
+      "version": "6.2.0",
+      "license": "MIT",
+      "source": "https://github.com/obra/superpowers/tree/3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9/skills/test-driven-development",
+      "riskLevel": "low",
+      "path": "skills/test-driven-development",
+      "detail": {
+        "displayName": "测试驱动开发（Superpowers）",
+        "summary": "强制红-绿-重构的 TDD 循环：先写失败测试、看它失败、再写最小实现，防止 agent 跳过测试直接写代码。",
+        "useCases": [
+          "新功能实现",
+          "缺陷修复",
+          "重构保护"
+        ],
+        "capabilities": [
+          "失败测试先行",
+          "最小实现",
+          "测试质量指导"
+        ],
+        "requirements": [
+          "项目具备可运行的测试框架"
+        ],
+        "permissions": [
+          "读写测试与实现代码",
+          "运行测试命令"
+        ],
+        "markdownPath": "details/test-driven-development.md"
+      },
+      "archive": {
+        "path": "dist/skills/test-driven-development.zip",
+        "sha256": "d02c9428c48ebbaccfcac5d2aaed5750b0fe2d2a3d11dde1e85601f6201eb292",
+        "size": 8551
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/test-driven-development.zip",
+        "sha256": "ca2b091605d3cd77b5faf807957e2eeaf991f84696dc968e539b74c56164e298",
+        "size": 8407
+      }
+    },
+    {
+      "id": "unit-test-vue-pinia",
+      "name": "unit-test-vue-pinia",
+      "description": "Write and review focused unit tests for Vue 3, TypeScript, Vitest, and Pinia codebases, using behavior-first assertions and the narrowest Pinia setup that proves the scenario.",
+      "category": "engineering",
+      "tags": [
+        "vue",
+        "pinia",
+        "vitest",
+        "testing"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/unit-test-vue-pinia",
+        "claude": "~/.claude/skills/unit-test-vue-pinia",
+        "portable": "~/.agents/skills/unit-test-vue-pinia"
+      },
+      "version": "0.1.0",
+      "license": "MIT",
+      "source": "https://github.com/github/awesome-copilot/tree/314cf968ab643bc0ad1488e98e6e7893b752004a/skills/unit-test-vue-pinia",
+      "riskLevel": "low",
+      "path": "skills/unit-test-vue-pinia",
+      "detail": {
+        "displayName": "Vue 与 Pinia 单元测试",
+        "summary": "为 Vue 3、Vitest 与 Pinia 项目编写行为优先、依赖明确且可重复运行的单元测试。",
+        "useCases": [
+          "Pinia store 测试",
+          "Vue 组件测试",
+          "Vitest 测试评审"
+        ],
+        "capabilities": [
+          "测试策略选择",
+          "Pinia 隔离",
+          "行为断言"
+        ],
+        "requirements": [
+          "Vue 3 项目",
+          "Vitest 与 Vue Test Utils",
+          "按需使用 @pinia/testing"
+        ],
+        "permissions": [
+          "读取前端源文件和测试",
+          "按任务修改测试文件",
+          "运行聚焦测试命令"
+        ],
+        "markdownPath": "details/unit-test-vue-pinia.md"
+      },
+      "archive": {
+        "path": "dist/skills/unit-test-vue-pinia.zip",
+        "sha256": "af565cafbba7342889b9d528b27320e77f78e7a73047f0c9d95c3c4951dec456",
+        "size": 3839
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/unit-test-vue-pinia.zip",
+        "sha256": "941f7870b607c02bc6990c43046830f675629cd9e9516ba985ba0562496faadc",
+        "size": 3759
+      }
+    },
+    {
+      "id": "web-design-guidelines",
+      "name": "web-design-guidelines",
+      "description": "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\".",
+      "category": "design",
+      "tags": [
+        "ui",
+        "accessibility",
+        "review"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/web-design-guidelines",
+        "claude": "~/.claude/skills/web-design-guidelines",
+        "portable": "~/.agents/skills/web-design-guidelines"
+      },
+      "version": "1.0.0",
+      "license": "MIT",
+      "source": "https://github.com/vercel-labs/agent-skills/tree/7c180d9044c9ae2b442b567aad4e42a28dd5ed62/skills/web-design-guidelines",
+      "riskLevel": "medium",
+      "path": "skills/web-design-guidelines",
+      "detail": {
+        "displayName": "Web 界面规范审查",
+        "summary": "对照 Vercel Web Interface Guidelines 审查 UI 代码的可访问性、交互与排版；规则源已固定到指定 commit。",
+        "useCases": [
+          "UI 代码评审",
+          "可访问性检查",
+          "设计规范审计"
+        ],
+        "capabilities": [
+          "规范对照审查",
+          "file:line 级发现输出"
+        ],
+        "requirements": [
+          "需要联网获取固定版本的规则文件"
+        ],
+        "permissions": [
+          "读取 UI 代码",
+          "从固定 URL 拉取规则"
+        ],
+        "markdownPath": "details/web-design-guidelines.md"
+      },
+      "archive": {
+        "path": "dist/skills/web-design-guidelines.zip",
+        "sha256": "e0301ca4a18675de4b78a4038caef4c1fb6266a772b8c44f99f0df4fed458de0",
+        "size": 888
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/web-design-guidelines.zip",
+        "sha256": "f089bc6738966db412357a4e4f0b8b084c09aae653c6e4b3cfeaaf501f2185a2",
+        "size": 844
+      }
+    },
+    {
+      "id": "webapp-testing",
+      "name": "webapp-testing",
+      "description": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.",
+      "category": "engineering",
+      "tags": [
+        "playwright",
+        "testing",
+        "web"
+      ],
+      "runtime": [
+        "portable"
+      ],
+      "installTargets": {
+        "codex": "~/.codex/skills/webapp-testing",
+        "claude": "~/.claude/skills/webapp-testing",
+        "portable": "~/.agents/skills/webapp-testing"
+      },
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "source": "https://github.com/anthropics/skills/tree/b29e7cf65e5cb78a5ac33d582270551bc74a14eb/skills/webapp-testing",
+      "riskLevel": "medium",
+      "path": "skills/webapp-testing",
+      "detail": {
+        "displayName": "Web 应用测试",
+        "summary": "Anthropic 官方 Playwright 测试技能：对本地 Web 应用做端到端验证、截图、读取浏览器日志与 UI 调试。",
+        "useCases": [
+          "前端功能验证",
+          "UI 行为调试",
+          "浏览器日志排查"
+        ],
+        "capabilities": [
+          "Playwright 脚本",
+          "服务生命周期管理",
+          "截图与日志采集"
+        ],
+        "requirements": [
+          "Python 3 与 Playwright",
+          "可本地启动的 Web 应用"
+        ],
+        "permissions": [
+          "启动本地服务",
+          "驱动本地浏览器",
+          "写测试脚本与截图"
+        ],
+        "markdownPath": "details/webapp-testing.md"
+      },
+      "archive": {
+        "path": "dist/skills/webapp-testing.zip",
+        "sha256": "b4e47a10a5fa7051a2dcd2336ba34c98878f5bd01c806f6715d3cedab76b843e",
+        "size": 9626
+      },
+      "teleagentArchive": {
+        "path": "dist/teleagent/webapp-testing.zip",
+        "sha256": "78e0febd27ce67daea0a2e7c9fb0b19b37c50b9a7162d67f73c987d80c8df0a0",
+        "size": 9446
+      }
+    }
+  ]
+}

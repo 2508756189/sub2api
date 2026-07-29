@@ -1,4 +1,5 @@
 export type PromptAuditMode = 'off' | 'async_audit' | 'blocking'
+export type SecretGuardMode = 'off' | 'block'
 export type PromptDecision = 'pass' | 'flag' | 'critical'
 export type PromptRiskLevel = 'low' | 'medium' | 'high' | 'critical'
 
@@ -23,6 +24,7 @@ export interface PromptAuditEndpointDraft extends PromptAuditEndpoint {
 export interface PromptAuditConfig {
   enabled: boolean
   blocking_enabled: boolean
+  secret_guard_mode: SecretGuardMode
   store_pass_events: boolean
   effective_mode: PromptAuditMode
   strategy: 'priority'
@@ -46,6 +48,7 @@ export interface PromptAuditUpdateRequest {
   expected_config_version: number
   enabled: boolean
   blocking_enabled: boolean
+  secret_guard_mode: SecretGuardMode
   store_pass_events: boolean
   strategy: 'priority'
   worker_count: number

@@ -39,7 +39,7 @@ func resolveAccountStatsCost(
 
 	// 优先级 1：自定义规则（始终尝试）
 	if cost := tryCustomRules(channel, accountID, groupID, platform, upstreamModel, tokens, requestCount); cost != nil {
-		return cost
+		return convertAccountStatsSourceCost(billingService, cost)
 	}
 
 	// 优先级 2：渠道开启"应用模型定价到账号统计"时，直接使用客户计费（倍率前）
@@ -53,10 +53,18 @@ func resolveAccountStatsCost(
 
 	// 优先级 3：模型定价文件（LiteLLM）默认价格
 	if billingService != nil {
-		return tryModelFilePricing(billingService, upstreamModel, tokens)
+		return convertAccountStatsSourceCost(billingService, tryModelFilePricing(billingService, upstreamModel, tokens))
 	}
 
 	return nil
+}
+
+func convertAccountStatsSourceCost(billingService *BillingService, cost *float64) *float64 {
+	if cost == nil || billingService == nil {
+		return cost
+	}
+	converted := *cost * billingService.BillingConfig().USDExchangeRate()
+	return &converted
 }
 
 // tryModelFilePricing 使用模型定价文件（LiteLLM/fallback）中的标准价格计算费用。
@@ -70,7 +78,7 @@ func tryModelFilePricing(billingService *BillingService, model string, tokens Us
 		if err != nil || breakdown == nil || breakdown.TotalCost <= 0 {
 			return nil
 		}
-		return &breakdown.TotalCost
+		return &breakdown.SourceTotalCostUSD
 	}
 	cost := float64(tokens.InputTokens)*pricing.InputPricePerToken +
 		float64(tokens.OutputTokens)*pricing.OutputPricePerToken +

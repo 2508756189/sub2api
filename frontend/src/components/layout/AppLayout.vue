@@ -1,7 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-950">
-    <!-- Background Decoration -->
-    <div class="pointer-events-none fixed inset-0 bg-mesh-gradient"></div>
+  <div class="tokenport-console relative min-h-screen overflow-x-hidden bg-gray-50 dark:bg-dark-950">
+    <!-- Ambient canvas glow (styled by tokenport-console.css) -->
+    <div class="tp-ambient pointer-events-none fixed inset-0" aria-hidden="true"></div>
+    <div class="pointer-events-none fixed inset-0 bg-mesh-gradient" aria-hidden="true"></div>
 
     <!-- Sidebar -->
     <AppSidebar />
@@ -15,7 +16,7 @@
       <AppHeader />
 
       <!-- Main Content -->
-      <main class="p-4 md:p-6 lg:p-8">
+      <main class="relative z-[1] p-4 md:p-6 lg:p-8">
         <slot />
       </main>
     </div>
@@ -24,6 +25,7 @@
 
 <script setup lang="ts">
 import '@/styles/onboarding.css'
+import '@/tokenport/brand/tokenport-console.css'
 import { computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores'
 import { useAuthStore } from '@/stores/auth'

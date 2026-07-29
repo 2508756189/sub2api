@@ -11,7 +11,7 @@
         @click.self="handleClose"
       >
         <!-- Modal panel -->
-        <div ref="dialogRef" :class="['modal-content', widthClasses]" @click.stop>
+        <div ref="dialogRef" :class="['modal-content', widthClasses, panelClass]" @click.stop>
           <!-- Header -->
           <div class="modal-header">
             <h3 :id="dialogId" class="modal-title">
@@ -21,7 +21,7 @@
               v-if="showCloseButton"
               @click="emit('close')"
               class="-mr-2 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2 dark:text-dark-500 dark:hover:bg-dark-700 dark:hover:text-dark-300 dark:focus-visible:ring-offset-dark-900"
-              aria-label="Close modal"
+              :aria-label="t('common.close')"
             >
               <Icon name="x" size="md" />
             </button>
@@ -44,7 +44,11 @@
 
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { getFocusableWithin, useFocusTrap } from '@/composables/useFocusTrap'
 import Icon from '@/components/icons/Icon.vue'
+
+const { t } = useI18n()
 
 // 生成唯一ID以避免多个对话框时ID冲突
 let dialogIdCounter = 0
@@ -64,6 +68,7 @@ interface Props {
   closeOnClickOutside?: boolean
   showCloseButton?: boolean
   zIndex?: number
+  panelClass?: string
 }
 
 interface Emits {
@@ -75,7 +80,8 @@ const props = withDefaults(defineProps<Props>(), {
   closeOnEscape: true,
   closeOnClickOutside: false,
   showCloseButton: true,
-  zIndex: 50
+  zIndex: 50,
+  panelClass: ''
 })
 
 const emit = defineEmits<Emits>()
@@ -105,8 +111,15 @@ const handleClose = () => {
   }
 }
 
-const handleEscape = (event: KeyboardEvent) => {
-  if (props.show && props.closeOnEscape && event.key === 'Escape') {
+const getFocusable = () => getFocusableWithin(dialogRef.value)
+
+// Tab 圈定走共享实现,与自建遮罩的弹窗保持同一套行为。
+useFocusTrap(dialogRef, () => props.show)
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!props.show) return
+
+  if (event.key === 'Escape' && props.closeOnEscape) {
     emit('close')
   }
 }
@@ -123,12 +136,7 @@ watch(
 
       // 等待DOM更新后设置焦点到对话框
       await nextTick()
-      if (dialogRef.value) {
-        const firstFocusable = dialogRef.value.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        firstFocusable?.focus()
-      }
+      getFocusable()[0]?.focus()
     } else {
       document.body.classList.remove('modal-open')
       // 恢复之前的焦点
@@ -142,11 +150,11 @@ watch(
 )
 
 onMounted(() => {
-  document.addEventListener('keydown', handleEscape)
+  document.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape)
+  document.removeEventListener('keydown', handleKeydown)
   // 确保组件卸载时移除滚动锁定
   document.body.classList.remove('modal-open')
 })

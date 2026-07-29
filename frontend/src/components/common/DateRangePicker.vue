@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" ref="containerRef">
+  <div class="relative" :class="isOpen && 'date-picker-open'" ref="containerRef">
     <button
       type="button"
       @click="toggle"
@@ -321,6 +321,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.date-picker-open {
+  /* Lift above following chart cards that create later stacking contexts */
+  z-index: 80;
+}
+
 .date-picker-trigger {
   @apply flex items-center gap-2;
   @apply rounded-lg px-3 py-2 text-sm;
@@ -350,13 +355,15 @@ onUnmounted(() => {
 }
 
 .date-picker-dropdown {
-  @apply absolute left-0 z-[100] mt-2;
+  @apply absolute left-0 z-[120] mt-2;
   @apply bg-white dark:bg-dark-800;
   @apply rounded-xl;
   @apply border border-gray-200 dark:border-dark-700;
-  @apply shadow-lg shadow-black/10 dark:shadow-black/30;
+  @apply shadow-xl shadow-black/15 dark:shadow-black/40;
   @apply overflow-hidden;
   @apply min-w-[320px];
+  /* Keep the menu above adjacent cards even when parent overflow is clipped */
+  isolation: isolate;
 }
 
 .date-picker-presets {

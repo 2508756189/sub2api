@@ -60,16 +60,86 @@
     @apply bg-primary-500/20 text-primary-900 dark:text-primary-100;
   }
 
+  /* 全局键盘焦点样式(openspec add-tokenport-frontend-polish frontend-a11y R2)。
+     只在键盘/程序化聚焦时命中,鼠标点击不出现。.btn/.input 等基类自带
+     focus-visible:ring 且特异性更高,会各自覆盖这条兜底规则。 */
+  :focus-visible {
+    outline: 2px solid var(--tp-brand);
+    outline-offset: 2px;
+  }
 
+  /* TokenPort 品牌色唯一定义点(openspec add-tokenport-frontend-polish D2/D3)。
+     终值待 design.md OQ1 拍板,拍板后只改这里;组件内一律引用 var(--tp-brand*)。 */
+  :root {
+    --tp-brand: #00a878;
+    --tp-brand-hover: #00b583;
+    --tp-brand-strong: #008f66;
+    --tp-brand-deep: #087a58;
+    --tp-brand-soft: #e0f6ee;
+    --tp-brand-ink: #0b6f52;
+
+    /* 圆角三档(frontend-theme R3)。实测首页曾并存 10/12/14/16/18 五种半径,
+       没有可辨识的规律;收敛成「控件 / 卡片 / 面板」三档,卡片档对齐
+       Tailwind 的 rounded-xl,使定制面与主控制台同一尺度。 */
+    --tp-radius-control: 10px;
+    --tp-radius-card: 12px;
+    --tp-radius-panel: 16px;
+
+    /* 层级三档。实测首页曾并存 9 种阴影(其中两组同透明度不同模糊,
+       视觉上分不出高低),技能市场卡片则几乎无阴影——两页各说各话。
+       统一为静置 / 抬起 / 浮层三级,色相取品牌墨绿而非纯黑,避免发灰。 */
+    --tp-elev-1: 0 1px 2px rgb(16 52 38 / 4%), 0 2px 8px rgb(16 52 38 / 4%);
+    --tp-elev-2: 0 2px 4px rgb(16 52 38 / 5%), 0 8px 24px rgb(16 52 38 / 8%);
+    --tp-elev-3: 0 8px 16px rgb(16 52 38 / 6%), 0 24px 56px rgb(16 52 38 / 12%);
+  }
+
+  .dark {
+    --tp-brand: #21c493;
+    --tp-brand-hover: #35d6a6;
+    --tp-brand-strong: #17b083;
+    --tp-brand-deep: #4fd6ab;
+    --tp-brand-soft: #11352a;
+    --tp-brand-ink: #7fe3c0;
+
+    /* 深色下投影几乎不可见,层级改由更深的投影 + 顶部内高光承担,
+       后者模拟光源从上方掠过卡片边缘,是深色界面拉开层次的主要手段。 */
+    --tp-elev-1: 0 1px 2px rgb(0 0 0 / 40%), inset 0 1px 0 rgb(255 255 255 / 4%);
+    --tp-elev-2: 0 4px 12px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(255 255 255 / 6%);
+    --tp-elev-3: 0 16px 48px rgb(0 0 0 / 55%), inset 0 1px 0 rgb(255 255 255 / 8%);
+  }
 }
 
 @layer components {
+  /* ============ 层级工具类 ============ */
+  /* Tailwind 的 shadow-[...] 任意值解析不了带逗号的多层阴影(会静默产出
+     box-shadow: none),所以层级以组件类形式提供。 */
+  .tp-elev-1 {
+    box-shadow: var(--tp-elev-1);
+  }
+
+  .tp-elev-2 {
+    box-shadow: var(--tp-elev-2);
+  }
+
+  .tp-elev-3 {
+    box-shadow: var(--tp-elev-3);
+  }
+
+  /* 静置 elev-1、悬停抬到 elev-2 的常见组合。 */
+  .tp-elev-raise {
+    box-shadow: var(--tp-elev-1);
+  }
+
+  .tp-elev-raise:hover {
+    box-shadow: var(--tp-elev-2);
+  }
+
   /* ============ 按钮样式 ============ */
   .btn {
     @apply inline-flex items-center justify-center gap-2;
     @apply rounded-xl px-4 py-2.5 text-sm font-medium;
     @apply transition-all duration-200 ease-out;
-    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2;
     @apply disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50;
     @apply active:scale-[0.98];
   }
@@ -166,7 +236,8 @@
     @apply text-gray-900 dark:text-gray-100;
     @apply placeholder:text-gray-400 dark:placeholder:text-dark-400;
     @apply transition-all duration-200;
-    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30;
+    /* 边框走 focus:(鼠标点进输入框也要看得出激活),焦点环走 focus-visible: 只给键盘。 */
+    @apply focus:border-primary-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30;
     @apply disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-dark-900;
   }
 
@@ -179,7 +250,7 @@
   }
 
   .input-error {
-    @apply border-red-500 focus:border-red-500 focus:ring-red-500/30;
+    @apply border-red-500 focus:border-red-500 focus-visible:ring-red-500/30;
   }
 
   .input-label {

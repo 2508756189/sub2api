@@ -1,7 +1,7 @@
 export default {
   promptAudit: {
     title: 'Prompt Audit',
-    description: 'Review user input asynchronously or block it synchronously through OpenAI-compatible Qwen3Guard nodes. Full prompts are stored with events for admin review.',
+    description: 'Review user input asynchronously or block it synchronously through OpenAI-compatible Qwen3Guard nodes. The local secret guard never sends matched text to an audit endpoint or stores plaintext.',
     configVersion: 'Config version v{version}',
     tabs: { config: 'Configuration', events: 'Events' },
     actions: { refresh: 'Refresh runtime', retry: 'Retry', Allow: 'Allow', Warn: 'Warn', Block: 'Block' },
@@ -20,6 +20,7 @@ export default {
       politically_sensitive_topics: 'Politically Sensitive Topics',
       copyright_violation: 'Copyright Violation',
       jailbreak: 'Jailbreak',
+      credential_exposure: 'Credential exposure',
     },
     scannerDescriptions: {
       violent: 'Violence or threats of violence',
@@ -31,6 +32,7 @@ export default {
       politically_sensitive_topics: 'Politically sensitive topics',
       copyright_violation: 'Copyright infringement',
       jailbreak: 'Prompt injection or jailbreak attempt',
+      credential_exposure: 'Potential API key, access token, or password',
     },
     runtime: {
       title: 'Runtime overview',
@@ -54,6 +56,8 @@ export default {
       title: 'Audit policy', description: 'Configure group scope, nine input-risk categories, workers, and queue bounds.', scope: 'Scope', allGroups: 'All groups', selectedGroups: 'Selected groups',
       searchGroups: 'Search groups', noGroups: 'No matching groups', missingGroups: 'Configured IDs for groups that no longer exist', selectedCount: '{count} groups selected',
       scanners: 'Qwen3Guard input-risk categories', workerCount: 'Worker count', queueCapacity: 'Persistent queue capacity', strategy: 'Node strategy', strategyHint: 'Try nodes in configuration order and fail over when allowed.',
+      secretGuard: 'Local secret guard', secretGuardDescription: 'Detects likely credentials locally at the gateway; a match does not reach the audit model or upstream provider.',
+      secretGuardOff: 'Off', secretGuardBlock: 'Block outbound request', secretGuardBlockHint: 'Only the credential category and redacted explanation are recorded. Normal Claude Code, Codex, and TeleAgent requests remain unchanged; requests that paste credentials are blocked.',
     },
     saveBar: { enabled: 'Enable prompt audit', blocking: 'Synchronous blocking', storePass: 'Store safe events', dirty: 'Unsaved changes', synced: 'Configuration synced' },
     blockingConfirm: {
@@ -62,7 +66,7 @@ export default {
       confirm: 'I understand; enable it',
     },
     events: {
-      title: 'Audit events', description: 'Review events by identity, route, risk, hash, and time; the detail view shows the full prompt.', decision: 'Decision', risk: 'Risk level', endpoint: 'Endpoint', groupId: 'Group ID', userId: 'User ID', apiKeyId: 'API Key ID', keyword: 'Keyword',
+      title: 'Audit events', description: 'Review events by identity, route, risk, hash, and time. Local secret guard events retain only categories and a redacted explanation, not the full prompt.', decision: 'Decision', risk: 'Risk level', endpoint: 'Endpoint', groupId: 'Group ID', userId: 'User ID', apiKeyId: 'API Key ID', keyword: 'Keyword',
       startAt: 'Start time', endAt: 'End time', deleteSelected: 'Delete selected ({count})', deleteByFilter: 'Delete by filter',
       filterDeleteDialogTitle: 'Delete audit events by filter', filterDeleteDialogDesc: 'Choose the time range and risk criteria, then delete directly. Deletion is permanent. Generate a preview first if you want to see the match count.',
       filterTimeRange: 'Deletion time range', filterTimeRangeHint: 'Deletes events created before the selected cutoff. Events created after the preview are not affected.',
@@ -74,7 +78,7 @@ export default {
       selectAll: 'Select all events on this page', selectEvent: 'Select event {id}', time: 'Time', identity: 'User / email / API Key', user: 'Username', email: 'User email', apiKey: 'API Key name', group: 'Group', route: 'Endpoint / model', result: 'Decision / risk', preview: 'Redacted preview', empty: 'No matching events.',
       passEventsDisabled: '“Store safe events” is off. Safe requests are still audited but do not appear in this list; Flag and Critical risk events are still stored.', openConfiguration: 'Open configuration',
       detailTitle: 'Prompt audit event details', tabs: { summary: 'Audit summary', risks: 'Specific risks', technical: 'Technical details' },
-      promptFull: 'Full prompt (unredacted)',
+      promptFull: 'Full prompt (unredacted)', localSecretPromptLabel: 'Prompt storage status', localSecretPromptWithheld: 'The local secret guard did not store the full prompt; only the risk category and redacted summary are retained.',
       promptFullHint: 'The full prompt is stored with this event for admin review only. Treat it as sensitive data and do not share it.',
       guardReturn: 'Model audit return',
       guardReturnHint: 'Normalized Guard result (decision, categories, scores, and redacted evidence). Raw response bodies are not stored.',

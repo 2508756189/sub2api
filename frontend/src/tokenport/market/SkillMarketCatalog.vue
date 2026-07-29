@@ -1,0 +1,183 @@
+<template>
+  <div class="space-y-6">
+    <section class="overflow-hidden rounded-xl border border-primary-950/10 bg-gradient-to-br from-white via-primary-50/60 to-primary-50 dark:border-dark-700 dark:from-dark-900 dark:via-dark-900 dark:to-dark-950">
+      <div class="grid gap-6 p-5 lg:grid-cols-[1fr_auto] lg:items-end lg:p-7">
+        <div>
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/80 px-3 py-1 text-xs font-semibold text-primary-700 dark:border-primary-800/50 dark:bg-dark-800 dark:text-primary-300">
+            <img src="/ctyun-logo.svg" alt="Tianyi Cloud" class="h-4 w-4 rounded" />
+            TOKENPORT · SKILL MARKET
+          </div>
+          <h1 class="text-2xl leading-tight font-extrabold tracking-tight text-gray-950 dark:text-white sm:text-3xl">可复用的智能体能力资产</h1>
+          <p class="mt-3 max-w-3xl text-base leading-7 text-gray-600 dark:text-gray-300">
+            按场景、风险和运行时筛选技能，查看版本、依赖与校验信息。安装操作在 API 密钥的接入配置中心完成。
+          </p>
+        </div>
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 tp-elev-1 dark:border-dark-600 dark:bg-dark-800">
+            <b class="block text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ registry?.skills.length || 0 }}</b>
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">技能</span>
+          </div>
+          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 tp-elev-1 dark:border-dark-600 dark:bg-dark-800">
+            <b class="block text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ registry?.categories.length || 0 }}</b>
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">分类</span>
+          </div>
+          <div class="rounded-xl border border-primary-950/10 bg-white px-4 py-3 tp-elev-1 dark:border-dark-600 dark:bg-dark-800">
+            <b class="block text-2xl font-extrabold tracking-tight text-primary-700 dark:text-primary-300">SHA256</b>
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">校验</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-primary-950/10 bg-white p-4 tp-elev-1 dark:border-dark-700 dark:bg-dark-800/70 lg:p-5">
+      <div class="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_180px_160px_160px]">
+        <div class="relative">
+          <Icon name="search" size="sm" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input v-model="query" class="input w-full pl-9" placeholder="搜索技能、场景或标签" />
+        </div>
+        <Select v-model="runtime" :options="runtimeOptions" :searchable="false" />
+        <Select v-model="risk" :options="riskOptions" :searchable="false" />
+        <Select v-model="sort" :options="sortOptions" :searchable="false" />
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button
+          v-for="category in categoryOptions"
+          :key="category.value"
+          type="button"
+          class="rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all"
+          :class="category.value === activeCategory
+            ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm dark:border-primary-500/60 dark:bg-primary-900/25 dark:text-primary-300'
+            : 'border-gray-200 text-gray-600 hover:border-primary-300 hover:bg-primary-50/50 dark:border-dark-600 dark:text-gray-300 dark:hover:border-primary-700 dark:hover:bg-primary-900/10'"
+          @click="activeCategory = category.value"
+        >
+          {{ category.label }} <span class="ml-1 text-xs opacity-70">{{ category.count }}</span>
+        </button>
+      </div>
+    </section>
+
+    <div v-if="loading" class="rounded-xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-800/70 dark:text-gray-400">正在加载技能市场...</div>
+    <div v-else-if="error" class="rounded-xl border border-red-200 bg-red-50 py-12 text-center text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+      {{ error }} <button class="ml-2 font-medium underline" @click="load">重试</button>
+    </div>
+    <div v-else-if="!filteredSkills.length" class="rounded-xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-800/70 dark:text-gray-400">没有符合条件的技能。</div>
+    <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <SkillMarketCard
+        v-for="skill in filteredSkills"
+        :key="skill.id"
+        :skill="skill"
+        :registry="registry"
+      >
+        <template #action>
+          <button
+            type="button"
+            class="skill-card-action"
+            @click="selectedSkill = skill"
+          >
+            查看详情
+            <Icon name="arrowRight" size="xs" />
+          </button>
+        </template>
+      </SkillMarketCard>
+    </div>
+
+    <p v-if="registry" class="text-right text-xs text-gray-400">市场更新：{{ formatGeneratedAt(registry.generatedAt) }}</p>
+
+    <SkillDetailDialog
+      :show="Boolean(selectedSkill)"
+      :skill="selectedSkill"
+      :registry="registry"
+      :registry-url="registrySource"
+      @close="selectedSkill = null"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import Icon from '@/components/icons/Icon.vue'
+import Select from '@/components/common/Select.vue'
+import SkillMarketCard from './SkillMarketCard.vue'
+import SkillDetailDialog from './SkillDetailDialog.vue'
+import {
+  DEFAULT_SKILL_MARKET_REGISTRY_URL,
+  fetchSkillMarketWithSource,
+  getSkillCategoryName,
+  getSkillDisplayName,
+  skillSupportsRuntime,
+  type SkillMarketEntry,
+  type SkillMarketRegistry,
+} from '@/api/skillMarket'
+
+const loading = ref(false)
+const error = ref('')
+const registry = ref<SkillMarketRegistry | null>(null)
+const registrySource = ref(DEFAULT_SKILL_MARKET_REGISTRY_URL)
+const selectedSkill = ref<SkillMarketEntry | null>(null)
+const query = ref('')
+const activeCategory = ref('all')
+const runtime = ref<string | number | boolean | null>('all')
+const risk = ref<string | number | boolean | null>('all')
+const sort = ref<string | number | boolean | null>('name')
+
+const runtimeOptions = [
+  { value: 'all', label: '全部运行时' },
+  { value: 'codex', label: 'Codex' },
+  { value: 'claude', label: 'Claude Code' },
+  { value: 'portable', label: '通用运行时' },
+]
+const riskOptions = [
+  { value: 'all', label: '全部风险等级' },
+  { value: 'low', label: '低风险' },
+  { value: 'medium', label: '中风险' },
+  { value: 'high', label: '高风险' },
+]
+const sortOptions = [
+  { value: 'name', label: '按名称排序' },
+  { value: 'category', label: '按分类排序' },
+  { value: 'risk', label: '按风险排序' },
+]
+
+const categoryOptions = computed(() => [
+  { value: 'all', label: '全部', count: registry.value?.skills.length || 0 },
+  ...(registry.value?.categories || []).map((category) => ({
+    value: category.id,
+    label: getSkillCategoryName(category.id, registry.value),
+    count: registry.value?.skills.filter((skill) => skill.category === category.id).length || 0,
+  })),
+])
+
+const filteredSkills = computed(() => {
+  const needle = query.value.trim().toLowerCase()
+  const riskWeight: Record<string, number> = { high: 0, medium: 1, low: 2 }
+  return [...(registry.value?.skills || [])]
+    .filter((skill) => activeCategory.value === 'all' || skill.category === activeCategory.value)
+    .filter((skill) => runtime.value === 'all' || skillSupportsRuntime(skill, String(runtime.value) as 'codex' | 'claude' | 'portable'))
+    .filter((skill) => risk.value === 'all' || skill.riskLevel === risk.value)
+    .filter((skill) => !needle || [skill.id, skill.name, skill.description, skill.detail?.summary, ...(skill.tags || [])].filter(Boolean).join(' ').toLowerCase().includes(needle))
+    .sort((a, b) => {
+      if (sort.value === 'category') return a.category.localeCompare(b.category) || a.name.localeCompare(b.name)
+      if (sort.value === 'risk') return (riskWeight[a.riskLevel || 'low'] ?? 9) - (riskWeight[b.riskLevel || 'low'] ?? 9)
+      return getSkillDisplayName(a).localeCompare(getSkillDisplayName(b), 'zh-CN')
+    })
+})
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    const result = await fetchSkillMarketWithSource()
+    registry.value = result.registry
+    registrySource.value = result.registryUrl
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Skill Market 加载失败'
+  } finally {
+    loading.value = false
+  }
+}
+
+function formatGeneratedAt(value: string) {
+  return value ? new Date(value).toLocaleString('zh-CN') : '—'
+}
+
+onMounted(load)
+</script>

@@ -294,6 +294,7 @@ export default {
       flaggedHashHint: '哈希永久保存在 Redis 集合中；可粘贴完整 64 位哈希删除误拦截项，或一键清空全部风险哈希。',
       flaggedHashPlaceholder: '粘贴完整 64 位输入哈希',
       deleteFlaggedHash: '删除指定哈希',
+      deleteFlaggedHashConfirm: '确定要删除该风险输入哈希吗？删除后该输入将不再被拦截。',
       clearFlaggedHashes: '一键清空',
       clearFlaggedHashesConfirm: '确定要清空全部风险输入哈希吗？此操作不会删除审核记录，但会取消所有历史哈希拦截。',
       flaggedHashDeleted: '风险哈希已删除',

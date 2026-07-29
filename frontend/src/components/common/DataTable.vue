@@ -17,13 +17,15 @@
     <template v-else-if="!data || data.length === 0">
       <div class="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-dark-700 dark:bg-dark-900">
         <slot name="empty">
+          <!-- 视觉 token 与 EmptyState.vue 对齐(openspec add-tokenport-frontend-polish D6):
+               同一套图标底板尺寸、图标尺寸与标题字号,避免表格空态与卡片空态两种观感。 -->
           <div class="flex flex-col items-center">
-            <Icon
-              name="inbox"
-              size="xl"
-              class="mb-4 h-12 w-12 text-gray-400 dark:text-dark-500"
-            />
-            <p class="text-lg font-medium text-gray-900 dark:text-gray-100">
+            <div
+              class="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-100 dark:bg-dark-800"
+            >
+              <Icon name="inbox" size="xl" class="empty-state-icon mb-0 h-10 w-10" />
+            </div>
+            <p class="empty-state-title">
               {{ t('empty.noData') }}
             </p>
           </div>

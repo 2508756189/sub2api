@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 
 import TokenUsageTrend from '../TokenUsageTrend.vue'
@@ -21,11 +21,50 @@ vi.mock('vue-i18n', async () => {
 vi.mock('vue-chartjs', () => ({
   Line: {
     props: ['data', 'options'],
-    template: '<div class="chart-data">{{ JSON.stringify(data) }}</div>',
+    template:
+      '<div><div class="chart-data">{{ JSON.stringify(data) }}</div><div class="chart-options">{{ JSON.stringify(options) }}</div></div>',
   },
 }))
 
+afterEach(() => {
+  document.documentElement.classList.remove('dark')
+})
+
 describe('TokenUsageTrend', () => {
+  it('updates chart colors when the root theme changes', async () => {
+    const wrapper = mount(TokenUsageTrend, {
+      props: {
+        trendData: [
+          {
+            date: '2026-05-08',
+            requests: 1,
+            input_tokens: 500,
+            output_tokens: 100,
+            cache_creation_tokens: 0,
+            cache_read_tokens: 1500,
+            cost: 0.01,
+            actual_cost: 0.005,
+          },
+        ],
+      },
+      global: {
+        stubs: {
+          LoadingSpinner: true,
+        },
+      },
+    })
+
+    const options = () => JSON.parse(wrapper.find('.chart-options').text())
+    expect(options().plugins.legend.labels.color).toBe('#374151')
+
+    document.documentElement.classList.add('dark')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(options().plugins.legend.labels.color).toBe('#e5e7eb')
+    expect(options().scales.x.grid.color).toBe('#374151')
+    wrapper.unmount()
+  })
+
   it('calculates cache hit rate against all prompt tokens', () => {
     const wrapper = mount(TokenUsageTrend, {
       props: {

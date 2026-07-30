@@ -10,6 +10,7 @@ import { formatHistoryLabel, sumNumbers } from '../utils/opsFormatters'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { formatNumber } from '@/utils/format'
+import { useDarkMode } from '@/composables/useDarkMode'
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, LinearScale, PointElement, CategoryScale, Filler)
 
@@ -43,7 +44,7 @@ watch(
   }
 )
 
-const isDarkMode = computed(() => document.documentElement.classList.contains('dark'))
+const isDarkMode = useDarkMode()
 const colors = computed(() => ({
   blue: '#3b82f6',
   blueAlpha: '#3b82f620',

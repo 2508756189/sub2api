@@ -529,6 +529,15 @@
   }
 }
 
+/* The TokenPort SVG already contains its own framed mark. Avoid wrapping it in
+   the generic uploaded-logo surface so public and console wordmarks match. */
+.tokenport-console .sidebar-logo.sidebar-logo-tokenport,
+.dark .tokenport-console .sidebar-logo.sidebar-logo-tokenport {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 /* =========================================================
    Dark theme — deep monochrome harbor
    DOM: .dark .tokenport-console

@@ -70,6 +70,9 @@ func TestDecideResponsesProbeSupport(t *testing.T) {
 		{"200 no output field", 200, []byte(`{"status":"completed"}`), false},
 		// Non-2xx (other than 404/405): endpoint exists, capability undecidable -> conservative true.
 		{"400 conservative true", 400, reasoningOnly, true},
+		{"400 explicit model unsupported", 400, []byte(`{"error":{"code":"RESPONSES_MODEL_NOT_SUPPORTED","message":"当前模型不支持 Responses API"}}`), false},
+		{"400 explicit feature unsupported", 400, []byte(`{"error":{"code":"RESPONSES_FEATURE_NOT_SUPPORTED","message":"当前模型或上游不支持 Responses 能力：compact"}}`), false},
+		{"400 explicit English unsupported", 400, []byte(`{"error":{"message":"This model does not support Responses API"}}`), false},
 		{"401 conservative true", 401, nil, true},
 		{"500 conservative true", 500, nil, true},
 	}
@@ -78,6 +81,12 @@ func TestDecideResponsesProbeSupport(t *testing.T) {
 			require.Equal(t, tc.want, decideResponsesProbeSupport(tc.status, tc.body))
 		})
 	}
+}
+
+func TestResponsesProbeBodyExplicitlyUnsupported(t *testing.T) {
+	require.True(t, responsesProbeBodyExplicitlyUnsupported([]byte(`{"error":{"message":"当前模型不支持 Responses API"}}`)))
+	require.True(t, responsesProbeBodyExplicitlyUnsupported([]byte(`{"error":{"message":"This feature is unsupported for Responses"}}`)))
+	require.False(t, responsesProbeBodyExplicitlyUnsupported([]byte(`{"error":{"message":"invalid request"}}`)))
 }
 
 func TestResponsesProbeBodyHasFunctionCall(t *testing.T) {

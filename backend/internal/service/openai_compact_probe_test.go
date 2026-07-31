@@ -109,6 +109,16 @@ func TestBuildOpenAICompactProbeExtraUpdates_UnknownModelDoesNotMarkUnsupported(
 	}
 }
 
+func TestBuildOpenAICompactProbeExtraUpdates_ResponsesModelUnsupportedMarksUnsupported(t *testing.T) {
+	now := time.Date(2026, 4, 10, 10, 0, 0, 0, time.UTC)
+	body := []byte(`{"error":{"code":"RESPONSES_MODEL_NOT_SUPPORTED","message":"当前模型不支持 Responses API"}}`)
+	updates := buildOpenAICompactProbeExtraUpdates(&http.Response{StatusCode: http.StatusBadRequest}, body, nil, now)
+
+	if got := updates["openai_compact_supported"]; got != false {
+		t.Fatalf("openai_compact_supported = %v, want false", got)
+	}
+}
+
 func TestBuildOpenAICompactProbeExtraUpdates_EmptyFailureBodyFallsBackToHTTPStatus(t *testing.T) {
 	now := time.Date(2026, 4, 10, 10, 0, 0, 0, time.UTC)
 	updates := buildOpenAICompactProbeExtraUpdates(&http.Response{StatusCode: http.StatusServiceUnavailable}, nil, nil, now)

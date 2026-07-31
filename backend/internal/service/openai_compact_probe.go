@@ -38,6 +38,9 @@ func createOpenAICompactProbePayload(model string) map[string]any {
 }
 
 func shouldMarkOpenAICompactUnsupported(status int, body []byte) bool {
+	if responsesProbeBodyExplicitlyUnsupported(body) {
+		return true
+	}
 	switch status {
 	case http.StatusNotFound, http.StatusMethodNotAllowed, http.StatusNotImplemented:
 		return true

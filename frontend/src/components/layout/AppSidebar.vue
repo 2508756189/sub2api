@@ -11,10 +11,11 @@
       <!-- Custom Logo or Default Logo -->
       <router-link
         :to="homePath"
-        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow transition-opacity hover:opacity-80"
+        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl transition-opacity hover:opacity-80"
+        :class="{ 'sidebar-logo-tokenport': isTokenPortLogo }"
         @click="handleMenuItemClick(homePath)"
       >
-        <img v-if="settingsLoaded" :src="siteLogo || '/ctyun-logo.svg'" alt="Logo" class="h-full w-full object-contain" />
+        <img v-if="settingsLoaded" :src="siteLogo" alt="Logo" class="block h-full w-full object-contain" />
       </router-link>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
         <router-link
@@ -262,6 +263,7 @@ const siteLogo = computed(() => {
   const raw = sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true })
   return resolveTokenPortLogo(raw)
 })
+const isTokenPortLogo = computed(() => siteLogo.value === '/tokenport-logo.svg')
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 

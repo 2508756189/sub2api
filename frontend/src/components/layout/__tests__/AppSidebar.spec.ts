@@ -43,6 +43,12 @@ describe('AppSidebar scroll position persistence', () => {
 })
 
 describe('AppSidebar header styles', () => {
+  it('uses the TokenPort mark without the generic uploaded-logo frame', () => {
+    expect(componentSource).toContain("'sidebar-logo-tokenport': isTokenPortLogo")
+    expect(componentSource).toContain("const isTokenPortLogo = computed(() => siteLogo.value === '/tokenport-logo.svg')")
+    expect(componentSource).not.toContain('sidebar-brand-accent')
+  })
+
   it('does not clip the version badge dropdown', () => {
     const sidebarHeaderBlockMatch = styleSource.match(/\.sidebar-header\s*\{[\s\S]*?\n {2}\}/)
     const sidebarBrandBlockMatch = componentSource.match(/\.sidebar-brand\s*\{[\s\S]*?\n\}/)

@@ -506,6 +506,7 @@ import Icon from '@/components/icons/Icon.vue'
 import { adminAPI } from '@/api/admin'
 import type { Account, AccountUsageStatsResponse } from '@/types'
 import { getBillingCurrencyLabel, getBillingCurrencySymbol } from '@/tokenport/billing/currency'
+import { useDarkMode } from '@/composables/useDarkMode'
 
 ChartJS.register(
   CategoryScale,
@@ -534,10 +535,7 @@ const emit = defineEmits<{
 const loading = ref(false)
 const stats = ref<AccountUsageStatsResponse | null>(null)
 
-// Dark mode detection
-const isDarkMode = computed(() => {
-  return document.documentElement.classList.contains('dark')
-})
+const isDarkMode = useDarkMode()
 
 // Chart colors
 const chartColors = computed(() => ({

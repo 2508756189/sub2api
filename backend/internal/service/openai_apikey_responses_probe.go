@@ -99,7 +99,8 @@ func selectResponsesProbeModel(account *Account) string {
 //   - 上游 404 / 405 → 端点不存在,写 false
 //   - 上游 2xx → 端点存在,进一步看工具能力:响应含 function_call 输出项才写 true;
 //     仅 reasoning / 无 function_call(如火山方舟 coding/v3 × kimi-k2.6)写 false
-//   - 其他非 2xx（401/422/400/5xx 等）→ 端点存在但无法判定工具能力,保守写 true
+//   - 其他非 2xx（鉴权/瞬时故障等）→ 端点存在但无法判定工具能力,保守写 true
+//   - 错误明确表示模型或上游不支持 Responses → 写 false
 //   - 网络层失败（连接错误、超时）→ 不写标记，保持 unknown
 //     （后续请求仍按"现状即证据"默认走 Responses）
 //
@@ -214,6 +215,7 @@ func isResponsesEndpointSupportedByStatus(status int) bool {
 //   - 404 / 405：端点不存在 → false
 //   - 其他非 2xx（401/403/422/5xx 等）：端点存在,但本次无法判定工具能力
 //     （鉴权/校验/瞬时故障）→ 保守按 true,保持既有"端点存在即支持"行为
+//   - 错误明确表示模型或上游不支持 Responses → false
 //   - 2xx：探测以 tool_choice=required 强制工具调用,响应必须含 function_call
 //     输出项才算真正可用;否则(如火山方舟 coding/v3 × kimi-k2.6 仅回 reasoning)
 //     判为 false,使网关改走 /v1/chat/completions 直转路径。
@@ -222,9 +224,39 @@ func decideResponsesProbeSupport(status int, body []byte) bool {
 		return false
 	}
 	if status < 200 || status >= 300 {
-		return true
+		return !responsesProbeBodyExplicitlyUnsupported(body)
 	}
 	return responsesProbeBodyHasFunctionCall(body)
+}
+
+func responsesProbeBodyExplicitlyUnsupported(body []byte) bool {
+	code := strings.ToLower(strings.TrimSpace(extractUpstreamErrorCode(body)))
+	switch code {
+	case "responses_model_not_supported", "responses_feature_not_supported", "responses_not_supported":
+		return true
+	}
+
+	message := strings.ToLower(strings.TrimSpace(extractUpstreamErrorMessage(body)))
+	if message == "" {
+		message = strings.ToLower(strings.TrimSpace(string(body)))
+	}
+	if !strings.Contains(message, "responses") {
+		return false
+	}
+	for _, marker := range []string{
+		"not support",
+		"doesn't support",
+		"unsupported",
+		"not available",
+		"disabled",
+		"不支持",
+		"未支持",
+	} {
+		if strings.Contains(message, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 // responsesProbeBodyHasFunctionCall 判断非流式 Responses 响应体的 output 数组里

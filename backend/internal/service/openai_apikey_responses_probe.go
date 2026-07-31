@@ -224,10 +224,7 @@ func decideResponsesProbeSupport(status int, body []byte) bool {
 		return false
 	}
 	if status < 200 || status >= 300 {
-		if responsesProbeBodyExplicitlyUnsupported(body) {
-			return false
-		}
-		return true
+		return !responsesProbeBodyExplicitlyUnsupported(body)
 	}
 	return responsesProbeBodyHasFunctionCall(body)
 }

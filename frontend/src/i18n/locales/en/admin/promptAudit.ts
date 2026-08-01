@@ -59,7 +59,7 @@ export default {
       secretGuard: 'Local secret guard', secretGuardDescription: 'Detects likely credentials locally at the gateway; a match does not reach the audit model or upstream provider.',
       secretGuardOff: 'Off', secretGuardBlock: 'Block outbound request', secretGuardBlockHint: 'Only the credential category and redacted explanation are recorded. Normal Claude Code, Codex, and TeleAgent requests remain unchanged; requests that paste credentials are blocked.',
     },
-    saveBar: { enabled: 'Enable prompt audit', blocking: 'Synchronous blocking', storePass: 'Store safe events', dirty: 'Unsaved changes', synced: 'Configuration synced' },
+    saveBar: { enabled: 'Enable prompt audit', blocking: 'Synchronous blocking', blockingLatestTurnOnly: 'Only latest input and prior output', storePass: 'Store safe events', dirty: 'Unsaved changes', synced: 'Configuration synced' },
     blockingConfirm: {
       title: 'Enable synchronous blocking?',
       message: 'Applicable requests wait for Guard before account selection, billing, or upstream access. Block, unavailable Guard, and invalid responses all prevent upstream access.',

@@ -59,7 +59,7 @@ export default {
       secretGuard: '本地密钥防护', secretGuardDescription: '在网关本地识别疑似密钥或口令；命中时不会访问审计模型或上游提供商。',
       secretGuardOff: '关闭', secretGuardBlock: '阻断外发', secretGuardBlockHint: '仅保存密钥类别和脱敏说明。正常的 Claude Code、Codex、TeleAgent 请求无需改动；显式粘贴凭证的请求会被阻断。',
     },
-    saveBar: { enabled: '启用提示词审计', blocking: '同步阻止', storePass: '保存安全事件', dirty: '有未保存的更改', synced: '配置已同步' },
+    saveBar: { enabled: '启用提示词审计', blocking: '同步阻止', blockingLatestTurnOnly: '仅审最新输入和上一轮输出', storePass: '保存安全事件', dirty: '有未保存的更改', synced: '配置已同步' },
     blockingConfirm: {
       title: '开启同步阻止？',
       message: '适用请求会在账号选择、计费和访问上游之前等待 Guard。命中 Block、Guard 不可用或响应非法时，请求都不会访问上游。',

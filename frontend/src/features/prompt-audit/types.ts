@@ -25,6 +25,7 @@ export interface PromptAuditConfig {
   enabled: boolean
   blocking_enabled: boolean
   secret_guard_mode: SecretGuardMode
+  blocking_latest_turn_only: boolean
   store_pass_events: boolean
   effective_mode: PromptAuditMode
   strategy: 'priority'
@@ -49,6 +50,7 @@ export interface PromptAuditUpdateRequest {
   enabled: boolean
   blocking_enabled: boolean
   secret_guard_mode: SecretGuardMode
+  blocking_latest_turn_only: boolean
   store_pass_events: boolean
   strategy: 'priority'
   worker_count: number

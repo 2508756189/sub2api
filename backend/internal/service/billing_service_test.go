@@ -554,6 +554,13 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedCacheRead: floatPtr(0.2e-6),
 		},
 		{
+			name:              "TokenRhythm qwen 3.7 max",
+			model:             "qwen3.7-max",
+			expectedInput:     0.833333333333e-6,
+			expectedOutput:    floatPtr(2.5e-6),
+			expectedCacheRead: floatPtr(0.166666666667e-6),
+		},
+		{
 			name:              "glm 5 turbo",
 			model:             "glm-5-turbo",
 			expectedInput:     1.2e-6,
@@ -703,6 +710,13 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedCacheRead: floatPtr(0.098e-6),
 		},
 		{
+			name:              "TokenRhythm kimi k2.7 code",
+			model:             "kimi-k2.7-code",
+			expectedInput:     0.902777777778e-6,
+			expectedOutput:    floatPtr(3.75e-6),
+			expectedCacheRead: floatPtr(0.180555555556e-6),
+		},
+		{
 			name:              "kimi k2-thinking",
 			model:             "kimi-k2-thinking",
 			expectedInput:     0.56e-6,
@@ -753,6 +767,12 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedInput:     0.30e-6,
 			expectedOutput:    floatPtr(1.20e-6),
 			expectedCacheRead: floatPtr(0.06e-6),
+		},
+		{
+			name:           "TokenRhythm mimo v2.5 pro",
+			model:          "mimo-v2.5-pro",
+			expectedInput:  0.416666666667e-6,
+			expectedOutput: floatPtr(0.833333333333e-6),
 		},
 		{
 			name:              "minimax m2.7 highspeed",

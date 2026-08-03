@@ -441,6 +441,15 @@ func (s *BillingService) initFallbackPricing() {
 		CacheReadPricePerToken: 0.2e-6,
 		SupportsCacheBreakdown: false,
 	}
+	// TokenRhythm-only models not covered by the public pricing catalog use the
+	// upstream /v1/models effective CNY rate, converted at the platform's 7.2 rate.
+	// Channel-specific pricing takes precedence when the request is routed there.
+	s.fallbackPrices["qwen3.7-max"] = &ModelPricing{
+		InputPricePerToken:     0.833333333333e-6, // CNY 6 / 1M
+		OutputPricePerToken:    2.5e-6,            // CNY 18 / 1M
+		CacheReadPricePerToken: 0.166666666667e-6, // CNY 1.2 / 1M
+		SupportsCacheBreakdown: false,
+	}
 	s.fallbackPrices["glm-5-turbo"] = &ModelPricing{
 		InputPricePerToken:     1.2e-6,
 		OutputPricePerToken:    4e-6,
@@ -539,6 +548,12 @@ func (s *BillingService) initFallbackPricing() {
 		CacheReadPricePerToken: 0.098e-6,
 		SupportsCacheBreakdown: false,
 	}
+	s.fallbackPrices["kimi-k2.7-code"] = &ModelPricing{
+		InputPricePerToken:     0.902777777778e-6, // CNY 6.5 / 1M
+		OutputPricePerToken:    3.75e-6,           // CNY 27 / 1M
+		CacheReadPricePerToken: 0.180555555556e-6, // CNY 1.3 / 1M
+		SupportsCacheBreakdown: false,
+	}
 	s.fallbackPrices["kimi-k2-thinking"] = &ModelPricing{
 		InputPricePerToken:     0.56e-6, // ¥4/百万 ≈ $0.56
 		OutputPricePerToken:    2.24e-6, // ¥16/百万
@@ -566,6 +581,11 @@ func (s *BillingService) initFallbackPricing() {
 		InputPricePerToken:     0.30e-6, // $0.30 per MTok
 		OutputPricePerToken:    1.20e-6,
 		CacheReadPricePerToken: 0.06e-6,
+		SupportsCacheBreakdown: false,
+	}
+	s.fallbackPrices["mimo-v2.5-pro"] = &ModelPricing{
+		InputPricePerToken:     0.416666666667e-6, // CNY 3 / 1M
+		OutputPricePerToken:    0.833333333333e-6, // CNY 6 / 1M
 		SupportsCacheBreakdown: false,
 	}
 	s.fallbackPrices["minimax-m2.7-highspeed"] = &ModelPricing{
@@ -711,6 +731,9 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	if strings.Contains(modelLower, "glm-5") {
 		return s.fallbackPrices["glm-5"]
 	}
+	if strings.Contains(modelLower, "qwen3.7-max") || strings.Contains(modelLower, "qwen3-7-max") {
+		return s.fallbackPrices["qwen3.7-max"]
+	}
 	if strings.Contains(modelLower, "glm-4.7-flashx") {
 		return s.fallbackPrices["glm-4.7-flashx"]
 	}
@@ -761,6 +784,9 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	if strings.Contains(modelLower, "kimi-k2.5") || strings.Contains(modelLower, "kimi-k2-5") {
 		return s.fallbackPrices["kimi-k2.5"]
 	}
+	if strings.Contains(modelLower, "kimi-k2.7-code") || strings.Contains(modelLower, "kimi-k2-7-code") {
+		return s.fallbackPrices["kimi-k2.7-code"]
+	}
 	if strings.Contains(modelLower, "kimi-k2-thinking") || strings.Contains(modelLower, "kimi-k2-thinking-") {
 		return s.fallbackPrices["kimi-k2-thinking"]
 	}
@@ -786,6 +812,9 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 	if strings.Contains(modelLower, "minimax-m2") || strings.Contains(modelLower, "minimax-m-2") {
 		return s.fallbackPrices["minimax-m2"]
+	}
+	if strings.Contains(modelLower, "mimo-v2.5-pro") || strings.Contains(modelLower, "mimo-v2-5-pro") {
+		return s.fallbackPrices["mimo-v2.5-pro"]
 	}
 
 	// 火山方舟 豆包 Embedding（多模态向量化）。

@@ -6,6 +6,10 @@
 -- qwen3.7-max and kimi-k2.7-code are only seeded for the OpenAI-compatible
 -- channel because the upstream model metadata does not advertise Anthropic
 -- protocol support for them.
+--
+-- Channel rows are tenant data rather than schema data.  Skip the seed when a
+-- configured channel does not exist, so a fresh installation can complete its
+-- migrations and still use the billing fallback rates until the channel exists.
 WITH seed(channel_id, platform, model_name, input_price, output_price, cache_read_price) AS (
     VALUES
         (5, 'anthropic', 'glm-5',            0.000000833333333333, 0.000003055555555556, 0.000000208333333333),
@@ -24,7 +28,7 @@ INSERT INTO channel_model_pricing (
     input_price, output_price, cache_read_price
 )
 SELECT
-    s.channel_id,
+    c.id,
     s.platform,
     jsonb_build_array(s.model_name),
     'token',
@@ -32,6 +36,7 @@ SELECT
     s.output_price,
     s.cache_read_price
 FROM seed s
+JOIN channels AS c ON c.id = s.channel_id
 WHERE NOT EXISTS (
     SELECT 1
     FROM channel_model_pricing p

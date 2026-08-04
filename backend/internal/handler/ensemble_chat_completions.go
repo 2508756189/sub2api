@@ -88,7 +88,42 @@ const (
 	ensembleStatusOK               = "ok"
 	ensembleStatusFailed           = "failed"
 	maxEnsembleAggregatorBodyBytes = 2 << 20
+	ensembleProgressSinkKey        = "ensemble.progress.sink"
 )
+
+// EnsembleProgressEvent is the small, stable event contract used by the
+// authenticated diagnostic stream. The normal Chat Completions response stays
+// unchanged; these events only make the execution observable to the admin UI.
+type EnsembleProgressEvent struct {
+	Type               string              `json:"type"`
+	Model              string              `json:"model,omitempty"`
+	Platform           string              `json:"platform,omitempty"`
+	Role               string              `json:"role,omitempty"`
+	Status             string              `json:"status,omitempty"`
+	Error              string              `json:"error,omitempty"`
+	Member             *ensembleMemberStat `json:"member,omitempty"`
+	ProposersTotal     int                 `json:"proposers_total,omitempty"`
+	ProposersSucceeded int                 `json:"proposers_succeeded,omitempty"`
+	Aggregator         string              `json:"aggregator,omitempty"`
+	Aggregated         bool                `json:"aggregated,omitempty"`
+	DurationMs         int64               `json:"duration_ms,omitempty"`
+	StatusCode         int                 `json:"status_code,omitempty"`
+	Response           json.RawMessage     `json:"response,omitempty"`
+}
+
+func emitEnsembleProgress(c *gin.Context, event EnsembleProgressEvent) {
+	if c == nil {
+		return
+	}
+	sinkValue, ok := c.Get(ensembleProgressSinkKey)
+	if !ok {
+		return
+	}
+	sink, ok := sinkValue.(func(EnsembleProgressEvent))
+	if ok && sink != nil {
+		sink(event)
+	}
+}
 
 // ChatCompletions handles POST /v1/chat/completions for platform=ensemble groups.
 func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
@@ -137,6 +172,15 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 			"This ensemble group has no enabled proposer models. Add members in the admin Ensemble configuration.")
 		return
 	}
+	aggregatorModel := ""
+	if plan.ShouldAggregate() {
+		aggregatorModel = plan.Aggregator.Model
+	}
+	emitEnsembleProgress(c, EnsembleProgressEvent{
+		Type:           "started",
+		ProposersTotal: len(plan.Proposers),
+		Aggregator:     aggregatorModel,
+	})
 
 	timeout := time.Duration(plan.EffectiveTimeoutSeconds()) * time.Second
 	started := time.Now()
@@ -148,9 +192,16 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		wg.Add(1)
 		go func(idx int, member service.EnsembleProposer) {
 			defer wg.Done()
+			emitEnsembleProgress(c, EnsembleProgressEvent{
+				Type:     "member_started",
+				Model:    member.Model,
+				Platform: member.Platform,
+				Role:     service.EnsembleRoleProposer,
+			})
+			var result ensembleSubResult
 			defer func() {
 				if r := recover(); r != nil {
-					results[idx] = ensembleSubResult{
+					result = ensembleSubResult{
 						index: idx,
 						model: member.Model,
 						role:  service.EnsembleRoleProposer,
@@ -164,8 +215,17 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 						},
 					}
 				}
+				results[idx] = result
+				stat := result.stat
+				emitEnsembleProgress(c, EnsembleProgressEvent{
+					Type:   "member_finished",
+					Model:  stat.Model,
+					Role:   stat.Role,
+					Status: stat.Status,
+					Member: &stat,
+				})
 			}()
-			results[idx] = h.runSubCall(c, idx, member.Model, member.Platform, service.EnsembleRoleProposer, body, plan.Config.MaxTokens, timeout)
+			result = h.runSubCall(c, idx, member.Model, member.Platform, service.EnsembleRoleProposer, body, plan.Config.MaxTokens, timeout)
 		}(i, plan.Proposers[i])
 	}
 	wg.Wait()
@@ -182,12 +242,23 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 				zap.Error(res.err))
 		}
 	}
+	emitEnsembleProgress(c, EnsembleProgressEvent{
+		Type:               "proposers_finished",
+		ProposersTotal:     len(plan.Proposers),
+		ProposersSucceeded: len(proposals),
+	})
 
 	minProposers := plan.EffectiveMinProposers()
 	if len(proposals) < minProposers {
 		reqLog.Error("ensemble did not reach min_proposers",
 			zap.Int("succeeded", len(proposals)),
 			zap.Int("required", minProposers))
+		emitEnsembleProgress(c, EnsembleProgressEvent{
+			Type:               "error",
+			Error:              fmt.Sprintf("Only %d proposers succeeded, minimum %d required", len(proposals), minProposers),
+			ProposersTotal:     len(plan.Proposers),
+			ProposersSucceeded: len(proposals),
+		})
 		h.errorResponse(c, http.StatusBadGateway, "api_error",
 			fmt.Sprintf("Only %d proposers succeeded, minimum %d required", len(proposals), minProposers))
 		return
@@ -200,14 +271,44 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		aggBody, buildErr := buildEnsembleAggregatorBody(body, proposals)
 		if buildErr != nil {
 			reqLog.Warn("failed to build aggregator request, falling back to longest proposal", zap.Error(buildErr))
+			emitEnsembleProgress(c, EnsembleProgressEvent{
+				Type:       "fallback",
+				Model:      plan.Aggregator.Model,
+				Role:       service.EnsembleRoleAggregator,
+				Status:     ensembleStatusFailed,
+				Error:      buildErr.Error(),
+				Aggregated: false,
+			})
 		} else {
+			emitEnsembleProgress(c, EnsembleProgressEvent{
+				Type:     "member_started",
+				Model:    plan.Aggregator.Model,
+				Platform: plan.Aggregator.Platform,
+				Role:     service.EnsembleRoleAggregator,
+			})
 			aggRes := h.runSubCall(c, len(results), plan.Aggregator.Model, plan.Aggregator.Platform, service.EnsembleRoleAggregator,
 				aggBody, plan.Config.MaxTokens, timeout)
 			stats = append(stats, aggRes.stat)
+			stat := aggRes.stat
+			emitEnsembleProgress(c, EnsembleProgressEvent{
+				Type:   "member_finished",
+				Model:  stat.Model,
+				Role:   stat.Role,
+				Status: stat.Status,
+				Member: &stat,
+			})
 			if aggRes.err == nil && strings.TrimSpace(aggRes.content) != "" {
 				finalContent = aggRes.content
 				aggregated = true
 			} else {
+				emitEnsembleProgress(c, EnsembleProgressEvent{
+					Type:       "fallback",
+					Model:      plan.Aggregator.Model,
+					Role:       service.EnsembleRoleAggregator,
+					Status:     ensembleStatusFailed,
+					Error:      aggRes.stat.Error,
+					Aggregated: false,
+				})
 				reqLog.Warn("ensemble aggregator failed, falling back to longest proposal",
 					zap.String("model", plan.Aggregator.Model),
 					zap.Error(aggRes.err))
@@ -227,6 +328,84 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, payload)
+}
+
+// TestStream runs the normal Ensemble Chat Completions handler in an isolated
+// recorder and forwards progress over SSE. API-key authentication and the
+// downstream dispatch path are inherited from the gateway route, so this is a
+// diagnostic view of the same billing behavior rather than a second executor.
+func (h *EnsembleHandler) TestStream(c *gin.Context) {
+	apiKey, ok := middleware2.GetAPIKeyFromContext(c)
+	if !ok || apiKey == nil || apiKey.Group == nil {
+		h.errorResponse(c, http.StatusUnauthorized, "authentication_error", "Invalid API key")
+		return
+	}
+	if apiKey.Group.Platform != service.PlatformEnsemble {
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "The API key is not bound to an Ensemble group")
+		return
+	}
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to read request body")
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+
+	events := make(chan EnsembleProgressEvent, 32)
+	started := time.Now()
+	recorder := httptest.NewRecorder()
+	diagnosticContext, _ := gin.CreateTestContext(recorder)
+	diagnosticContext.Request = c.Request.Clone(c.Request.Context())
+	diagnosticContext.Request.Body = io.NopCloser(bytes.NewReader(body))
+	diagnosticContext.Request.ContentLength = int64(len(body))
+	for key, value := range c.Keys {
+		diagnosticContext.Set(key, value)
+	}
+	diagnosticContext.Set(ensembleProgressSinkKey, func(event EnsembleProgressEvent) {
+		select {
+		case events <- event:
+		case <-c.Request.Context().Done():
+		}
+	})
+
+	go func() {
+		h.ChatCompletions(diagnosticContext)
+		terminal := EnsembleProgressEvent{
+			Type:       "completed",
+			StatusCode: recorder.Code,
+			DurationMs: time.Since(started).Milliseconds(),
+			Response:   json.RawMessage(append([]byte(nil), recorder.Body.Bytes()...)),
+		}
+		if recorder.Code >= http.StatusBadRequest {
+			terminal.Type = "error"
+			terminal.Error = gjson.GetBytes(recorder.Body.Bytes(), "error.message").String()
+			if terminal.Error == "" {
+				terminal.Error = ensembleTruncate(recorder.Body.String(), 500)
+			}
+		}
+		select {
+		case events <- terminal:
+		case <-c.Request.Context().Done():
+		}
+		close(events)
+	}()
+
+	for {
+		select {
+		case event, open := <-events:
+			if !open {
+				return
+			}
+			c.SSEvent(event.Type, event)
+			c.Writer.Flush()
+		case <-c.Request.Context().Done():
+			return
+		}
+	}
 }
 
 // runSubCall executes one member call by re-entering the normal gateway pipeline

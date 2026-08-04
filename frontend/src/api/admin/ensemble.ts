@@ -25,6 +25,7 @@ export interface EnsembleConfig {
 
 export interface EnsembleMemberStat {
   model: string
+  platform?: string
   role: EnsembleMemberRole
   status: 'ok' | 'failed' | string
   duration_ms: number
@@ -34,6 +35,23 @@ export interface EnsembleMemberStat {
   cost?: number
   cost_source?: string
   error?: string
+}
+
+export interface EnsembleProgressEvent {
+  type: 'started' | 'member_started' | 'member_finished' | 'proposers_finished' | 'fallback' | 'error' | 'completed' | string
+  model?: string
+  platform?: string
+  role?: EnsembleMemberRole | string
+  status?: string
+  error?: string
+  member?: EnsembleMemberStat
+  proposers_total?: number
+  proposers_succeeded?: number
+  aggregator?: string
+  aggregated?: boolean
+  duration_ms?: number
+  status_code?: number
+  response?: EnsembleTestResponse
 }
 
 export interface EnsembleTestResponse {
@@ -140,6 +158,83 @@ export const ensembleAPI = {
       throw new Error(data?.error?.message ?? data?.message ?? response.statusText)
     }
     return data as EnsembleTestResponse
+  },
+
+  /**
+   * Run the same gateway request as test(), but receive execution diagnostics
+   * as server-sent events so the admin page can show where a slow call stops.
+   */
+  testStream: async (
+    apiKey: string,
+    messages: Array<{ role: string; content: string }>,
+    onEvent: (event: EnsembleProgressEvent) => void,
+    signal?: AbortSignal
+  ): Promise<EnsembleTestResponse | null> => {
+    const response = await fetch(buildGatewayUrl('/v1/ensemble/test'), {
+      method: 'POST',
+      headers: {
+        Accept: 'text/event-stream',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'ensemble',
+        messages,
+        stream: false
+      }),
+      signal
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data?.error?.message ?? data?.message ?? response.statusText)
+    }
+    if (!response.body) throw new Error('测试接口没有返回进度流')
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let eventName = ''
+    let dataLines: string[] = []
+    let finalResponse: EnsembleTestResponse | null = null
+
+    const consumeEvent = () => {
+      const currentEvent = eventName || 'message'
+      const payload = dataLines.join('\n')
+      if (payload) {
+        try {
+          const parsed = JSON.parse(payload) as Record<string, unknown>
+          const event = { ...parsed, type: currentEvent } as EnsembleProgressEvent
+          onEvent(event)
+          if ((currentEvent === 'completed' || currentEvent === 'error') && event.response) {
+            finalResponse = event.response
+          }
+        } catch {
+          onEvent({ type: currentEvent, error: payload })
+        }
+      }
+      eventName = ''
+      dataLines = []
+    }
+
+    while (true) {
+      const { done, value } = await reader.read()
+      buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done })
+      const lines = buffer.split(/\r?\n/)
+      buffer = lines.pop() ?? ''
+      for (const line of lines) {
+        if (line === '') {
+          consumeEvent()
+        } else if (line.startsWith('event:')) {
+          eventName = line.slice(6).trim()
+        } else if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trimStart())
+        }
+      }
+      if (done) break
+    }
+    if (buffer || dataLines.length) consumeEvent()
+    return finalResponse
   }
 }
 

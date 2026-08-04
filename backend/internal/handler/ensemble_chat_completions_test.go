@@ -399,3 +399,50 @@ func TestEnsembleAggregatorBodyRejectsOversizedCandidateContext(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "aggregator request exceeds")
 }
+
+func TestEnsembleTestStreamReportsMembersAndFinalResponse(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	dispatch := &ensembleDispatchStub{responses: map[string]dispatchResponse{
+		"gpt-5":   {status: http.StatusOK, body: chatCompletion("candidate", 7, 3)},
+		"gpt-5.1": {status: http.StatusOK, body: chatCompletion("final answer", 11, 4)},
+	}}
+	members := []service.EnsembleProposer{
+		{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Platform: service.PlatformOpenAI, Enabled: true},
+		{ID: 2, GroupID: 7, Role: service.EnsembleRoleAggregator, Model: "gpt-5.1", Platform: service.PlatformOpenAI, Enabled: true},
+	}
+	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: members}))
+	h.SetSubCallDispatcher(dispatch.dispatch)
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/ensemble/test", strings.NewReader(
+		`{"model":"ensemble-public","messages":[{"role":"user","content":"hello"}],"stream":false}`,
+	))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{
+		ID:      99,
+		GroupID: ensembleInt64Ptr(7),
+		Group: &service.Group{
+			ID:       7,
+			Platform: service.PlatformEnsemble,
+			EnsembleConfig: service.EnsembleConfig{
+				AggregatorEnabled: true,
+				MinProposers:      1,
+				ExposeMetadata:    true,
+			},
+		},
+	})
+
+	h.TestStream(c)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, "text/event-stream", recorder.Header().Get("Content-Type"))
+	stream := recorder.Body.String()
+	require.Contains(t, stream, "event:started")
+	require.Contains(t, stream, "event:member_started")
+	require.Contains(t, stream, "event:member_finished")
+	require.Contains(t, stream, "event:completed")
+	require.Contains(t, stream, `"model":"gpt-5"`)
+	require.Contains(t, stream, `"model":"gpt-5.1"`)
+	require.Contains(t, stream, `"content":"final answer"`)
+}

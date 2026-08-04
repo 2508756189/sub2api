@@ -6,11 +6,15 @@
           <button type="button" class="btn btn-secondary" :disabled="loading" title="刷新" @click="init">
             <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
           </button>
-          <button type="button" class="btn btn-secondary" :disabled="testing || !canTest" @click="runTest">
-            <Icon name="play" size="md" class="mr-1.5" />
-            {{ testing ? '测试中…' : '测试运行' }}
-          </button>
-          <button type="button" class="btn btn-primary" :disabled="saving || !canSave" @click="save">
+           <button type="button" class="btn btn-secondary" :disabled="testing || !canTest" @click="runTest">
+             <Icon name="play" size="md" class="mr-1.5" />
+             {{ testing ? '测试中…' : '测试运行' }}
+           </button>
+           <button v-if="!isNew" type="button" class="btn btn-secondary" :disabled="saving || !canSaveAsNew" @click="save(true)">
+             <Icon name="plus" size="md" class="mr-1.5" />
+             另存为新分组
+           </button>
+           <button type="button" class="btn btn-primary" :disabled="saving || !canSave" @click="save()">
             <Icon name="check" size="md" class="mr-1.5" />
             {{ saving ? '保存中…' : '保存配置' }}
           </button>
@@ -262,10 +266,13 @@
                   <p class="section-desc">每一行对应一次实际上游调用；聚合调用也会单独列出。</p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <span>成功 {{ testResult.successCount }} / {{ testResult.members.length }}</span>
+                  <span>{{ testResult.metadataPresent ? `成功 ${testResult.successCount} / ${testResult.members.length}` : '未读取到 Ensemble 执行明细' }}</span>
                   <span>耗时 {{ testResult.durationText }}</span>
                   <span>总 Token {{ testResult.totalTokens }}</span>
                 </div>
+              </div>
+              <div v-if="testResult.warning" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
+                {{ testResult.warning }}
               </div>
               <div class="overflow-x-auto">
                 <table class="result-table">
@@ -301,24 +308,34 @@
                   </div>
                 </div>
               </details>
-            </section>
+           </section>
           </div>
         </div>
       </template>
     </TablePageLayout>
+    <EnsembleTestDialog
+      :show="testDialogOpen"
+      :testing="testing"
+      :events="testEvents"
+      :result="testResult"
+      :error="testDialogError"
+      @close="closeTestDialog"
+      @cancel="cancelTest"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import Select from '@/components/common/Select.vue'
 import type { SelectOption } from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
+import EnsembleTestDialog from '@/components/admin/EnsembleTestDialog.vue'
 import groupsAPI from '@/api/admin/groups'
 import channelsAPI, { type Channel } from '@/api/admin/channels'
-import ensembleAPI, { type EnsembleMemberStat, type EnsembleProposer } from '@/api/admin/ensemble'
+import ensembleAPI, { type EnsembleMemberStat, type EnsembleProgressEvent, type EnsembleProposer } from '@/api/admin/ensemble'
 import type { AdminGroup } from '@/types'
 import {
   buildEnsembleGroupPayload,
@@ -363,6 +380,8 @@ interface TestResult {
   totalTokens: number | string
   content: string
   proposals: Array<{ model: string; content: string }>
+  metadataPresent: boolean
+  warning?: string
 }
 
 const loading = ref(false)
@@ -372,6 +391,10 @@ const notice = ref('')
 const noticeType = ref<'ok' | 'err' | 'warn'>('ok')
 const testApiKey = ref('')
 const testResult = ref<TestResult | null>(null)
+const testDialogOpen = ref(false)
+const testEvents = ref<EnsembleProgressEvent[]>([])
+const testDialogError = ref('')
+const testAbortController = ref<AbortController | null>(null)
 
 const allGroups = ref<AdminGroup[]>([])
 const channels = ref<Channel[]>([])
@@ -426,6 +449,11 @@ const canSave = computed(() => {
   const hasSource = !isNew.value || selectedSourceGroupIds.value.length > 0
   return !loading.value && !saving.value && draft.value.name.trim().length > 0 && hasSource &&
     !!billingChannel.value &&
+    proposers.value.length >= 2 && options.value.minProposers >= 1 && options.value.minProposers <= proposers.value.length
+})
+const canSaveAsNew = computed(() => {
+  return !loading.value && !saving.value && draft.value.name.trim().length > 0 &&
+    selectedSourceGroupIds.value.length > 0 && !!findSharedEnsembleChannel(selectedSourceGroupIds.value, channels.value) &&
     proposers.value.length >= 2 && options.value.minProposers >= 1 && options.value.minProposers <= proposers.value.length
 })
 const canTest = computed(() => !isNew.value && !!testApiKey.value.trim() && proposers.value.length >= 2)
@@ -574,7 +602,7 @@ function addProposer(model: string) {
   proposers.value.push(model)
   if (options.value.minProposers < 1) options.value.minProposers = 1
   modelQuery.value = ''
-  if (overProposerLimit.value || availableModels.value.length === 0) modelPickerOpen.value = false
+  modelPickerOpen.value = false
 }
 
 function removeProposer(model: string) {
@@ -583,10 +611,11 @@ function removeProposer(model: string) {
   if (aggregator.value === model && !models.value.includes(model)) aggregator.value = null
 }
 
-async function save() {
+async function save(forceCreate = false) {
+  const creating = forceCreate || isNew.value
   const validation = validateEnsembleDraft({
     name: draft.value.name,
-    sourceGroupIds: isNew.value ? selectedSourceGroupIds.value : [selectedEnsembleGroupId.value as number],
+    sourceGroupIds: creating ? selectedSourceGroupIds.value : [selectedEnsembleGroupId.value as number],
     proposers: proposers.value,
     minProposers: options.value.minProposers
   })
@@ -594,16 +623,30 @@ async function save() {
     show(validationMessage(validation), 'err')
     return
   }
-  if (!billingChannel.value) {
+  const effectiveBillingChannel = creating
+    ? findSharedEnsembleChannel(selectedSourceGroupIds.value, channels.value)
+    : billingChannel.value
+  if (!effectiveBillingChannel) {
     show('所选来源组必须属于同一个启用中的渠道，才能保证模型定价和计费规则唯一。', 'err')
+    return
+  }
+  const duplicate = allGroups.value.find(group =>
+    group.name.trim().toLowerCase() === draft.value.name.trim().toLowerCase() &&
+    (creating || group.id !== selectedEnsembleGroupId.value)
+  )
+  if (duplicate) {
+    show(`分组名称“${draft.value.name.trim()}”已存在，请换一个名称。`, 'err')
     return
   }
 
   saving.value = true
+  let createdGroupId: number | null = null
+  let creationConfigured = false
   try {
-    let groupId = selectedEnsembleGroupId.value
+    let groupId = creating ? null : selectedEnsembleGroupId.value
     if (groupId === null) {
-      const channel = billingChannel.value
+      const channel = effectiveBillingChannel
+      if (!channel) throw new Error('来源分组没有共同的启用渠道，无法创建 Ensemble 分组。')
       const created = await groupsAPI.create(buildEnsembleGroupPayload({
         name: draft.value.name,
         description: draft.value.description,
@@ -611,6 +654,7 @@ async function save() {
         rateMultiplier: draft.value.rateMultiplier
       }))
       groupId = created.id
+      createdGroupId = groupId
       selectedEnsembleGroupId.value = groupId
       allGroups.value = [...allGroups.value, created]
       await channelsAPI.update(channel.id, {
@@ -633,10 +677,19 @@ async function save() {
       expose_metadata: true,
       source_group_ids: [...selectedSourceGroupIds.value]
     })
+    creationConfigured = true
     localStorage.setItem(TARGET_STORAGE_KEY, String(groupId))
     await reloadGroupsAndTarget(groupId)
     show(`Ensemble 分组“${draft.value.name.trim()}”已保存，共 ${proposers.value.length} 个候选${aggregator.value ? `，聚合模型为 ${aggregator.value}` : '，不使用聚合模型'}`, 'ok')
   } catch (error) {
+    if (createdGroupId !== null && !creationConfigured) {
+      try {
+        await groupsAPI.delete(createdGroupId)
+      } catch {
+        show(`保存失败，且自动清理新建分组失败，请检查分组“${draft.value.name.trim()}”。`, 'err')
+        return
+      }
+    }
     show(`保存失败：${errorMessage(error, '服务器返回未知错误')}`, 'err')
   } finally {
     saving.value = false
@@ -683,24 +736,62 @@ async function runTest() {
   }
   testing.value = true
   testResult.value = null
+  testDialogOpen.value = true
+  testEvents.value = []
+  testDialogError.value = ''
+  testAbortController.value?.abort()
+  testAbortController.value = new AbortController()
   try {
-    const data = await ensembleAPI.test(testApiKey.value.trim(), [
+    const data = await ensembleAPI.testStream(testApiKey.value.trim(), [
       { role: 'user', content: '请用两三句话说明什么是多模型聚合。' }
-    ])
-    testResult.value = normalizeTestResult(data)
-    show(`测试完成：${testResult.value.successCount}/${testResult.value.members.length} 个调用成功，耗时 ${testResult.value.durationText}`, testResult.value.successCount > 0 ? 'ok' : 'warn')
+    ], event => {
+      testEvents.value.push(event)
+      if (event.type === 'error' || event.type === 'fallback') {
+        testDialogError.value = event.error ?? (event.type === 'fallback' ? '聚合模型失败，已回退到候选回答。' : '')
+      }
+      if (event.type === 'completed' && event.response) {
+        testResult.value = normalizeTestResult(event.response)
+      }
+    }, testAbortController.value.signal)
+    if (data && !testResult.value) testResult.value = normalizeTestResult(data)
+    if (testDialogError.value) {
+      show(`测试结束：${testDialogError.value}`, 'warn')
+    } else if (testResult.value) {
+      show(`测试完成：${testResult.value.successCount}/${testResult.value.members.length} 个调用成功，耗时 ${testResult.value.durationText}`, testResult.value.successCount > 0 ? 'ok' : 'warn')
+    }
   } catch (error) {
-    show(`测试失败：${errorMessage(error, '网关请求失败')}`, 'err')
+    if ((error as { name?: string })?.name === 'AbortError') {
+      testDialogError.value = '测试已取消。'
+      show('测试已取消。', 'warn')
+    } else {
+      testDialogError.value = errorMessage(error, '网关请求失败')
+      show(`测试失败：${testDialogError.value}`, 'err')
+    }
   } finally {
     testing.value = false
+    testAbortController.value = null
   }
 }
 
+function cancelTest() {
+  testAbortController.value?.abort()
+}
+
+function closeTestDialog() {
+  if (testing.value) {
+    cancelTest()
+  }
+  testDialogOpen.value = false
+}
+
+onUnmounted(() => testAbortController.value?.abort())
+
 function normalizeTestResult(data: any): TestResult {
-  const metadata = data?.ensemble_metadata ?? {}
-  const members: EnsembleMemberStat[] = metadata.members ?? [
-    ...(metadata.proposer_results ?? []).map((member: EnsembleMemberStat) => ({ ...member, role: 'proposer' })),
-    ...(metadata.aggregator_result ? [{ ...metadata.aggregator_result, role: 'aggregator' }] : [])
+  const metadata = data?.ensemble_metadata
+  const metadataPresent = !!metadata && Array.isArray(metadata.members)
+  const members: EnsembleMemberStat[] = metadataPresent ? metadata.members : [
+    ...(metadata?.proposer_results ?? []).map((member: EnsembleMemberStat) => ({ ...member, role: 'proposer' })),
+    ...(metadata?.aggregator_result ? [{ ...metadata.aggregator_result, role: 'aggregator' }] : [])
   ]
   const normalized = members.map(member => ({
     model: member.model,
@@ -721,10 +812,12 @@ function normalizeTestResult(data: any): TestResult {
   return {
     members: normalized,
     successCount: normalized.filter(member => member.status === 'ok').length,
-    durationText: formatDuration(metadata.duration_ms ?? 0),
+    durationText: formatDuration(metadata?.duration_ms ?? 0),
     totalTokens,
     content: data?.choices?.[0]?.message?.content ?? '',
-    proposals
+    proposals,
+    metadataPresent,
+    warning: metadataPresent ? undefined : '网关没有返回 Ensemble 执行元数据，可能没有进入 Ensemble 路由；请检查测试 Key 是否绑定到 Ensemble 分组。'
   }
 }
 

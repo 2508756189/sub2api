@@ -121,7 +121,7 @@ func newEnsembleHandlerRequest(t *testing.T, members []service.EnsembleProposer,
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{
 		ID:      99,
-		GroupID: ptrInt64(7),
+		GroupID: ensembleInt64Ptr(7),
 		Group: &service.Group{
 			ID:             7,
 			Platform:       service.PlatformEnsemble,
@@ -134,7 +134,7 @@ func newEnsembleHandlerRequest(t *testing.T, members []service.EnsembleProposer,
 	return recorder
 }
 
-func ptrInt64(value int64) *int64 { return &value }
+func ensembleInt64Ptr(value int64) *int64 { return &value }
 
 func chatCompletion(content string, promptTokens, completionTokens int) map[string]any {
 	return map[string]any{
@@ -281,7 +281,9 @@ func TestEnsembleChatCompletionsStreamsFinalAnswerAndMetadata(t *testing.T) {
 
 func TestEnsembleMetadataContainsCandidateContentAndReportedCost(t *testing.T) {
 	response := chatCompletion("candidate answer", 3, 2)
-	response["usage"].(map[string]any)["cost"] = 0.0123
+	usage, ok := response["usage"].(map[string]any)
+	require.True(t, ok)
+	usage["cost"] = 0.0123
 	dispatch := &ensembleDispatchStub{responses: map[string]dispatchResponse{
 		"gpt-5": {status: http.StatusOK, body: response},
 	}}

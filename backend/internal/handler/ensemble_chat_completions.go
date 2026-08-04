@@ -395,13 +395,13 @@ func prepareEnsembleSubCallBody(body []byte, model string, maxTokens int) ([]byt
 // proposal as a trailing user message, preserving the original conversation.
 func buildEnsembleAggregatorBody(body []byte, proposals []ensembleProposal) ([]byte, error) {
 	var sb strings.Builder
-	sb.WriteString("以下是多个模型对同一问题给出的候选回答。请综合这些回答，给出一个更完整、更准确的最终答案。\n")
-	sb.WriteString("要求：\n")
-	sb.WriteString("1. 直接给出最终答案，不要提及这些候选方案，也不要评价它们；\n")
-	sb.WriteString("2. 保留其中正确且有价值的细节，纠正明显的错误；\n")
-	sb.WriteString("3. 若候选回答互相矛盾，选择更可靠的一种，并保持答案内部一致。\n\n")
+	_, _ = sb.WriteString("以下是多个模型对同一问题给出的候选回答。请综合这些回答，给出一个更完整、更准确的最终答案。\n")
+	_, _ = sb.WriteString("要求：\n")
+	_, _ = sb.WriteString("1. 直接给出最终答案，不要提及这些候选方案，也不要评价它们；\n")
+	_, _ = sb.WriteString("2. 保留其中正确且有价值的细节，纠正明显的错误；\n")
+	_, _ = sb.WriteString("3. 若候选回答互相矛盾，选择更可靠的一种，并保持答案内部一致。\n\n")
 	for i, proposal := range proposals {
-		sb.WriteString(fmt.Sprintf("【方案%d - %s】\n%s\n\n", i+1, proposal.Model, proposal.Content))
+		_, _ = sb.WriteString(fmt.Sprintf("【方案%d - %s】\n%s\n\n", i+1, proposal.Model, proposal.Content))
 	}
 	if len(body)+sb.Len() > maxEnsembleAggregatorBodyBytes {
 		return nil, fmt.Errorf("aggregator request exceeds %d bytes", maxEnsembleAggregatorBodyBytes)
@@ -425,7 +425,7 @@ func extractEnsembleContent(payload []byte) string {
 		var sb strings.Builder
 		content.ForEach(func(_, part gjson.Result) bool {
 			if text := part.Get("text"); text.Exists() {
-				sb.WriteString(text.String())
+				_, _ = sb.WriteString(text.String())
 			}
 			return true
 		})

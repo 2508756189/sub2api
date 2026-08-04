@@ -53,6 +53,13 @@ type AdminService interface {
 	UpdateCompositeRoute(ctx context.Context, groupID, routeID int64, input CompositeRouteInput) (*CompositeModelRoute, error)
 	DeleteCompositeRoute(ctx context.Context, groupID, routeID int64) error
 	PreviewCompositeRoute(ctx context.Context, groupID int64, input CompositeRoutePreviewRequest) (*CompositeRouteDecision, error)
+	// Ensemble group members + config (in-group aggregation only).
+	ListEnsembleProposers(ctx context.Context, groupID int64) ([]EnsembleProposer, error)
+	CreateEnsembleProposer(ctx context.Context, groupID int64, input EnsembleProposerInput) (*EnsembleProposer, error)
+	UpdateEnsembleProposer(ctx context.Context, groupID, proposerID int64, input EnsembleProposerInput) (*EnsembleProposer, error)
+	DeleteEnsembleProposer(ctx context.Context, groupID, proposerID int64) error
+	GetEnsembleConfig(ctx context.Context, groupID int64) (EnsembleConfig, error)
+	UpdateEnsembleConfig(ctx context.Context, groupID int64, config EnsembleConfig) (EnsembleConfig, error)
 	GetGroupAPIKeys(ctx context.Context, groupID int64, page, pageSize int) ([]APIKey, int64, error)
 	GetGroupRateMultipliers(ctx context.Context, groupID int64) ([]UserGroupRateEntry, error)
 	ClearGroupRateMultipliers(ctx context.Context, groupID int64) error
@@ -646,6 +653,7 @@ type adminServiceImpl struct {
 	affiliateService     adminRechargeAffiliateAccruer
 	compositeRouteRepo   CompositeModelRouteRepository
 	compositeResolver    *CompositeRouteResolver
+	ensembleProposerRepo EnsembleProposerRepository
 }
 
 type adminRechargeAffiliateAccruer interface {
@@ -679,6 +687,7 @@ func NewAdminService(
 	affiliateService *AffiliateService,
 	compositeRouteRepo CompositeModelRouteRepository,
 	compositeResolver *CompositeRouteResolver,
+	ensembleProposerRepo EnsembleProposerRepository,
 ) AdminService {
 	return &adminServiceImpl{
 		userRepo:             userRepo,
@@ -705,5 +714,6 @@ func NewAdminService(
 		affiliateService:     affiliateService,
 		compositeRouteRepo:   compositeRouteRepo,
 		compositeResolver:    compositeResolver,
+		ensembleProposerRepo: ensembleProposerRepo,
 	}
 }

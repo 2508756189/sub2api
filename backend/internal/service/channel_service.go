@@ -215,7 +215,8 @@ func newEmptyChannelCache() *channelCache {
 
 // expandPricingToCache 将渠道的模型定价展开到缓存（按分组+平台维度）。
 // 各平台严格独立：antigravity 分组只匹配 antigravity 定价，不会匹配 anthropic/gemini 的定价。
-// 查找时通过 lookupPricingAcrossPlatforms() 在本平台内查找。
+// composite 和 ensemble 组允许在同一组内携带具体平台定价；查找时仍通过
+// groupID 隔离，且请求解析出的具体平台会进一步限制查找范围。
 func expandPricingToCache(cache *channelCache, ch *Channel, gid int64, platform string) {
 	for j := range ch.ModelPricing {
 		pricing := &ch.ModelPricing[j]
@@ -342,21 +343,26 @@ func populateChannelCache(channels []Channel, groupPlatforms map[int64]string) *
 
 // invalidateCache 使缓存失效，让下次读取时自然重建
 
+func isMultiPlatformGroup(platform string) bool {
+	return platform == PlatformComposite || platform == PlatformEnsemble
+}
+
 // isPlatformPricingMatch 判断定价条目的平台是否匹配分组平台。
-// Concrete platforms stay isolated; composite groups may carry concrete-provider
-// pricing rows that are selected by the request's resolved target platform.
+// Concrete platforms stay isolated; composite and ensemble groups may carry
+// concrete-provider pricing rows that are selected by the request's resolved
+// target platform.
 func isPlatformPricingMatch(groupPlatform, pricingPlatform string) bool {
-	if groupPlatform == PlatformComposite {
+	if isMultiPlatformGroup(groupPlatform) {
 		return isConcreteRequestPlatform(pricingPlatform)
 	}
 	return groupPlatform == pricingPlatform
 }
 
 // matchingPlatforms 返回分组平台对应的可匹配平台列表。
-// Concrete platforms return themselves; composite is a configuration-time
-// fallback used before a request target has been resolved.
+// Concrete platforms return themselves; composite and ensemble are
+// configuration-time fallbacks used before a request target has been resolved.
 func matchingPlatforms(groupPlatform string) []string {
-	if groupPlatform == PlatformComposite {
+	if isMultiPlatformGroup(groupPlatform) {
 		return []string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok}
 	}
 	return []string{groupPlatform}
@@ -367,7 +373,7 @@ func channelLookupPlatform(ctx context.Context, groupPlatform string) string {
 		if forcePlatform, ok := ctx.Value(ctxkey.ForcePlatform).(string); ok && strings.TrimSpace(forcePlatform) != "" {
 			return strings.TrimSpace(forcePlatform)
 		}
-		if groupPlatform == PlatformComposite {
+		if isMultiPlatformGroup(groupPlatform) {
 			if platform, ok := ResolvedTargetPlatformFromContext(ctx); ok {
 				return platform
 			}

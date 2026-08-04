@@ -24,6 +24,13 @@ const (
 	PlatformAntigravity = "antigravity"
 	PlatformGrok        = "grok"
 	PlatformComposite   = "composite"
+	PlatformEnsemble    = "ensemble"
+)
+
+// Ensemble proposer role constants
+const (
+	EnsembleRoleProposer   = "proposer"
+	EnsembleRoleAggregator = "aggregator"
 )
 
 // Account type constants

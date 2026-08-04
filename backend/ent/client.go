@@ -30,6 +30,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
 	"github.com/Wei-Shaw/sub2api/ent/compositemodelroute"
+	"github.com/Wei-Shaw/sub2api/ent/ensembleproposer"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -93,6 +94,8 @@ type Client struct {
 	ChannelMonitorRequestTemplate *ChannelMonitorRequestTemplateClient
 	// CompositeModelRoute is the client for interacting with the CompositeModelRoute builders.
 	CompositeModelRoute *CompositeModelRouteClient
+	// EnsembleProposer is the client for interacting with the EnsembleProposer builders.
+	EnsembleProposer *EnsembleProposerClient
 	// ErrorPassthroughRule is the client for interacting with the ErrorPassthroughRule builders.
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
 	// Group is the client for interacting with the Group builders.
@@ -167,6 +170,7 @@ func (c *Client) init() {
 	c.ChannelMonitorHistory = NewChannelMonitorHistoryClient(c.config)
 	c.ChannelMonitorRequestTemplate = NewChannelMonitorRequestTemplateClient(c.config)
 	c.CompositeModelRoute = NewCompositeModelRouteClient(c.config)
+	c.EnsembleProposer = NewEnsembleProposerClient(c.config)
 	c.ErrorPassthroughRule = NewErrorPassthroughRuleClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
@@ -298,6 +302,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
 		ChannelMonitorRequestTemplate: NewChannelMonitorRequestTemplateClient(cfg),
 		CompositeModelRoute:           NewCompositeModelRouteClient(cfg),
+		EnsembleProposer:              NewEnsembleProposerClient(cfg),
 		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
@@ -356,6 +361,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
 		ChannelMonitorRequestTemplate: NewChannelMonitorRequestTemplateClient(cfg),
 		CompositeModelRoute:           NewCompositeModelRouteClient(cfg),
+		EnsembleProposer:              NewEnsembleProposerClient(cfg),
 		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
@@ -413,12 +419,12 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AuthIdentity, c.AuthIdentityChannel, c.BatchImageEvent, c.BatchImageItem,
 		c.BatchImageJob, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
-		c.CompositeModelRoute, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
-		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
-		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.CompositeModelRoute, c.EnsembleProposer, c.ErrorPassthroughRule, c.Group,
+		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
+		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Use(hooks...)
@@ -433,12 +439,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AuthIdentity, c.AuthIdentityChannel, c.BatchImageEvent, c.BatchImageItem,
 		c.BatchImageJob, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
-		c.CompositeModelRoute, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
-		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
-		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.CompositeModelRoute, c.EnsembleProposer, c.ErrorPassthroughRule, c.Group,
+		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
+		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
@@ -478,6 +484,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ChannelMonitorRequestTemplate.mutate(ctx, m)
 	case *CompositeModelRouteMutation:
 		return c.CompositeModelRoute.mutate(ctx, m)
+	case *EnsembleProposerMutation:
+		return c.EnsembleProposer.mutate(ctx, m)
 	case *ErrorPassthroughRuleMutation:
 		return c.ErrorPassthroughRule.mutate(ctx, m)
 	case *GroupMutation:
@@ -2880,6 +2888,157 @@ func (c *CompositeModelRouteClient) mutate(ctx context.Context, m *CompositeMode
 		return (&CompositeModelRouteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown CompositeModelRoute mutation op: %q", m.Op())
+	}
+}
+
+// EnsembleProposerClient is a client for the EnsembleProposer schema.
+type EnsembleProposerClient struct {
+	config
+}
+
+// NewEnsembleProposerClient returns a client for the EnsembleProposer from the given config.
+func NewEnsembleProposerClient(c config) *EnsembleProposerClient {
+	return &EnsembleProposerClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ensembleproposer.Hooks(f(g(h())))`.
+func (c *EnsembleProposerClient) Use(hooks ...Hook) {
+	c.hooks.EnsembleProposer = append(c.hooks.EnsembleProposer, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ensembleproposer.Intercept(f(g(h())))`.
+func (c *EnsembleProposerClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EnsembleProposer = append(c.inters.EnsembleProposer, interceptors...)
+}
+
+// Create returns a builder for creating a EnsembleProposer entity.
+func (c *EnsembleProposerClient) Create() *EnsembleProposerCreate {
+	mutation := newEnsembleProposerMutation(c.config, OpCreate)
+	return &EnsembleProposerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EnsembleProposer entities.
+func (c *EnsembleProposerClient) CreateBulk(builders ...*EnsembleProposerCreate) *EnsembleProposerCreateBulk {
+	return &EnsembleProposerCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EnsembleProposerClient) MapCreateBulk(slice any, setFunc func(*EnsembleProposerCreate, int)) *EnsembleProposerCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EnsembleProposerCreateBulk{err: fmt.Errorf("calling to EnsembleProposerClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EnsembleProposerCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EnsembleProposerCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EnsembleProposer.
+func (c *EnsembleProposerClient) Update() *EnsembleProposerUpdate {
+	mutation := newEnsembleProposerMutation(c.config, OpUpdate)
+	return &EnsembleProposerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EnsembleProposerClient) UpdateOne(_m *EnsembleProposer) *EnsembleProposerUpdateOne {
+	mutation := newEnsembleProposerMutation(c.config, OpUpdateOne, withEnsembleProposer(_m))
+	return &EnsembleProposerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EnsembleProposerClient) UpdateOneID(id int64) *EnsembleProposerUpdateOne {
+	mutation := newEnsembleProposerMutation(c.config, OpUpdateOne, withEnsembleProposerID(id))
+	return &EnsembleProposerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EnsembleProposer.
+func (c *EnsembleProposerClient) Delete() *EnsembleProposerDelete {
+	mutation := newEnsembleProposerMutation(c.config, OpDelete)
+	return &EnsembleProposerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EnsembleProposerClient) DeleteOne(_m *EnsembleProposer) *EnsembleProposerDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EnsembleProposerClient) DeleteOneID(id int64) *EnsembleProposerDeleteOne {
+	builder := c.Delete().Where(ensembleproposer.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EnsembleProposerDeleteOne{builder}
+}
+
+// Query returns a query builder for EnsembleProposer.
+func (c *EnsembleProposerClient) Query() *EnsembleProposerQuery {
+	return &EnsembleProposerQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEnsembleProposer},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EnsembleProposer entity by its id.
+func (c *EnsembleProposerClient) Get(ctx context.Context, id int64) (*EnsembleProposer, error) {
+	return c.Query().Where(ensembleproposer.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EnsembleProposerClient) GetX(ctx context.Context, id int64) *EnsembleProposer {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGroup queries the group edge of a EnsembleProposer.
+func (c *EnsembleProposerClient) QueryGroup(_m *EnsembleProposer) *GroupQuery {
+	query := (&GroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ensembleproposer.Table, ensembleproposer.FieldID, id),
+			sqlgraph.To(group.Table, group.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ensembleproposer.GroupTable, ensembleproposer.GroupColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EnsembleProposerClient) Hooks() []Hook {
+	hooks := c.hooks.EnsembleProposer
+	return append(hooks[:len(hooks):len(hooks)], ensembleproposer.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *EnsembleProposerClient) Interceptors() []Interceptor {
+	inters := c.inters.EnsembleProposer
+	return append(inters[:len(inters):len(inters)], ensembleproposer.Interceptors[:]...)
+}
+
+func (c *EnsembleProposerClient) mutate(ctx context.Context, m *EnsembleProposerMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EnsembleProposerCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EnsembleProposerUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EnsembleProposerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EnsembleProposerDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EnsembleProposer mutation op: %q", m.Op())
 	}
 }
 
@@ -6828,25 +6987,25 @@ type (
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
 		AuthIdentityChannel, BatchImageEvent, BatchImageItem, BatchImageJob,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
-		ChannelMonitorRequestTemplate, CompositeModelRoute, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Hook
+		ChannelMonitorRequestTemplate, CompositeModelRoute, EnsembleProposer,
+		ErrorPassthroughRule, Group, IdempotencyRecord, IdentityAdoptionDecision,
+		PaymentAuditLog, PaymentOrder, PaymentProviderInstance, PendingAuthSession,
+		PromoCode, PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting,
+		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
+		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserPlatformQuota, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
 		AuthIdentityChannel, BatchImageEvent, BatchImageItem, BatchImageJob,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
-		ChannelMonitorRequestTemplate, CompositeModelRoute, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Interceptor
+		ChannelMonitorRequestTemplate, CompositeModelRoute, EnsembleProposer,
+		ErrorPassthroughRule, Group, IdempotencyRecord, IdentityAdoptionDecision,
+		PaymentAuditLog, PaymentOrder, PaymentProviderInstance, PendingAuthSession,
+		PromoCode, PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting,
+		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
+		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserPlatformQuota, UserSubscription []ent.Interceptor
 	}
 )
 

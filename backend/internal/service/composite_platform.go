@@ -185,3 +185,47 @@ func isConcreteRequestPlatform(platform string) bool {
 		return false
 	}
 }
+
+// WithAccountPoolGroupIDs marks the request as drawing its account pool from a
+// set of groups instead of the caller's own group. Ensemble member sub-calls set
+// this to the union of the ensemble group and its source groups, so each member
+// model is scheduled exactly like a direct call to its source group: the normal
+// load balancing, failover and capacity logic all apply, and the caller never
+// has to know which account actually serves the request.
+func WithAccountPoolGroupIDs(ctx context.Context, groupIDs []int64) context.Context {
+	groupIDs = dedupePositiveInt64s(groupIDs)
+	if ctx == nil || len(groupIDs) == 0 {
+		return ctx
+	}
+	return context.WithValue(ctx, ctxkey.AccountPoolGroupIDs, groupIDs)
+}
+
+func dedupePositiveInt64s(ids []int64) []int64 {
+	seen := make(map[int64]struct{}, len(ids))
+	out := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	return out
+}
+
+// AccountPoolGroupIDsFromContext returns the account-pool group set for the
+// current request, if one was set. A nil/empty result means the default
+// single-group pool applies.
+func AccountPoolGroupIDsFromContext(ctx context.Context) []int64 {
+	if ctx == nil {
+		return nil
+	}
+	groupIDs, ok := ctx.Value(ctxkey.AccountPoolGroupIDs).([]int64)
+	if !ok || len(groupIDs) == 0 {
+		return nil
+	}
+	return groupIDs
+}

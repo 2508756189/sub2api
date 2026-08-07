@@ -75,4 +75,9 @@ const (
 
 	// ClaudeCodeVersion stores the extracted Claude Code version from User-Agent (e.g. "2.1.22")
 	ClaudeCodeVersion Key = "ctx_claude_code_version"
+
+	// AccountPoolGroupIDs 是 ensemble 子调用携带的"选号池组集合"：
+	// 子调用按模型去这些组的账号池里选号（组8 ∪ source_group_ids），
+	// 而不是只从调用组绑定的账号里选。普通请求不设置，行为不变。
+	AccountPoolGroupIDs Key = "ctx_account_pool_group_ids"
 )

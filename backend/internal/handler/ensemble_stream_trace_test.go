@@ -359,3 +359,63 @@ func chatCompletionWithUsage(content string, promptTokens, completionTokens, cac
 	}
 	return payload
 }
+
+// poolCapturingDispatch records the account-pool group set on each sub-call
+// context, proving the scheduler receives the union of the caller group and the
+// configured source groups instead of a hand-bound single group.
+type poolCapturingDispatch struct {
+	inner gin.HandlerFunc
+	mu    sync.Mutex
+	pools [][]int64
+}
+
+func (d *poolCapturingDispatch) dispatch(c *gin.Context) {
+	d.mu.Lock()
+	d.pools = append(d.pools, service.AccountPoolGroupIDsFromContext(c.Request.Context()))
+	d.mu.Unlock()
+	d.inner(c)
+}
+
+// The member sub-call must draw its account pool from the caller's group plus
+// the configured source groups. That is what makes ensemble scheduling reuse
+// the normal load-balanced, failover-capable account pool of the source group
+// instead of whatever accounts happen to be hand-bound to the ensemble group.
+func TestEnsembleSubCallUsesSourceGroupAccountPool(t *testing.T) {
+	inner := &ensembleDispatchStub{responses: map[string]dispatchResponse{
+		"gpt-5": {status: http.StatusOK, body: chatCompletion("pooled", 3, 2)},
+	}}
+	capture := &poolCapturingDispatch{inner: inner.dispatch}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true}},
+		service.EnsembleConfig{MinProposers: 1, SourceGroupIDs: []int64{42, 43}, ExposeMetadata: true},
+		capture.dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":"hi"}],"stream":true}`,
+	)
+	require.Equal(t, http.StatusOK, recorder.Code)
+
+	require.Len(t, capture.pools, 1, "one proposer sub-call")
+	require.ElementsMatch(t, []int64{7, 42, 43}, capture.pools[0],
+		"sub-call pool must be the caller group plus the source groups")
+}
+
+// Without source groups the pool is still the caller's own group, preserving
+// the pre-existing behaviour for groups configured before the field existed.
+func TestEnsembleSubCallPoolFallsBackToCallerGroup(t *testing.T) {
+	inner := &ensembleDispatchStub{responses: map[string]dispatchResponse{
+		"gpt-5": {status: http.StatusOK, body: chatCompletion("own", 3, 2)},
+	}}
+	capture := &poolCapturingDispatch{inner: inner.dispatch}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true}},
+		service.EnsembleConfig{MinProposers: 1, ExposeMetadata: true},
+		capture.dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":"hi"}],"stream":true}`,
+	)
+	require.Equal(t, http.StatusOK, recorder.Code)
+
+	require.Len(t, capture.pools, 1)
+	require.Equal(t, []int64{7}, capture.pools[0],
+		"without source groups the pool must stay the caller's own group")
+}

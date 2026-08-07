@@ -495,7 +495,7 @@ func (s *defaultOpenAIAccountScheduler) selectBySessionHash(
 		return nil, false, nil
 	}
 	account = s.service.recheckSelectedOpenAIAccountFromDB(ctx, account, req.GroupID, req.Platform, req.RequestedModel, req.RequireCompact, req.RequiredCapability)
-	if account == nil || !s.service.openAIAccountMatchesSchedulingGroup(account, req.GroupID) || !s.isAccountTransportCompatible(account, req.RequiredTransport) {
+	if account == nil || !s.service.openAIAccountMatchesSchedulingGroup(ctx, account, req.GroupID) || !s.isAccountTransportCompatible(account, req.RequiredTransport) {
 		_ = s.service.deleteStickySessionAccountID(ctx, req.GroupID, sessionHash)
 		return nil, false, nil
 	}
@@ -559,6 +559,30 @@ func openAIStickyAccountMatchesGroup(account *Account, groupID *int64) bool {
 	}
 	for _, accountGroup := range account.AccountGroups {
 		if accountGroup.GroupID == *groupID {
+			return true
+		}
+	}
+	return false
+}
+
+// openAIStickyAccountMatchesPoolGroupIDs is the multi-group variant used by
+// ensemble member sub-calls: an account is eligible when it belongs to any of
+// the pool groups (the caller's group plus the configured source groups).
+func openAIStickyAccountMatchesPoolGroupIDs(account *Account, poolGroupIDs []int64) bool {
+	if account == nil || len(poolGroupIDs) == 0 {
+		return false
+	}
+	pool := make(map[int64]struct{}, len(poolGroupIDs))
+	for _, groupID := range poolGroupIDs {
+		pool[groupID] = struct{}{}
+	}
+	for _, accountGroupID := range account.GroupIDs {
+		if _, ok := pool[accountGroupID]; ok {
+			return true
+		}
+	}
+	for _, accountGroup := range account.AccountGroups {
+		if _, ok := pool[accountGroup.GroupID]; ok {
 			return true
 		}
 	}
@@ -1229,7 +1253,7 @@ func (s *defaultOpenAIAccountScheduler) tryFallbackToWeightedSticky(
 			}
 			continue
 		}
-		if !s.service.openAIAccountMatchesSchedulingGroup(account, req.GroupID) {
+		if !s.service.openAIAccountMatchesSchedulingGroup(ctx, account, req.GroupID) {
 			if accountID == req.StickyAccountID && strings.TrimSpace(req.SessionHash) != "" {
 				_ = s.service.deleteStickySessionAccountID(ctx, req.GroupID, req.SessionHash)
 			}

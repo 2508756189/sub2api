@@ -167,6 +167,26 @@ func emitEnsembleProgress(c *gin.Context, event EnsembleProgressEvent) {
 	}
 }
 
+// ensembleAccountPoolContext extends a sub-call context with the account-pool
+// group set: the caller's own group plus every configured source group. The
+// scheduler then picks each member's account from that union exactly as it
+// would for a direct call to the source group, so ensemble requests never
+// depend on hand-bound accounts and inherit the normal load balancing and
+// failover behaviour.
+func ensembleAccountPoolContext(ctx context.Context, parent *gin.Context) context.Context {
+	if ctx == nil || parent == nil {
+		return ctx
+	}
+	apiKey, ok := middleware2.GetAPIKeyFromContext(parent)
+	if !ok || apiKey == nil || apiKey.Group == nil {
+		return ctx
+	}
+	pool := make([]int64, 0, 1+len(apiKey.Group.EnsembleConfig.SourceGroupIDs))
+	pool = append(pool, apiKey.Group.ID)
+	pool = append(pool, apiKey.Group.EnsembleConfig.SourceGroupIDs...)
+	return service.WithAccountPoolGroupIDs(ctx, pool)
+}
+
 // addEnsembleProgressSink attaches an observer without displacing an existing
 // one, so the admin diagnostic stream and a caller's execution trace can watch
 // the same run. It must be called before the fan-out goroutines start: gin's
@@ -548,6 +568,9 @@ func (h *EnsembleHandler) runResponsesSubCall(
 	defer cancel()
 	ctx = service.WithResolvedTargetPlatform(ctx, platform)
 	ctx = context.WithValue(ctx, ctxkey.ClientRequestID, fmt.Sprintf("ensemble-compact-%s", uuid.NewString()))
+	// Compact runs on the aggregator; it draws the same account pool as a
+	// regular member call.
+	ctx = ensembleAccountPoolContext(ctx, parent)
 	req := parent.Request.Clone(ctx)
 	req.Body = io.NopCloser(bytes.NewReader(body))
 	req.ContentLength = int64(len(body))
@@ -758,6 +781,11 @@ func (h *EnsembleHandler) runSubCallOnce(
 	// Ensemble member is a real upstream call and must therefore get its own
 	// billing identity; otherwise the parallel calls collapse into one usage row.
 	ctx = context.WithValue(ctx, ctxkey.ClientRequestID, fmt.Sprintf("ensemble-%s-%d", uuid.NewString(), index))
+	// Members draw their account pool from the caller's group plus the
+	// configured source groups, so each model is scheduled exactly like a direct
+	// call to its source group: load balancing, failover and capacity all apply,
+	// and the caller never depends on a hand-bound account.
+	ctx = ensembleAccountPoolContext(ctx, parent)
 
 	req := parent.Request.Clone(ctx)
 	req.Body = io.NopCloser(bytes.NewReader(subBody))

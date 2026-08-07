@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -36,10 +37,12 @@ import (
 // they do for a direct call. That also means an N-proposer request bills N
 // sub-calls (plus one for the aggregator), which is the intended cost model.
 type EnsembleHandler struct {
-	runtime           *service.EnsembleRuntimeService
-	dispatch          gin.HandlerFunc
-	responsesDispatch gin.HandlerFunc
-	costEstimator     service.EnsembleCostEstimator
+	runtime                  *service.EnsembleRuntimeService
+	dispatch                 gin.HandlerFunc
+	responsesDispatch        gin.HandlerFunc
+	costEstimator            service.EnsembleCostEstimator
+	securityAuditCoordinator *securityaudit.Coordinator
+	contentModerationService *service.ContentModerationService
 }
 
 func NewEnsembleHandler(runtime *service.EnsembleRuntimeService, estimators ...service.EnsembleCostEstimator) *EnsembleHandler {
@@ -73,13 +76,13 @@ type ensembleProposal struct {
 
 // ensembleMemberStat is the per-member record exposed via ensemble_metadata.
 type ensembleMemberStat struct {
-	Model            string   `json:"model"`
-	Platform         string   `json:"platform,omitempty"`
-	Role             string   `json:"role"`
-	Status           string   `json:"status"`
-	DurationMs       int64    `json:"duration_ms"`
-	PromptTokens     int      `json:"prompt_tokens,omitempty"`
-	CompletionTokens int      `json:"completion_tokens,omitempty"`
+	Model            string `json:"model"`
+	Platform         string `json:"platform,omitempty"`
+	Role             string `json:"role"`
+	Status           string `json:"status"`
+	DurationMs       int64  `json:"duration_ms"`
+	PromptTokens     int    `json:"prompt_tokens,omitempty"`
+	CompletionTokens int    `json:"completion_tokens,omitempty"`
 	// CachedTokens is the member's prompt-cache hit count as reported by its
 	// upstream usage. The aggregate usage object sums it across members so a
 	// caller (e.g. the ZCode client's cache-hit display) sees the same
@@ -192,6 +195,11 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		h.errorResponse(c, http.StatusUnauthorized, "authentication_error", "Invalid API key")
 		return
 	}
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		h.errorResponse(c, http.StatusInternalServerError, "api_error", "User context not found")
+		return
+	}
 	if h.runtime == nil || h.dispatch == nil {
 		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Ensemble runtime is not available")
 		return
@@ -217,6 +225,10 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	requestedModel := gjson.GetBytes(body, "model").String()
 	if strings.TrimSpace(requestedModel) == "" {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "The model field is required")
+		return
+	}
+	if decision := h.checkSecurityAudit(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIChat, requestedModel, body); decision != nil && !decision.AllowNextStage {
+		h.openAISecurityAuditError(c, decision)
 		return
 	}
 
@@ -990,7 +1002,7 @@ func normalizeEnsembleChatPayload(payload []byte) []byte {
 		}
 		if delta := choice.Get("delta"); delta.Exists() {
 			if deltaContent := delta.Get("content"); deltaContent.Exists() && deltaContent.Type == gjson.String {
-				content.WriteString(deltaContent.String())
+				_, _ = content.WriteString(deltaContent.String())
 			}
 			if calls := delta.Get("tool_calls"); calls.IsArray() {
 				calls.ForEach(func(_, call gjson.Result) bool {

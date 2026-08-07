@@ -177,6 +177,7 @@ func TestEnsembleStreamFailureIsParseableAndRecordedForOps(t *testing.T) {
 		Group: &service.Group{ID: 7, Platform: service.PlatformEnsemble,
 			EnsembleConfig: service.EnsembleConfig{MinProposers: 2, ExposeMetadata: true}},
 	})
+	c.Set(string(middleware.ContextKeyUser), middleware.AuthSubject{UserID: 7, Concurrency: 2})
 	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: []service.EnsembleProposer{
 		{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true},
 		{ID: 2, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5.1", Enabled: true},
@@ -242,8 +243,8 @@ func TestEnsembleStreamTraceDoesNotReplaceSubCallBillingIdentity(t *testing.T) {
 // bodyCapturingDispatch wraps a dispatch stub and records every sub-call body,
 // so tests can assert on what the members actually receive.
 type bodyCapturingDispatch struct {
-	inner gin.HandlerFunc
-	mu    sync.Mutex
+	inner  gin.HandlerFunc
+	mu     sync.Mutex
 	bodies []string
 }
 
@@ -304,7 +305,7 @@ func TestEnsembleDropsClientEchoedReasoningFromSubCalls(t *testing.T) {
 // shape instead of silently dropping the members' cache hits.
 func TestEnsembleAggregateUsageSurfacesCachedTokens(t *testing.T) {
 	dispatch := &ensembleDispatchStub{responses: map[string]dispatchResponse{
-		"gpt-5": {status: http.StatusOK, body: chatCompletionWithUsage("cached", 10, 5, 7)},
+		"gpt-5":   {status: http.StatusOK, body: chatCompletionWithUsage("cached", 10, 5, 7)},
 		"gpt-5.1": {status: http.StatusOK, body: chatCompletionWithUsage("plain", 20, 8, 0)},
 	}}
 
@@ -349,7 +350,10 @@ func TestEnsembleAggregateUsageOmitsCachedTokensWhenNone(t *testing.T) {
 // a prompt-token cache hit, exercising the OpenAI spelling of the field.
 func chatCompletionWithUsage(content string, promptTokens, completionTokens, cachedTokens int) map[string]any {
 	payload := chatCompletion(content, promptTokens, completionTokens)
-	usage := payload["usage"].(map[string]any)
+	usage, ok := payload["usage"].(map[string]any)
+	if !ok {
+		return payload
+	}
 	if cachedTokens > 0 {
 		usage["prompt_tokens_details"] = map[string]any{"cached_tokens": cachedTokens}
 	}

@@ -39,7 +39,6 @@ func (s *ensembleProposerRepoForAdminTest) Create(_ context.Context, proposer *E
 	return nil
 }
 
-
 func (s *ensembleProposerRepoForAdminTest) Update(_ context.Context, proposer *EnsembleProposer) error {
 	s.updated = proposer
 	return nil
@@ -161,7 +160,7 @@ func TestAdminServiceAllowsConfigBeforeFreshGroupHasMembers(t *testing.T) {
 	group := &Group{ID: 7, Platform: PlatformEnsemble}
 	groupRepo := &groupRepoStubForAdmin{getByIDByID: map[int64]*Group{7: group}}
 	svc := &adminServiceImpl{
-		groupRepo: groupRepo,
+		groupRepo:            groupRepo,
 		ensembleProposerRepo: &ensembleProposerRepoForAdminTest{},
 	}
 

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
@@ -129,6 +130,7 @@ func newEnsembleHandlerRequest(t *testing.T, members []service.EnsembleProposer,
 			EnsembleConfig: cfg,
 		},
 	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
 	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: members}), estimators...)
 	h.SetSubCallDispatcher(dispatch)
 	h.ChatCompletions(c)
@@ -480,6 +482,7 @@ func TestEnsembleCompactCallsOnlyConfiguredAggregator(t *testing.T) {
 			EnsembleConfig: service.EnsembleConfig{AggregatorEnabled: true, MinProposers: 1},
 		},
 	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
 	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: []service.EnsembleProposer{
 		{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true},
 		{ID: 2, GroupID: 7, Role: service.EnsembleRoleAggregator, Model: "gpt-5.1", Platform: service.PlatformOpenAI, Enabled: true},
@@ -531,6 +534,7 @@ func TestEnsembleStreamingRecordsOuterTimeToFirstToken(t *testing.T) {
 		Group: &service.Group{ID: 7, Platform: service.PlatformEnsemble,
 			EnsembleConfig: service.EnsembleConfig{MinProposers: 1}},
 	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
 	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: []service.EnsembleProposer{
 		{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true},
 	}}))
@@ -565,6 +569,7 @@ func TestEnsembleNonStreamingDoesNotRecordTimeToFirstToken(t *testing.T) {
 		Group: &service.Group{ID: 7, Platform: service.PlatformEnsemble,
 			EnsembleConfig: service.EnsembleConfig{MinProposers: 1}},
 	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
 	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: []service.EnsembleProposer{
 		{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true},
 	}}))
@@ -631,6 +636,81 @@ func TestEnsembleMetadataEstimatesCostFromConfiguredPricing(t *testing.T) {
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Contains(t, recorder.Body.String(), `"cost":0.0042`)
 	require.Contains(t, recorder.Body.String(), `"cost_source":"channel"`)
+}
+
+func TestEnsembleChatCompletionsAuditsOriginalPromptBeforeDispatch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := blockingHandlerPromptEngine()
+	dispatchCalls := 0
+	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: []service.EnsembleProposer{
+		{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true},
+	}}))
+	h.securityAuditCoordinator = securityaudit.NewCoordinator(nil, engine)
+	h.SetSubCallDispatcher(func(c *gin.Context) {
+		dispatchCalls++
+		c.JSON(http.StatusOK, chatCompletion("unexpected", 1, 1))
+	})
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	body := `{"model":"ensemble","messages":[{"role":"assistant","content":"answer","reasoning_content":"audit-original-marker"},{"role":"user","content":"blocked prompt"}],"stream":false}`
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{
+		ID: 99, GroupID: ensembleInt64Ptr(7),
+		Group: &service.Group{ID: 7, Platform: service.PlatformEnsemble, EnsembleConfig: service.EnsembleConfig{MinProposers: 1}},
+	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
+
+	h.ChatCompletions(c)
+
+	require.Equal(t, http.StatusForbidden, recorder.Code)
+	require.Contains(t, recorder.Body.String(), securityaudit.ErrorCodeBlocked)
+	require.Zero(t, dispatchCalls)
+	evaluated, _, requests := engine.snapshot()
+	require.Equal(t, 1, evaluated)
+	require.Len(t, requests, 1)
+	require.JSONEq(t, body, string(requests[0].Body))
+	require.Contains(t, string(requests[0].Body), "audit-original-marker")
+}
+
+func TestEnsembleTestStreamCannotBypassPromptAudit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := blockingHandlerPromptEngine()
+	dispatchCalls := 0
+	h := NewEnsembleHandler(service.NewEnsembleRuntimeService(&ensembleHandlerRepoStub{members: []service.EnsembleProposer{
+		{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true},
+	}}))
+	h.securityAuditCoordinator = securityaudit.NewCoordinator(nil, engine)
+	h.SetSubCallDispatcher(func(c *gin.Context) {
+		dispatchCalls++
+		c.JSON(http.StatusOK, chatCompletion("unexpected", 1, 1))
+	})
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/ensemble/test", strings.NewReader(
+		`{"model":"ensemble","messages":[{"role":"user","content":"blocked diagnostic prompt"}],"stream":true}`,
+	))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{
+		ID: 99, GroupID: ensembleInt64Ptr(7),
+		Group: &service.Group{ID: 7, Platform: service.PlatformEnsemble, EnsembleConfig: service.EnsembleConfig{MinProposers: 1}},
+	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
+
+	h.TestStream(c)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Zero(t, dispatchCalls)
+	terminal := ensembleTerminalEvent(t, recorder.Body.String())
+	require.Equal(t, "error", gjson.Get(terminal, "type").String())
+	require.Equal(t, int64(http.StatusForbidden), gjson.Get(terminal, "status_code").Int())
+	require.Equal(t, securityaudit.ErrorCodeBlocked, gjson.Get(terminal, "response.error.code").String())
+	evaluated, _, requests := engine.snapshot()
+	require.Equal(t, 1, evaluated)
+	require.Len(t, requests, 1)
+	require.Contains(t, string(requests[0].Body), "blocked diagnostic prompt")
 }
 
 func TestEnsembleChatCompletionsRejectsMalformedRequest(t *testing.T) {
@@ -730,6 +810,7 @@ func TestEnsembleTestStreamReportsMembersAndFinalResponse(t *testing.T) {
 			},
 		},
 	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
 
 	h.TestStream(c)
 
@@ -770,6 +851,7 @@ func TestEnsembleTestStreamForcesInnerRequestNonStreaming(t *testing.T) {
 		ID: 99, GroupID: ensembleInt64Ptr(7),
 		Group: &service.Group{ID: 7, Platform: service.PlatformEnsemble, EnsembleConfig: service.EnsembleConfig{MinProposers: 1}},
 	})
+	c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 7, Concurrency: 2})
 
 	h.TestStream(c)
 

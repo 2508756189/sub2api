@@ -512,3 +512,31 @@ func TestEnsembleBodyContainsImageDetection(t *testing.T) {
 	// actual input, and the detector ignores assistant content.
 	require.False(t, ensembleBodyContainsImage([]byte(`{"messages":[{"role":"assistant","content":[{"type":"image_url","image_url":{"url":"x"}}]}]}`)))
 }
+
+// One member failing must not sink the request when the survivors still meet
+// min_proposers: 3 members, min=2, one 502, two OK -> success with the two
+// successful answers aggregated.
+func TestEnsemblePartialFailureStillReturnsWhenMinimumMet(t *testing.T) {
+	dispatch := &ensembleDispatchStub{responses: map[string]dispatchResponse{
+		"gpt-5":   {status: http.StatusOK, body: chatCompletion("first", 2, 1)},
+		"gpt-5.1": {status: http.StatusBadGateway, body: gin.H{"error": gin.H{"message": "down"}}},
+		"gpt-5.2": {status: http.StatusOK, body: chatCompletion("second", 3, 1)},
+	}}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{
+			{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true},
+			{ID: 2, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5.1", Enabled: true},
+			{ID: 3, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5.2", Enabled: true},
+		},
+		service.EnsembleConfig{MinProposers: 2, ExposeMetadata: true},
+		dispatch.dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":"hi"}],"stream":false}`,
+	)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.NotContains(t, recorder.Body.String(), "minimum")
+	// The two successful answers must be present.
+	require.Contains(t, recorder.Body.String(), "first")
+	require.Contains(t, recorder.Body.String(), "second")
+}

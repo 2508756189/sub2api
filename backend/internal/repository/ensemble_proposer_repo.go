@@ -50,7 +50,6 @@ func (r *ensembleProposerRepository) Create(ctx context.Context, proposer *servi
 		SetPlatform(proposer.Platform).
 		SetPriority(proposer.Priority).
 		SetEnabled(proposer.Enabled).
-		SetVision(proposer.Vision).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, service.ErrEnsembleProposerExists)
@@ -69,7 +68,6 @@ func (r *ensembleProposerRepository) Update(ctx context.Context, proposer *servi
 		SetPlatform(proposer.Platform).
 		SetPriority(proposer.Priority).
 		SetEnabled(proposer.Enabled).
-		SetVision(proposer.Vision).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrEnsembleProposerNotFound, service.ErrEnsembleProposerExists)
@@ -102,7 +100,6 @@ func ensembleProposerEntityToService(row *dbent.EnsembleProposer) *service.Ensem
 		Platform:  row.Platform,
 		Priority:  row.Priority,
 		Enabled:   row.Enabled,
-		Vision:    row.Vision,
 		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
 	}

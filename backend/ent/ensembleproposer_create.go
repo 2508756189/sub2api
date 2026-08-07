@@ -133,20 +133,6 @@ func (_c *EnsembleProposerCreate) SetNillableEnabled(v *bool) *EnsembleProposerC
 	return _c
 }
 
-// SetVision sets the "vision" field.
-func (_c *EnsembleProposerCreate) SetVision(v bool) *EnsembleProposerCreate {
-	_c.mutation.SetVision(v)
-	return _c
-}
-
-// SetNillableVision sets the "vision" field if the given value is not nil.
-func (_c *EnsembleProposerCreate) SetNillableVision(v *bool) *EnsembleProposerCreate {
-	if v != nil {
-		_c.SetVision(*v)
-	}
-	return _c
-}
-
 // SetGroup sets the "group" edge to the Group entity.
 func (_c *EnsembleProposerCreate) SetGroup(v *Group) *EnsembleProposerCreate {
 	return _c.SetGroupID(v.ID)
@@ -219,10 +205,6 @@ func (_c *EnsembleProposerCreate) defaults() error {
 		v := ensembleproposer.DefaultEnabled
 		_c.mutation.SetEnabled(v)
 	}
-	if _, ok := _c.mutation.Vision(); !ok {
-		v := ensembleproposer.DefaultVision
-		_c.mutation.SetVision(v)
-	}
 	return nil
 }
 
@@ -266,9 +248,6 @@ func (_c *EnsembleProposerCreate) check() error {
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "EnsembleProposer.enabled"`)}
-	}
-	if _, ok := _c.mutation.Vision(); !ok {
-		return &ValidationError{Name: "vision", err: errors.New(`ent: missing required field "EnsembleProposer.vision"`)}
 	}
 	if len(_c.mutation.GroupIDs()) == 0 {
 		return &ValidationError{Name: "group", err: errors.New(`ent: missing required edge "EnsembleProposer.group"`)}
@@ -331,10 +310,6 @@ func (_c *EnsembleProposerCreate) createSpec() (*EnsembleProposer, *sqlgraph.Cre
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(ensembleproposer.FieldEnabled, field.TypeBool, value)
 		_node.Enabled = value
-	}
-	if value, ok := _c.mutation.Vision(); ok {
-		_spec.SetField(ensembleproposer.FieldVision, field.TypeBool, value)
-		_node.Vision = value
 	}
 	if nodes := _c.mutation.GroupIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -513,18 +488,6 @@ func (u *EnsembleProposerUpsert) UpdateEnabled() *EnsembleProposerUpsert {
 	return u
 }
 
-// SetVision sets the "vision" field.
-func (u *EnsembleProposerUpsert) SetVision(v bool) *EnsembleProposerUpsert {
-	u.Set(ensembleproposer.FieldVision, v)
-	return u
-}
-
-// UpdateVision sets the "vision" field to the value that was provided on create.
-func (u *EnsembleProposerUpsert) UpdateVision() *EnsembleProposerUpsert {
-	u.SetExcluded(ensembleproposer.FieldVision)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -693,20 +656,6 @@ func (u *EnsembleProposerUpsertOne) SetEnabled(v bool) *EnsembleProposerUpsertOn
 func (u *EnsembleProposerUpsertOne) UpdateEnabled() *EnsembleProposerUpsertOne {
 	return u.Update(func(s *EnsembleProposerUpsert) {
 		s.UpdateEnabled()
-	})
-}
-
-// SetVision sets the "vision" field.
-func (u *EnsembleProposerUpsertOne) SetVision(v bool) *EnsembleProposerUpsertOne {
-	return u.Update(func(s *EnsembleProposerUpsert) {
-		s.SetVision(v)
-	})
-}
-
-// UpdateVision sets the "vision" field to the value that was provided on create.
-func (u *EnsembleProposerUpsertOne) UpdateVision() *EnsembleProposerUpsertOne {
-	return u.Update(func(s *EnsembleProposerUpsert) {
-		s.UpdateVision()
 	})
 }
 
@@ -1044,20 +993,6 @@ func (u *EnsembleProposerUpsertBulk) SetEnabled(v bool) *EnsembleProposerUpsertB
 func (u *EnsembleProposerUpsertBulk) UpdateEnabled() *EnsembleProposerUpsertBulk {
 	return u.Update(func(s *EnsembleProposerUpsert) {
 		s.UpdateEnabled()
-	})
-}
-
-// SetVision sets the "vision" field.
-func (u *EnsembleProposerUpsertBulk) SetVision(v bool) *EnsembleProposerUpsertBulk {
-	return u.Update(func(s *EnsembleProposerUpsert) {
-		s.SetVision(v)
-	})
-}
-
-// UpdateVision sets the "vision" field to the value that was provided on create.
-func (u *EnsembleProposerUpsertBulk) UpdateVision() *EnsembleProposerUpsertBulk {
-	return u.Update(func(s *EnsembleProposerUpsert) {
-		s.UpdateVision()
 	})
 }
 

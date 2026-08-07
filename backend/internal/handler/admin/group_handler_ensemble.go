@@ -16,10 +16,6 @@ type EnsembleProposerRequest struct {
 	Platform string `json:"platform"`
 	Priority int    `json:"priority"`
 	Enabled  *bool  `json:"enabled"`
-	// Vision is a pointer so an older admin client that omits the field keeps
-	// the default-on behaviour instead of silently marking the member
-	// non-vision and skipping it on every image request.
-	Vision *bool `json:"vision"`
 }
 
 // EnsembleConfigRequest is the group-level ensemble options payload.
@@ -40,17 +36,12 @@ func ensembleProposerRequestToInput(req EnsembleProposerRequest, defaultEnabled 
 	if req.Enabled != nil {
 		enabled = *req.Enabled
 	}
-	vision := true
-	if req.Vision != nil {
-		vision = *req.Vision
-	}
 	return service.EnsembleProposerInput{
 		Role:     req.Role,
 		Model:    req.Model,
 		Platform: req.Platform,
 		Priority: req.Priority,
 		Enabled:  enabled,
-		Vision:   vision,
 	}
 }
 

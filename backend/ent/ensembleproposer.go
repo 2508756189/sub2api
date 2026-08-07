@@ -36,8 +36,6 @@ type EnsembleProposer struct {
 	Priority int `json:"priority,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
-	// whether the member model accepts image inputs.
-	Vision bool `json:"vision,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnsembleProposerQuery when eager-loading is set.
 	Edges        EnsembleProposerEdges `json:"edges"`
@@ -69,7 +67,7 @@ func (*EnsembleProposer) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case ensembleproposer.FieldEnabled, ensembleproposer.FieldVision:
+		case ensembleproposer.FieldEnabled:
 			values[i] = new(sql.NullBool)
 		case ensembleproposer.FieldID, ensembleproposer.FieldGroupID, ensembleproposer.FieldPriority:
 			values[i] = new(sql.NullInt64)
@@ -153,12 +151,6 @@ func (_m *EnsembleProposer) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Enabled = value.Bool
 			}
-		case ensembleproposer.FieldVision:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field vision", values[i])
-			} else if value.Valid {
-				_m.Vision = value.Bool
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -228,9 +220,6 @@ func (_m *EnsembleProposer) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
-	builder.WriteString(", ")
-	builder.WriteString("vision=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Vision))
 	builder.WriteByte(')')
 	return builder.String()
 }

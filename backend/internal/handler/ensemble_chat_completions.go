@@ -115,11 +115,6 @@ type ensembleResponsesSubResult struct {
 const (
 	ensembleStatusOK               = "ok"
 	ensembleStatusFailed           = "failed"
-	// ensembleStatusSkipped marks a member that was deliberately not called
-	// because the request could not be served by it (e.g. an image request and
-	// a member without vision capability). Skipped members do not count towards
-	// min_proposers and are never reported as failures.
-	ensembleStatusSkipped          = "skipped"
 	maxEnsembleAggregatorBodyBytes = 2 << 20
 	ensembleProgressSinkKey        = "ensemble.progress.sink"
 	// ensembleKeepAliveInterval bounds how long a streaming client waits without
@@ -313,36 +308,10 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	timeout := time.Duration(plan.EffectiveTimeoutSeconds()) * time.Second
 	started := time.Now()
 
-	// On image requests, members without the vision capability are dropped
-	// before the fan-out: they are not called, do not count towards
-	// min_proposers, and surface as skipped in the trace and metadata. A
-	// non-vision model then complements a vision model instead of breaking the
-	// request.
-	bodyContainsImage := ensembleBodyContainsImage(body)
-	activeProposers, skippedProposers := ensembleActiveProposers(plan.Proposers, bodyContainsImage)
-	if len(skippedProposers) > 0 {
-		reqLog.Info("ensemble skipped non-vision proposers on image request",
-			zap.Int("skipped", len(skippedProposers)),
-			zap.Int("active", len(activeProposers)))
-		for _, skipped := range skippedProposers {
-			emitEnsembleProgress(c, EnsembleProgressEvent{
-				Type:     "member_finished",
-				Index:    skipped.index,
-				Model:    skipped.model,
-				Role:     skipped.role,
-				Status:   skipped.stat.Status,
-				Member:   &skipped.stat,
-			})
-		}
-	}
-
-	// Fan out to every active proposer in parallel.
+	// Fan out to every proposer in parallel.
 	results := make([]ensembleSubResult, len(plan.Proposers))
-	for _, skipped := range skippedProposers {
-		results[skipped.index] = skipped
-	}
 	var wg sync.WaitGroup
-	for i := range activeProposers {
+	for i := range plan.Proposers {
 		wg.Add(1)
 		go func(idx int, member service.EnsembleProposer) {
 			defer wg.Done()
@@ -382,7 +351,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 				})
 			}()
 			result = h.runSubCall(c, idx, member.Model, member.Platform, service.EnsembleRoleProposer, body, plan.Config.MaxTokens, timeout)
-		}(i, activeProposers[i])
+		}(i, plan.Proposers[i])
 	}
 	wg.Wait()
 
@@ -413,12 +382,6 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	})
 
 	minProposers := plan.EffectiveMinProposers()
-	// Skipped members (image request, non-vision model) never count against
-	// min_proposers: the requirement is capped at the number of members that
-	// were actually called.
-	if activeCount := len(activeProposers); activeCount < minProposers {
-		minProposers = activeCount
-	}
 	if len(proposals) < minProposers && successfulMembers < minProposers {
 		reqLog.Error("ensemble did not reach min_proposers",
 			zap.Int("succeeded", len(proposals)),
@@ -1289,100 +1252,6 @@ func buildEnsembleChatResponse(
 	return payload
 }
 
-// ensembleBodyContainsImage reports whether the Chat Completions body carries
-// image content (image_url or input_image parts). Ensemble members without the
-// vision capability are skipped on such requests instead of being called and
-// failing, so a non-vision model never breaks an image request that another
-// member could serve.
-func ensembleBodyContainsImage(body []byte) bool {
-	if !gjson.ValidBytes(body) {
-		return false
-	}
-	messages := gjson.GetBytes(body, "messages")
-	if !messages.Exists() || !messages.IsArray() {
-		return false
-	}
-	found := false
-	messages.ForEach(func(_, message gjson.Result) bool {
-		if found {
-			return false
-		}
-		if message.Get("role").String() == "assistant" {
-			return true
-		}
-		content := message.Get("content")
-		if !content.Exists() {
-			return true
-		}
-		if content.Type == gjson.String {
-			return true
-		}
-		if content.IsArray() {
-			content.ForEach(func(_, part gjson.Result) bool {
-				if found {
-					return false
-				}
-				switch part.Get("type").String() {
-				case "image_url", "input_image", "image":
-					found = true
-					return false
-				}
-				if part.Get("image_url").Exists() {
-					found = true
-					return false
-				}
-				return true
-			})
-			return true
-		}
-		if content.IsObject() {
-			switch content.Get("type").String() {
-			case "image_url", "input_image", "image":
-				found = true
-				return false
-			}
-			if content.Get("image_url").Exists() {
-				found = true
-				return false
-			}
-		}
-		return true
-	})
-	return found
-}
-
-// ensembleActiveProposers filters the configured proposers down to the ones
-// that can serve this request. On image requests, members without the vision
-// capability are dropped: they are not called, do not count towards
-// min_proposers, and are reported as skipped so the caller sees the capability
-// composition instead of a failure.
-func ensembleActiveProposers(proposers []service.EnsembleProposer, bodyContainsImage bool) ([]service.EnsembleProposer, []ensembleSubResult) {
-	if !bodyContainsImage {
-		return proposers, nil
-	}
-	active := make([]service.EnsembleProposer, 0, len(proposers))
-	skipped := make([]ensembleSubResult, 0, len(proposers))
-	for i := range proposers {
-		if proposers[i].Vision {
-			active = append(active, proposers[i])
-			continue
-		}
-		skipped = append(skipped, ensembleSubResult{
-			index: i,
-			model: proposers[i].Model,
-			role:  service.EnsembleRoleProposer,
-			stat: ensembleMemberStat{
-				Model:    proposers[i].Model,
-				Platform: proposers[i].Platform,
-				Role:     service.EnsembleRoleProposer,
-				Status:   ensembleStatusSkipped,
-				Error:    "model does not support image input, skipped on image request",
-			},
-		})
-	}
-	return active, skipped
-}
-
 // ensembleStreamWriter owns the client SSE connection for a stream=true request.
 //
 // The whole point is that headers and a first chunk go out *before* the fan-out
@@ -1524,9 +1393,6 @@ func (w *ensembleStreamWriter) traceProgress(event EnsembleProgressEvent) string
 		return fmt.Sprintf("→ %s 开始\n", w.memberLabel(event.Index, event.Role, event.Model))
 	case "member_finished":
 		label := w.memberLabel(event.Index, event.Role, event.Model)
-		if event.Status == ensembleStatusSkipped {
-			return fmt.Sprintf("⤼ %s 跳过（不支持图片输入）\n", label)
-		}
 		if event.Status != ensembleStatusOK {
 			// The member error is the whole reason a caller looks at the trace, so
 			// it is shown even when expose_metadata hides the model id.

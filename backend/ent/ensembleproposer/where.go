@@ -100,11 +100,6 @@ func Enabled(v bool) predicate.EnsembleProposer {
 	return predicate.EnsembleProposer(sql.FieldEQ(FieldEnabled, v))
 }
 
-// Vision applies equality check predicate on the "vision" field. It's identical to VisionEQ.
-func Vision(v bool) predicate.EnsembleProposer {
-	return predicate.EnsembleProposer(sql.FieldEQ(FieldVision, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.EnsembleProposer {
 	return predicate.EnsembleProposer(sql.FieldEQ(FieldCreatedAt, v))
@@ -498,16 +493,6 @@ func EnabledEQ(v bool) predicate.EnsembleProposer {
 // EnabledNEQ applies the NEQ predicate on the "enabled" field.
 func EnabledNEQ(v bool) predicate.EnsembleProposer {
 	return predicate.EnsembleProposer(sql.FieldNEQ(FieldEnabled, v))
-}
-
-// VisionEQ applies the EQ predicate on the "vision" field.
-func VisionEQ(v bool) predicate.EnsembleProposer {
-	return predicate.EnsembleProposer(sql.FieldEQ(FieldVision, v))
-}
-
-// VisionNEQ applies the NEQ predicate on the "vision" field.
-func VisionNEQ(v bool) predicate.EnsembleProposer {
-	return predicate.EnsembleProposer(sql.FieldNEQ(FieldVision, v))
 }
 
 // HasGroup applies the HasEdge predicate on the "group" edge.

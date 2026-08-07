@@ -177,10 +177,6 @@
                     <span class="member-index">{{ index + 1 }}</span>
                     <span class="min-w-0 flex-1 truncate font-mono text-sm">{{ model }}</span>
                     <span class="member-role">候选</span>
-                    <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400" :title="nonVisionModels.has(model) ? '不支持图片输入,图片请求会跳过该模型' : '支持图片输入'">
-                      <Toggle :model-value="!nonVisionModels.has(model)" size="sm" :aria-label="`${model} 视觉能力`" @update:model-value="(v: boolean) => setModelVision(model, v)" />
-                      <span class="whitespace-nowrap">{{ nonVisionModels.has(model) ? '无视觉' : '视觉' }}</span>
-                    </label>
                     <button type="button" class="icon-button" :aria-label="`移除 ${model}`" title="移除" @click="removeProposer(model)">
                       <Icon name="x" size="sm" />
                     </button>
@@ -439,9 +435,6 @@ const selectedSourceGroupIds = ref<number[]>([])
 const models = ref<string[]>([])
 const modelPlatforms = ref<Record<string, string>>({})
 const proposers = ref<string[]>([])
-// 无视觉能力(不支持图片输入)的候选模型。图片请求会跳过这些成员,
-// 由其余视觉成员补齐能力,而不是让它们调用失败。
-const nonVisionModels = ref<Set<string>>(new Set())
 const aggregator = ref<string | null>(null)
 const loadedMembers = ref<EnsembleProposer[]>([])
 const draft = ref<Draft>({ name: '', description: '', rateMultiplier: 1 })
@@ -540,7 +533,6 @@ async function loadTarget(groupId: number | null) {
     loadedMembers.value = []
     selectedSourceGroupIds.value = []
     proposers.value = []
-    nonVisionModels.value = new Set()
     aggregator.value = null
     draft.value = { name: '', description: '', rateMultiplier: 1 }
     options.value = { minProposers: 2, timeoutSeconds: 120, maxTokens: 0, exposeMetadata: false, streamTrace: true }
@@ -573,11 +565,6 @@ async function loadTarget(groupId: number | null) {
       .filter(member => member.role === 'proposer' && member.enabled)
       .sort((a, b) => a.priority - b.priority)
       .map(member => member.model)
-    nonVisionModels.value = new Set(
-      members
-        .filter(member => member.role === 'proposer' && member.enabled && member.vision === false)
-        .map(member => member.model)
-    )
     aggregator.value = config.aggregator_enabled
       ? members.find(member => member.role === 'aggregator' && member.enabled)?.model ?? null
       : null
@@ -655,17 +642,8 @@ function addProposer(model: string) {
 
 function removeProposer(model: string) {
   proposers.value = proposers.value.filter(item => item !== model)
-  nonVisionModels.value.delete(model)
-  nonVisionModels.value = new Set(nonVisionModels.value)
   if (options.value.minProposers > proposers.value.length) options.value.minProposers = Math.max(1, proposers.value.length)
   if (aggregator.value === model && !models.value.includes(model)) aggregator.value = null
-}
-
-function setModelVision(model: string, vision: boolean) {
-  const next = new Set(nonVisionModels.value)
-  if (vision) next.delete(model)
-  else next.add(model)
-  nonVisionModels.value = next
 }
 
 async function save(forceCreate = false) {
@@ -755,18 +733,17 @@ async function save(forceCreate = false) {
 }
 
 async function reconcileMembers(groupId: number) {
-  const desired: Array<{ role: 'proposer' | 'aggregator'; model: string; platform: string; priority: number; vision: boolean }> = proposers.value.map((model, index) => ({
-    role: 'proposer', model, platform: platformForModel(model), priority: 100 + index,
-    vision: !nonVisionModels.value.has(model)
+  const desired: Array<{ role: 'proposer' | 'aggregator'; model: string; platform: string; priority: number }> = proposers.value.map((model, index) => ({
+    role: 'proposer', model, platform: platformForModel(model), priority: 100 + index
   }))
-  if (aggregator.value) desired.push({ role: 'aggregator', model: aggregator.value, platform: platformForModel(aggregator.value), priority: 10, vision: true })
+  if (aggregator.value) desired.push({ role: 'aggregator', model: aggregator.value, platform: platformForModel(aggregator.value), priority: 10 })
 
   const plan = planEnsembleMemberReconciliation(loadedMembers.value, desired)
   for (const update of plan.updates) {
-    await ensembleAPI.updateMember(groupId, update.id, { ...update.member, enabled: true, vision: update.member.vision })
+    await ensembleAPI.updateMember(groupId, update.id, { ...update.member, enabled: true })
   }
   for (const create of plan.creates) {
-    await ensembleAPI.createMember(groupId, { ...create, enabled: true, vision: create.vision })
+    await ensembleAPI.createMember(groupId, { ...create, enabled: true })
   }
   for (const memberId of plan.deletes) {
     await ensembleAPI.deleteMember(groupId, memberId)

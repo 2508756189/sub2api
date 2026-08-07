@@ -10,7 +10,6 @@ export interface EnsembleProposer {
   platform: string
   priority: number
   enabled: boolean
-  vision?: boolean
   created_at?: string
   updated_at?: string
 }
@@ -83,7 +82,6 @@ export interface SaveEnsembleMemberRequest {
   platform: string
   priority: number
   enabled: boolean
-  vision?: boolean
 }
 
 export const ensembleAPI = {

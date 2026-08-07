@@ -33,8 +33,6 @@ const (
 	FieldPriority = "priority"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
-	// FieldVision holds the string denoting the vision field in the database.
-	FieldVision = "vision"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
 	EdgeGroup = "group"
 	// Table holds the table name of the ensembleproposer in the database.
@@ -60,7 +58,6 @@ var Columns = []string{
 	FieldPlatform,
 	FieldPriority,
 	FieldEnabled,
-	FieldVision,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -101,8 +98,6 @@ var (
 	DefaultPriority int
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
-	// DefaultVision holds the default value on creation for the "vision" field.
-	DefaultVision bool
 )
 
 // OrderOption defines the ordering options for the EnsembleProposer queries.
@@ -156,11 +151,6 @@ func ByPriority(opts ...sql.OrderTermOption) OrderOption {
 // ByEnabled orders the results by the enabled field.
 func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
-}
-
-// ByVision orders the results by the vision field.
-func ByVision(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVision, opts...).ToFunc()
 }
 
 // ByGroupField orders the results by group field.

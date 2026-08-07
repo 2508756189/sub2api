@@ -189,23 +189,23 @@ func TestEnsembleStreamFailureIsParseableAndRecordedForOps(t *testing.T) {
 	// The SSE headers were committed before the fan-out, so the wire status stays 200.
 	require.Equal(t, http.StatusOK, recorder.Code)
 
-	var errorFrame string
+	var errorChunk string
 	for _, raw := range strings.Split(recorder.Body.String(), "\n") {
 		after, found := strings.CutPrefix(strings.TrimSpace(raw), "data:")
 		if !found {
 			continue
 		}
 		payload := strings.TrimSpace(after)
-		if gjson.Valid(payload) && gjson.Get(payload, "error").Exists() {
-			errorFrame = payload
+		if gjson.Valid(payload) && gjson.Get(payload, "choices.0.delta.content").Exists() {
+			errorChunk = payload
 		}
 	}
-	require.NotEmpty(t, errorFrame, "a failed fan-out must emit an in-band error frame")
-	// Without this discriminator a client has no field to key on and reports an
-	// unknown failure reason instead of the real cause.
-	require.Equal(t, "error", gjson.Get(errorFrame, "type").String())
-	require.Equal(t, "api_error", gjson.Get(errorFrame, "error.type").String())
-	require.Contains(t, gjson.Get(errorFrame, "error.message").String(), "minimum 2 required")
+	require.NotEmpty(t, errorChunk, "a failed fan-out must emit an in-band error chunk")
+	// Strict agent SDKs (Codex CLI, ZCode) only accept the standard
+	// chat.completion.chunk shape; a bare {"type":"error"} frame makes them
+	// report an unknown failure reason instead of the real cause.
+	require.Equal(t, "chat.completion.chunk", gjson.Get(errorChunk, "object").String())
+	require.Contains(t, gjson.Get(errorChunk, "choices.0.delta.content").String(), "minimum 2 required")
 	require.Contains(t, recorder.Body.String(), "[DONE]")
 
 	// ops_error_logger only collects rows with status >= 400, so a failure riding

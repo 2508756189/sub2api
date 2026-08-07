@@ -1469,24 +1469,22 @@ func (w *ensembleStreamWriter) finish(content string, payload map[string]any) {
 // fail reports a mid-stream failure. Headers are already sent, so the status code
 // is fixed at 200 and the error can only be delivered in-band.
 //
-// Two things make that error usable rather than opaque:
-//
-//   - MarkOpsStreamFailure records it for the ops error logger. That middleware
-//     only collects rows with status >= 400, so a failure riding on a committed
-//     200 is otherwise invisible on the error dashboard.
-//   - The frame carries the top-level "type":"error" discriminator used by the
-//     rest of the gateway (see handleStreamingAwareError). A bare {"error":{...}}
-//     chunk has no field a client can key on, so strict clients fall back to
-//     reporting an unknown reason.
-//
-// The trace line is written before the error frame so the failure has a
-// human-readable cause in the same place the caller watched the fan-out.
+// The frame is a full chat.completion.chunk with the error text as
+// delta.content, not a bare {"type":"error"} object. Strict agent SDKs (Codex
+// CLI, ZCode) only accept the standard chunk shape; a non-standard frame makes
+// them surface "reason=unknown" and hide the actual cause. Delivering the text
+// as content keeps the message visible in every client. MarkOpsStreamFailure
+// still records the failure for the ops error logger, which otherwise only
+// collects rows with status >= 400 and would never see a failure riding on a
+// committed 200.
 func (w *ensembleStreamWriter) fail(errType, message string, intendedStatus int) {
 	w.stopKeepAlive()
 	service.MarkOpsStreamFailure(w.ctx, errType, "", message, intendedStatus)
 	w.writeChunk(map[string]any{
-		"type":  "error",
-		"error": map[string]any{"type": errType, "message": message},
+		"id": w.id, "object": "chat.completion.chunk", "created": w.created, "model": w.model,
+		"choices": []map[string]any{
+			{"index": 0, "delta": map[string]any{"role": "assistant", "content": message}, "finish_reason": nil},
+		},
 	})
 	w.writeRaw("data: [DONE]\n\n")
 }

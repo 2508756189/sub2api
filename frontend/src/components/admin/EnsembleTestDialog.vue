@@ -51,7 +51,7 @@
                   <span>耗时 {{ formatDuration(member.duration_ms) }}</span>
                   <span>输入 {{ member.prompt_tokens ?? '—' }}</span>
                   <span>输出 {{ member.completion_tokens ?? '—' }}</span>
-                  <span v-if="member.cost !== undefined">成本 ${{ member.cost.toFixed(6) }}</span>
+                  <span>成本 {{ typeof member.cost === 'number' ? `$${member.cost.toFixed(6)}` : '未返回' }}</span>
                 </div>
                 <div v-if="member.error" class="mt-2 break-words text-xs leading-5 text-red-600 dark:text-red-300">{{ member.error }}</div>
               </div>

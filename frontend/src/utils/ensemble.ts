@@ -39,6 +39,66 @@ export interface EnsembleGroupDraft {
   rateMultiplier: number
 }
 
+export interface EnsembleMemberRow {
+  id: number
+  role: 'proposer' | 'aggregator'
+  model: string
+  platform?: string
+  priority: number
+  enabled: boolean
+}
+
+export interface EnsembleMemberDesired {
+  role: 'proposer' | 'aggregator'
+  model: string
+  platform: string
+  priority: number
+}
+
+export interface EnsembleMemberReconciliationPlan {
+  updates: Array<{ id: number; member: EnsembleMemberDesired }>
+  creates: EnsembleMemberDesired[]
+  deletes: number[]
+}
+
+/** Reuse unmatched rows before creating new ones at the hard proposer limit. */
+export function planEnsembleMemberReconciliation(
+  existing: EnsembleMemberRow[],
+  desired: EnsembleMemberDesired[]
+): EnsembleMemberReconciliationPlan {
+  const used = new Set<number>()
+  const updates: EnsembleMemberReconciliationPlan['updates'] = []
+  const creates: EnsembleMemberDesired[] = []
+
+  for (const item of desired) {
+    const exact = existing.find(member =>
+      !used.has(member.id) &&
+      member.role === item.role &&
+      member.model === item.model &&
+      (member.platform ?? '') === item.platform
+    )
+    if (exact) {
+      used.add(exact.id)
+      updates.push({ id: exact.id, member: item })
+      continue
+    }
+
+    const reusable = existing.find(member => !used.has(member.id) && member.role === item.role)
+    if (reusable) {
+      used.add(reusable.id)
+      updates.push({ id: reusable.id, member: item })
+    } else {
+      creates.push(item)
+    }
+  }
+
+  return {
+    updates,
+    creates,
+    deletes: existing.filter(member => !used.has(member.id)).map(member => member.id)
+  }
+}
+
 /** Return only groups whose accounts can be copied into an ensemble group. */
 export function getEnsembleSourceGroups<T extends EnsembleSourceGroup>(groups: T[]): T[] {
   return groups.filter(group =>

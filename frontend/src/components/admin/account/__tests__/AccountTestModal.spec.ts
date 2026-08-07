@@ -216,4 +216,25 @@ describe('AccountTestModal', () => {
       mode: 'compact'
     })
   })
+
+  it('账号直连测试不会把 Ensemble 虚拟入口当成上游模型', async () => {
+    getAvailableModels.mockResolvedValue([
+      { id: 'ensemble', display_name: 'ensemble' },
+      { id: 'gpt-5.4', display_name: 'GPT-5.4' }
+    ])
+
+    const wrapper = mountModal({
+      id: 42,
+      name: 'OpenAI Account',
+      platform: 'openai',
+      type: 'oauth',
+      status: 'active'
+    })
+    await wrapper.setProps({ show: true })
+    await flushPromises()
+
+    expect((wrapper.vm as any).availableModels.map((model: { id: string }) => model.id)).toEqual(['gpt-5.4'])
+    expect((wrapper.vm as any).selectedModelId).toBe('gpt-5.4')
+    expect(wrapper.text()).toContain('Ensemble')
+  })
 })

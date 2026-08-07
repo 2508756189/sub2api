@@ -22,4 +22,9 @@ type EnsembleConfig struct {
 	// ExposeMetadata adds an ensemble_metadata object to the response describing
 	// per-model timing, tokens and cost.
 	ExposeMetadata bool `json:"expose_metadata"`
+	// StreamTrace emits the fan-out execution steps to streaming clients as
+	// reasoning_content deltas, so a caller can watch which members ran and why a
+	// request failed instead of staring at a silent connection. Nil means enabled:
+	// rows written before this field existed should still get the trace.
+	StreamTrace *bool `json:"stream_trace,omitempty"`
 }

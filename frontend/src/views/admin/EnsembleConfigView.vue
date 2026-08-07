@@ -6,15 +6,11 @@
           <button type="button" class="btn btn-secondary" :disabled="loading" title="刷新" @click="init">
             <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
           </button>
-           <button type="button" class="btn btn-secondary" :disabled="testing || !canTest" @click="runTest">
-             <Icon name="play" size="md" class="mr-1.5" />
-             {{ testing ? '测试中…' : '测试运行' }}
-           </button>
-           <button v-if="!isNew" type="button" class="btn btn-secondary" :disabled="saving || !canSaveAsNew" @click="save(true)">
-             <Icon name="plus" size="md" class="mr-1.5" />
-             另存为新分组
-           </button>
-           <button type="button" class="btn btn-primary" :disabled="saving || !canSave" @click="save()">
+          <button v-if="!isNew" type="button" class="btn btn-secondary" :disabled="saving || !canSaveAsNew" @click="save(true)">
+            <Icon name="plus" size="md" class="mr-1.5" />
+            另存为新分组
+          </button>
+          <button type="button" class="btn btn-primary" :disabled="saving || !canSave" @click="save()">
             <Icon name="check" size="md" class="mr-1.5" />
             {{ saving ? '保存中…' : '保存配置' }}
           </button>
@@ -43,6 +39,24 @@
               </div>
               <div class="intro-flow">
                 <span>来源分组账号</span><Icon name="arrowRight" size="sm" /><span>候选模型</span><Icon name="arrowRight" size="sm" /><span>聚合输出</span>
+              </div>
+            </div>
+
+            <div class="readiness-bar">
+              <div class="readiness-item">
+                <span class="readiness-label">当前入口</span>
+                <strong>{{ isNew ? '尚未保存' : 'ensemble' }}</strong>
+                <span class="readiness-meta">{{ isNew ? '保存后生成可调用分组' : `${selectedEnsembleGroup?.account_count ?? 0} 个绑定账号` }}</span>
+              </div>
+              <div class="readiness-item">
+                <span class="readiness-label">候选调度</span>
+                <strong>{{ proposers.length }} / {{ MAX_PROPOSERS }}</strong>
+                <span class="readiness-meta">至少 {{ options.minProposers }} 个成功</span>
+              </div>
+              <div class="readiness-item">
+                <span class="readiness-label">测试方式</span>
+                <strong>分组 API Key</strong>
+                <span class="readiness-meta">账号直连测试不适用于 ensemble</span>
               </div>
             </div>
 
@@ -233,6 +247,20 @@
                   <input v-model.number="options.maxTokens" class="field-input" type="number" min="0" placeholder="0 表示不限制" />
                 </div>
               </div>
+              <div class="option-toggle mt-4">
+                <div>
+                  <div class="text-sm font-medium text-gray-800 dark:text-gray-200">返回 Ensemble 执行明细</div>
+                  <p class="field-hint">开启后响应会附带每个候选/聚合调用的耗时、Token 和成本信息；普通调用建议关闭。</p>
+                </div>
+                <Toggle v-model="options.exposeMetadata" aria-label="返回 Ensemble 执行明细" />
+              </div>
+              <div class="option-toggle mt-4">
+                <div>
+                  <div class="text-sm font-medium text-gray-800 dark:text-gray-200">流式输出执行过程（推理轨迹）</div>
+                  <p class="field-hint">开启后流式调用会通过 reasoning_content 实时展示候选模型调用、完成耗时与失败原因，未启用该字段的客户端会自动忽略。该轨迹仅用于展示，不会进入模型上下文。</p>
+                </div>
+                <Toggle v-model="options.streamTrace" aria-label="流式输出执行过程" />
+              </div>
               <div class="estimate-bar mt-4">
                 <span>预计上游调用次数</span>
                 <strong>{{ proposers.length + (aggregator ? 1 : 0) }} 次</strong>
@@ -247,15 +275,15 @@
                   <p class="section-desc">测试不会保存 API Key。请输入一个已经绑定到当前 Ensemble 分组的 API Key，页面会直接请求本地网关。</p>
                 </div>
               </div>
-              <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                <div>
-                  <label class="field-label">测试用 API Key</label>
+              <div class="test-key-field">
+                <label class="field-label">测试用 API Key</label>
+                <div class="test-key-row">
                   <input v-model="testApiKey" class="field-input font-mono" type="password" autocomplete="off" placeholder="粘贴当前 Ensemble 分组的 API Key" />
-                  <p class="field-hint">这是测试请求的临时凭证，不属于 Ensemble 配置，也不会发送给任何外部 Router。</p>
+                  <button type="button" class="btn btn-secondary test-run-button" :disabled="testing || !canTest" @click="runTest">
+                    <Icon name="play" size="md" class="mr-1.5" />{{ testing ? '测试中…' : '运行一次测试' }}
+                  </button>
                 </div>
-                <button type="button" class="btn btn-secondary" :disabled="testing || !canTest" @click="runTest">
-                  <Icon name="play" size="md" class="mr-1.5" />{{ testing ? '测试中…' : '运行一次测试' }}
-                </button>
+                <p class="field-hint">这是测试请求的临时凭证，不属于 Ensemble 配置，也不会发送给任何外部 Router。请求固定使用虚拟模型 <code>ensemble</code>。</p>
               </div>
             </section>
 
@@ -331,6 +359,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import Select from '@/components/common/Select.vue'
 import type { SelectOption } from '@/components/common/Select.vue'
+import Toggle from '@/components/common/Toggle.vue'
 import Icon from '@/components/icons/Icon.vue'
 import EnsembleTestDialog from '@/components/admin/EnsembleTestDialog.vue'
 import groupsAPI from '@/api/admin/groups'
@@ -342,6 +371,7 @@ import {
   deriveEnsembleModelOptions,
   findSharedEnsembleChannel,
   getEnsembleSourceGroups,
+  planEnsembleMemberReconciliation,
   validateEnsembleDraft
 } from '@/utils/ensemble'
 
@@ -358,6 +388,8 @@ interface Options {
   minProposers: number
   timeoutSeconds: number
   maxTokens: number
+  exposeMetadata: boolean
+  streamTrace: boolean
 }
 
 interface ResultMember {
@@ -406,7 +438,7 @@ const proposers = ref<string[]>([])
 const aggregator = ref<string | null>(null)
 const loadedMembers = ref<EnsembleProposer[]>([])
 const draft = ref<Draft>({ name: '', description: '', rateMultiplier: 1 })
-const options = ref<Options>({ minProposers: 2, timeoutSeconds: 120, maxTokens: 0 })
+const options = ref<Options>({ minProposers: 2, timeoutSeconds: 120, maxTokens: 0, exposeMetadata: false, streamTrace: true })
 
 const sourcePickerOpen = ref(false)
 const sourceQuery = ref('')
@@ -417,13 +449,14 @@ const modelPickerInput = ref<HTMLInputElement | null>(null)
 
 const isNew = computed(() => selectedEnsembleGroupId.value === null)
 const ensembleGroups = computed(() => allGroups.value.filter(group => group.platform === 'ensemble' && group.status === 'active'))
+const selectedEnsembleGroup = computed(() => ensembleGroups.value.find(group => group.id === selectedEnsembleGroupId.value))
 const sourceGroups = computed(() => getEnsembleSourceGroups(allGroups.value))
 const selectedSourceGroups = computed(() => selectedSourceGroupIds.value
   .map(id => sourceGroups.value.find(group => group.id === id))
   .filter((group): group is AdminGroup => !!group))
 const sourceGroupOptions = computed(() => sourceGroups.value.filter(group => !selectedSourceGroupIds.value.includes(group.id)))
 const billingChannel = computed(() => findSharedEnsembleChannel(
-  isNew.value ? selectedSourceGroupIds.value : [selectedEnsembleGroupId.value as number],
+  selectedSourceGroupIds.value.length > 0 ? selectedSourceGroupIds.value : (isNew.value ? [] : [selectedEnsembleGroupId.value as number]),
   channels.value
 ))
 const filteredSourceGroupOptions = computed(() => {
@@ -502,7 +535,7 @@ async function loadTarget(groupId: number | null) {
     proposers.value = []
     aggregator.value = null
     draft.value = { name: '', description: '', rateMultiplier: 1 }
-    options.value = { minProposers: 2, timeoutSeconds: 120, maxTokens: 0 }
+    options.value = { minProposers: 2, timeoutSeconds: 120, maxTokens: 0, exposeMetadata: false, streamTrace: true }
     await refreshModels()
     return
   }
@@ -523,7 +556,9 @@ async function loadTarget(groupId: number | null) {
     options.value = {
       minProposers: config.min_proposers || 1,
       timeoutSeconds: config.timeout_seconds || 120,
-      maxTokens: config.max_tokens || 0
+      maxTokens: config.max_tokens || 0,
+      exposeMetadata: config.expose_metadata === true,
+      streamTrace: config.stream_trace !== false
     }
     selectedSourceGroupIds.value = [...(config.source_group_ids ?? [])]
     proposers.value = members
@@ -674,7 +709,8 @@ async function save(forceCreate = false) {
       min_proposers: options.value.minProposers,
       timeout_seconds: options.value.timeoutSeconds,
       max_tokens: options.value.maxTokens || 0,
-      expose_metadata: true,
+      expose_metadata: options.value.exposeMetadata,
+      stream_trace: options.value.streamTrace,
       source_group_ids: [...selectedSourceGroupIds.value]
     })
     creationConfigured = true
@@ -702,20 +738,15 @@ async function reconcileMembers(groupId: number) {
   }))
   if (aggregator.value) desired.push({ role: 'aggregator', model: aggregator.value, platform: platformForModel(aggregator.value), priority: 10 })
 
-  const used = new Set<number>()
-  for (const item of desired) {
-    const existing = loadedMembers.value.find(member =>
-      !used.has(member.id) && member.role === item.role && member.model === item.model && (member.platform ?? '') === item.platform
-    )
-    if (existing) {
-      used.add(existing.id)
-      await ensembleAPI.updateMember(groupId, existing.id, { ...item, enabled: true })
-    } else {
-      await ensembleAPI.createMember(groupId, { ...item, enabled: true })
-    }
+  const plan = planEnsembleMemberReconciliation(loadedMembers.value, desired)
+  for (const update of plan.updates) {
+    await ensembleAPI.updateMember(groupId, update.id, { ...update.member, enabled: true })
   }
-  for (const member of loadedMembers.value) {
-    if (!used.has(member.id)) await ensembleAPI.deleteMember(groupId, member.id)
+  for (const create of plan.creates) {
+    await ensembleAPI.createMember(groupId, { ...create, enabled: true })
+  }
+  for (const memberId of plan.deletes) {
+    await ensembleAPI.deleteMember(groupId, memberId)
   }
 }
 
@@ -868,6 +899,11 @@ function show(message: string, type: 'ok' | 'err' | 'warn') {
 .intro-kicker { @apply text-sm font-semibold text-primary-700 dark:text-primary-300; }
 .intro-rule { @apply rounded-full bg-white/80 px-2.5 py-1 text-xs text-primary-600 dark:bg-dark-800/70 dark:text-primary-300; }
 .intro-flow { @apply flex items-center gap-2 text-xs font-medium text-primary-700 dark:text-primary-300; }
+.readiness-bar { @apply grid gap-px overflow-hidden rounded-xl border border-gray-200 bg-gray-200 sm:grid-cols-3 dark:border-dark-600 dark:bg-dark-600; }
+.readiness-item { @apply flex min-h-[78px] flex-col justify-center bg-white px-4 py-3 dark:bg-dark-800; }
+.readiness-label { @apply text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500; }
+.readiness-item strong { @apply mt-1 text-sm font-semibold text-gray-900 dark:text-white; }
+.readiness-meta { @apply mt-0.5 text-xs text-gray-500 dark:text-gray-400; }
 .section-card { @apply rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-dark-600 dark:bg-dark-800; }
 .section-header { @apply mb-4 flex flex-wrap items-start justify-between gap-3; }
 .section-title { @apply flex items-center text-base font-semibold text-gray-900 dark:text-white; }
@@ -901,6 +937,10 @@ function show(message: string, type: 'ok' | 'err' | 'warn') {
 .icon-button { @apply rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20; }
 .estimate-bar { @apply flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:bg-dark-900/40 dark:text-gray-300; }
 .estimate-bar strong { @apply text-primary-700 dark:text-primary-300; }
+.option-toggle { @apply flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-600 dark:bg-dark-900/30; }
+.test-key-row { @apply flex items-center gap-3; }
+.test-key-row .field-input { @apply min-w-0 flex-1; }
+.test-run-button { @apply min-h-[44px] flex-shrink-0 whitespace-nowrap; }
 .notice { @apply flex items-start gap-2.5 rounded-lg border p-4 text-sm; }
 .result-table { @apply min-w-full text-sm; }
 .result-table th { @apply bg-gray-50 px-3 py-2.5 text-left text-xs font-semibold text-gray-500 dark:bg-dark-900/50 dark:text-gray-400; }
@@ -910,4 +950,8 @@ function show(message: string, type: 'ok' | 'err' | 'warn') {
 .pill-fail { @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300; }
 .result-content { @apply max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-800 dark:border-dark-600 dark:bg-dark-900/40 dark:text-gray-200; }
 .proposal-card { @apply rounded-lg border border-gray-200 p-3 dark:border-dark-600; }
+@media (max-width: 639px) {
+  .test-key-row { @apply items-stretch flex-col; }
+  .test-run-button { @apply w-full justify-center; }
+}
 </style>

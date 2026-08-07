@@ -66,8 +66,28 @@ func RegisterGatewayRoutes(
 		}
 		h.Gateway.ChatCompletions(c)
 	}
+	responsesHandler := func(c *gin.Context) {
+		// Compact is context maintenance, so an Ensemble compact request uses
+		// exactly one configured aggregator call.
+		if h.Ensemble != nil && handler.GetInboundEndpoint(c) == handler.EndpointResponsesCompact && isEnsembleFanOutRequest(c) {
+			h.Ensemble.Compact(c)
+			return
+		}
+		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
+			h.OpenAIGateway.Responses(c)
+			return
+		}
+		h.Gateway.Responses(c)
+	}
 	if h.Ensemble != nil {
 		h.Ensemble.SetSubCallDispatcher(chatCompletionsByPlatform)
+		h.Ensemble.SetResponsesSubCallDispatcher(func(c *gin.Context) {
+			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
+				h.OpenAIGateway.Responses(c)
+				return
+			}
+			h.Gateway.Responses(c)
+		})
 	}
 	countTokensHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
@@ -221,20 +241,8 @@ func RegisterGatewayRoutes(
 		gateway.POST("/live", h.OpenAIGateway.Live)
 		gateway.GET("/live/:call_id", h.OpenAIGateway.LiveSideband)
 		// OpenAI Responses API: auto-route based on group platform
-		gateway.POST("/responses", func(c *gin.Context) {
-			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-				h.OpenAIGateway.Responses(c)
-				return
-			}
-			h.Gateway.Responses(c)
-		})
-		gateway.POST("/responses/*subpath", guardResponsesSubpath(func(c *gin.Context) {
-			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-				h.OpenAIGateway.Responses(c)
-				return
-			}
-			h.Gateway.Responses(c)
-		}))
+		gateway.POST("/responses", responsesHandler)
+		gateway.POST("/responses/*subpath", guardResponsesSubpath(responsesHandler))
 		gateway.POST("/alpha/search", textBodyLimit, h.OpenAIGateway.AlphaSearch)
 		gateway.GET("/responses", func(c *gin.Context) {
 			h.OpenAIGateway.ResponsesWebSocket(c)
@@ -300,13 +308,6 @@ func RegisterGatewayRoutes(
 	}
 
 	// OpenAI Responses API（不带v1前缀的别名）— auto-route based on group platform
-	responsesHandler := func(c *gin.Context) {
-		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-			h.OpenAIGateway.Responses(c)
-			return
-		}
-		h.Gateway.Responses(c)
-	}
 	r.POST("/responses", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, responsesHandler)
 	r.POST("/responses/*subpath", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, guardResponsesSubpath(responsesHandler))
 	r.POST("/alpha/search", textBodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.OpenAIGateway.AlphaSearch)

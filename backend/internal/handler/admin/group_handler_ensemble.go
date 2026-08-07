@@ -26,6 +26,9 @@ type EnsembleConfigRequest struct {
 	TimeoutSeconds    int     `json:"timeout_seconds"`
 	MaxTokens         int     `json:"max_tokens"`
 	ExposeMetadata    bool    `json:"expose_metadata"`
+	// StreamTrace is a pointer so an older admin client that omits the field
+	// keeps the default-on behaviour instead of silently disabling the trace.
+	StreamTrace *bool `json:"stream_trace"`
 }
 
 func ensembleProposerRequestToInput(req EnsembleProposerRequest, defaultEnabled bool) service.EnsembleProposerInput {
@@ -172,6 +175,7 @@ func (h *GroupHandler) UpdateEnsembleConfig(c *gin.Context) {
 		TimeoutSeconds:    req.TimeoutSeconds,
 		MaxTokens:         req.MaxTokens,
 		ExposeMetadata:    req.ExposeMetadata,
+		StreamTrace:       req.StreamTrace,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

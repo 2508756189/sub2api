@@ -78,6 +78,9 @@ func (s *adminServiceImpl) UpdateEnsembleProposer(ctx context.Context, groupID, 
 	if err := s.validateEnsembleModel(ctx, groupID, proposer.Model, proposer.Platform); err != nil {
 		return nil, err
 	}
+	if err := s.clampEnsembleMinimumForChange(ctx, groupID, proposerID, proposer); err != nil {
+		return nil, err
+	}
 	proposer.ID = proposerID
 	if err := s.ensembleProposerRepo.Update(ctx, proposer); err != nil {
 		return nil, err
@@ -97,6 +100,9 @@ func (s *adminServiceImpl) DeleteEnsembleProposer(ctx context.Context, groupID, 
 		return err
 	} else if !ok {
 		return ErrEnsembleProposerNotFound
+	}
+	if err := s.clampEnsembleMinimumForChange(ctx, groupID, proposerID, nil); err != nil {
+		return err
 	}
 	return s.ensembleProposerRepo.Delete(ctx, proposerID)
 }
@@ -136,7 +142,10 @@ func (s *adminServiceImpl) UpdateEnsembleConfig(ctx context.Context, groupID int
 			enabledProposers++
 		}
 	}
-	if group.EnsembleConfig.MinProposers > enabledProposers {
+	// A newly created group may be configured before its members are added. The
+	// runtime will reject calls until a proposer exists, but the admin workflow
+	// must be able to save the config first.
+	if enabledProposers > 0 && group.EnsembleConfig.MinProposers > enabledProposers {
 		return EnsembleConfig{}, fmt.Errorf("min_proposers %d exceeds enabled proposer count %d", group.EnsembleConfig.MinProposers, enabledProposers)
 	}
 	if err := s.groupRepo.Update(ctx, group); err != nil {
@@ -159,6 +168,44 @@ func (s *adminServiceImpl) ensembleProposerBelongsToGroup(ctx context.Context, g
 		}
 	}
 	return false, nil
+}
+
+// clampEnsembleMinimumForChange keeps a saved minimum satisfiable when an
+// admin disables, re-roles, or deletes a proposer. The group is updated before
+// the member mutation so a failed member write cannot leave an impossible
+// runtime configuration.
+func (s *adminServiceImpl) clampEnsembleMinimumForChange(ctx context.Context, groupID, targetID int64, replacement *EnsembleProposer) error {
+	group, err := s.groupRepo.GetByID(ctx, groupID)
+	if err != nil {
+		return err
+	}
+	members, err := s.ensembleProposerRepo.ListByGroup(ctx, groupID, true)
+	if err != nil {
+		return err
+	}
+	enabledProposers := 0
+	for _, member := range members {
+		if member.ID == targetID {
+			if replacement != nil && replacement.Enabled && replacement.Role == EnsembleRoleProposer {
+				enabledProposers++
+			}
+			continue
+		}
+		if member.Enabled && member.Role == EnsembleRoleProposer {
+			enabledProposers++
+		}
+	}
+	if enabledProposers == 0 || group.EnsembleConfig.MinProposers <= enabledProposers {
+		return nil
+	}
+	group.EnsembleConfig.MinProposers = enabledProposers
+	if err := s.groupRepo.Update(ctx, group); err != nil {
+		return err
+	}
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
+	}
+	return nil
 }
 
 func (s *adminServiceImpl) validateEnsembleMemberLimit(ctx context.Context, groupID, currentID int64, role string) error {

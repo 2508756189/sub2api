@@ -45,6 +45,17 @@ func (p *EnsemblePlan) ShouldAggregate() bool {
 	return p.Config.AggregatorEnabled && p.Aggregator != nil
 }
 
+// EffectiveStreamTrace reports whether streaming clients receive the fan-out
+// execution trace. It defaults to on: a group configured before the field
+// existed stores nil, and an ensemble request is otherwise silent for as long as
+// the slowest member takes.
+func (p *EnsemblePlan) EffectiveStreamTrace() bool {
+	if p.Config.StreamTrace == nil {
+		return true
+	}
+	return *p.Config.StreamTrace
+}
+
 // EnsembleRuntimeService resolves the ensemble plan for a group on the request path.
 type EnsembleRuntimeService struct {
 	proposerRepo EnsembleProposerRepository

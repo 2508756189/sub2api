@@ -25,6 +25,8 @@ func TestEnsembleConfigPreservesSourceGroupIDsInJSON(t *testing.T) {
 
 type ensembleProposerRepoForAdminTest struct {
 	created *EnsembleProposer
+	updated *EnsembleProposer
+	deleted int64
 	members []EnsembleProposer
 }
 
@@ -37,10 +39,15 @@ func (s *ensembleProposerRepoForAdminTest) Create(_ context.Context, proposer *E
 	return nil
 }
 
-func (s *ensembleProposerRepoForAdminTest) Update(context.Context, *EnsembleProposer) error {
+
+func (s *ensembleProposerRepoForAdminTest) Update(_ context.Context, proposer *EnsembleProposer) error {
+	s.updated = proposer
 	return nil
 }
-func (s *ensembleProposerRepoForAdminTest) Delete(context.Context, int64) error        { return nil }
+func (s *ensembleProposerRepoForAdminTest) Delete(_ context.Context, proposerID int64) error {
+	s.deleted = proposerID
+	return nil
+}
 func (s *ensembleProposerRepoForAdminTest) DeleteByGroup(context.Context, int64) error { return nil }
 
 func TestAdminServiceRejectsEnsembleModelUnavailableInBoundAccounts(t *testing.T) {
@@ -148,6 +155,49 @@ func TestAdminServiceRejectsMinimumAboveEnabledProposers(t *testing.T) {
 	_, err := svc.UpdateEnsembleConfig(context.Background(), 7, EnsembleConfig{MinProposers: 3})
 
 	require.Error(t, err)
+}
+
+func TestAdminServiceAllowsConfigBeforeFreshGroupHasMembers(t *testing.T) {
+	group := &Group{ID: 7, Platform: PlatformEnsemble}
+	groupRepo := &groupRepoStubForAdmin{getByIDByID: map[int64]*Group{7: group}}
+	svc := &adminServiceImpl{
+		groupRepo: groupRepo,
+		ensembleProposerRepo: &ensembleProposerRepoForAdminTest{},
+	}
+
+	updated, err := svc.UpdateEnsembleConfig(context.Background(), 7, EnsembleConfig{MinProposers: 1})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, updated.MinProposers)
+	require.Same(t, group, groupRepo.updated)
+}
+
+func TestAdminServiceClampsMinimumBeforeDisablingOrDeletingProposer(t *testing.T) {
+	for _, operation := range []string{"disable", "delete"} {
+		t.Run(operation, func(t *testing.T) {
+			group := &Group{ID: 7, Platform: PlatformEnsemble, EnsembleConfig: EnsembleConfig{MinProposers: 2}}
+			groupRepo := &groupRepoStubForAdmin{getByIDByID: map[int64]*Group{7: group}}
+			proposerRepo := &ensembleProposerRepoForAdminTest{members: []EnsembleProposer{
+				{ID: 1, GroupID: 7, Role: EnsembleRoleProposer, Model: "gpt-5", Platform: PlatformOpenAI, Enabled: true},
+				{ID: 2, GroupID: 7, Role: EnsembleRoleProposer, Model: "gpt-5.1", Platform: PlatformOpenAI, Enabled: true},
+			}}
+			svc := &adminServiceImpl{groupRepo: groupRepo, accountRepo: &accountRepoStubForCompositeModelsList{accounts: []Account{{
+				ID: 1, Platform: PlatformOpenAI, Credentials: map[string]any{"model_mapping": map[string]any{"gpt-5": "gpt-5", "gpt-5.1": "gpt-5.1"}},
+			}}}, ensembleProposerRepo: proposerRepo}
+
+			if operation == "disable" {
+				_, err := svc.UpdateEnsembleProposer(context.Background(), 7, 2, EnsembleProposerInput{
+					Role: EnsembleRoleProposer, Model: "gpt-5.1", Platform: PlatformOpenAI, Enabled: false,
+				})
+				require.NoError(t, err)
+			} else {
+				require.NoError(t, svc.DeleteEnsembleProposer(context.Background(), 7, 2))
+			}
+
+			require.Equal(t, 1, group.EnsembleConfig.MinProposers)
+			require.Same(t, group, groupRepo.updated)
+		})
+	}
 }
 
 func TestAdminServicePersistsEnsembleSourceGroupIDs(t *testing.T) {

@@ -20,6 +20,7 @@ export interface EnsembleConfig {
   timeout_seconds: number
   max_tokens: number
   expose_metadata: boolean
+  stream_trace?: boolean
   source_group_ids?: number[]
 }
 

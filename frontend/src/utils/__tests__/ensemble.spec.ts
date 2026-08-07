@@ -5,6 +5,7 @@ import {
   deriveEnsembleModels,
   findSharedEnsembleChannel,
   getEnsembleSourceGroups,
+  planEnsembleMemberReconciliation,
   validateEnsembleDraft
 } from '@/utils/ensemble'
 
@@ -100,5 +101,29 @@ describe('Ensemble configuration helpers', () => {
     expect(findSharedEnsembleChannel([1, 2], channels)).toMatchObject({ id: 10 })
     expect(findSharedEnsembleChannel([1, 3], channels)).toBeNull()
     expect(findSharedEnsembleChannel([], channels)).toBeNull()
+  })
+
+  it('reuses an existing proposer row when replacing a member at the six-member limit', () => {
+    const existing = Array.from({ length: 6 }, (_, index) => ({
+      id: index + 1,
+      role: 'proposer' as const,
+      model: `model-${index + 1}`,
+      platform: 'openai',
+      priority: 100 + index,
+      enabled: true
+    }))
+    const desired = [
+      ...existing.slice(0, 5).map(({ role, model, platform, priority }) => ({ role, model, platform, priority })),
+      { role: 'proposer' as const, model: 'replacement', platform: 'openai', priority: 105 }
+    ]
+
+    const plan = planEnsembleMemberReconciliation(existing, desired)
+
+    expect(plan.creates).toEqual([])
+    expect(plan.deletes).toEqual([])
+    expect(plan.updates).toContainEqual({
+      id: 6,
+      member: { role: 'proposer', model: 'replacement', platform: 'openai', priority: 105 }
+    })
   })
 })

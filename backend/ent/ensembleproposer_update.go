@@ -146,6 +146,20 @@ func (_u *EnsembleProposerUpdate) SetNillableEnabled(v *bool) *EnsembleProposerU
 	return _u
 }
 
+// SetVision sets the "vision" field.
+func (_u *EnsembleProposerUpdate) SetVision(v bool) *EnsembleProposerUpdate {
+	_u.mutation.SetVision(v)
+	return _u
+}
+
+// SetNillableVision sets the "vision" field if the given value is not nil.
+func (_u *EnsembleProposerUpdate) SetNillableVision(v *bool) *EnsembleProposerUpdate {
+	if v != nil {
+		_u.SetVision(*v)
+	}
+	return _u
+}
+
 // SetGroup sets the "group" edge to the Group entity.
 func (_u *EnsembleProposerUpdate) SetGroup(v *Group) *EnsembleProposerUpdate {
 	return _u.SetGroupID(v.ID)
@@ -265,6 +279,9 @@ func (_u *EnsembleProposerUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(ensembleproposer.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Vision(); ok {
+		_spec.SetField(ensembleproposer.FieldVision, field.TypeBool, value)
 	}
 	if _u.mutation.GroupCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -432,6 +449,20 @@ func (_u *EnsembleProposerUpdateOne) SetNillableEnabled(v *bool) *EnsemblePropos
 	return _u
 }
 
+// SetVision sets the "vision" field.
+func (_u *EnsembleProposerUpdateOne) SetVision(v bool) *EnsembleProposerUpdateOne {
+	_u.mutation.SetVision(v)
+	return _u
+}
+
+// SetNillableVision sets the "vision" field if the given value is not nil.
+func (_u *EnsembleProposerUpdateOne) SetNillableVision(v *bool) *EnsembleProposerUpdateOne {
+	if v != nil {
+		_u.SetVision(*v)
+	}
+	return _u
+}
+
 // SetGroup sets the "group" edge to the Group entity.
 func (_u *EnsembleProposerUpdateOne) SetGroup(v *Group) *EnsembleProposerUpdateOne {
 	return _u.SetGroupID(v.ID)
@@ -581,6 +612,9 @@ func (_u *EnsembleProposerUpdateOne) sqlSave(ctx context.Context) (_node *Ensemb
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(ensembleproposer.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Vision(); ok {
+		_spec.SetField(ensembleproposer.FieldVision, field.TypeBool, value)
 	}
 	if _u.mutation.GroupCleared() {
 		edge := &sqlgraph.EdgeSpec{

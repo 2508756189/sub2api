@@ -20538,6 +20538,7 @@ type EnsembleProposerMutation struct {
 	priority      *int
 	addpriority   *int
 	enabled       *bool
+	vision        *bool
 	clearedFields map[string]struct{}
 	group         *int64
 	clearedgroup  bool
@@ -21001,6 +21002,42 @@ func (m *EnsembleProposerMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
+// SetVision sets the "vision" field.
+func (m *EnsembleProposerMutation) SetVision(b bool) {
+	m.vision = &b
+}
+
+// Vision returns the value of the "vision" field in the mutation.
+func (m *EnsembleProposerMutation) Vision() (r bool, exists bool) {
+	v := m.vision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVision returns the old "vision" field's value of the EnsembleProposer entity.
+// If the EnsembleProposer object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnsembleProposerMutation) OldVision(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVision: %w", err)
+	}
+	return oldValue.Vision, nil
+}
+
+// ResetVision resets all changes to the "vision" field.
+func (m *EnsembleProposerMutation) ResetVision() {
+	m.vision = nil
+}
+
 // ClearGroup clears the "group" edge to the Group entity.
 func (m *EnsembleProposerMutation) ClearGroup() {
 	m.clearedgroup = true
@@ -21062,7 +21099,7 @@ func (m *EnsembleProposerMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnsembleProposerMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, ensembleproposer.FieldCreatedAt)
 	}
@@ -21090,6 +21127,9 @@ func (m *EnsembleProposerMutation) Fields() []string {
 	if m.enabled != nil {
 		fields = append(fields, ensembleproposer.FieldEnabled)
 	}
+	if m.vision != nil {
+		fields = append(fields, ensembleproposer.FieldVision)
+	}
 	return fields
 }
 
@@ -21116,6 +21156,8 @@ func (m *EnsembleProposerMutation) Field(name string) (ent.Value, bool) {
 		return m.Priority()
 	case ensembleproposer.FieldEnabled:
 		return m.Enabled()
+	case ensembleproposer.FieldVision:
+		return m.Vision()
 	}
 	return nil, false
 }
@@ -21143,6 +21185,8 @@ func (m *EnsembleProposerMutation) OldField(ctx context.Context, name string) (e
 		return m.OldPriority(ctx)
 	case ensembleproposer.FieldEnabled:
 		return m.OldEnabled(ctx)
+	case ensembleproposer.FieldVision:
+		return m.OldVision(ctx)
 	}
 	return nil, fmt.Errorf("unknown EnsembleProposer field %s", name)
 }
@@ -21214,6 +21258,13 @@ func (m *EnsembleProposerMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnabled(v)
+		return nil
+	case ensembleproposer.FieldVision:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVision(v)
 		return nil
 	}
 	return fmt.Errorf("unknown EnsembleProposer field %s", name)
@@ -21314,6 +21365,9 @@ func (m *EnsembleProposerMutation) ResetField(name string) error {
 		return nil
 	case ensembleproposer.FieldEnabled:
 		m.ResetEnabled()
+		return nil
+	case ensembleproposer.FieldVision:
+		m.ResetVision()
 		return nil
 	}
 	return fmt.Errorf("unknown EnsembleProposer field %s", name)

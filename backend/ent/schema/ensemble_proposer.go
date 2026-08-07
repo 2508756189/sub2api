@@ -52,6 +52,14 @@ func (EnsembleProposer) Fields() []ent.Field {
 			Comment("Lower values are called/displayed first among proposers."),
 		field.Bool("enabled").
 			Default(true),
+		// Vision marks a member that accepts image inputs (image_url /
+		// input_image parts). When the request carries images, members with
+		// vision=false are skipped instead of being called and failing, so a
+		// non-vision model never breaks an image request that a vision-capable
+		// member could serve.
+		field.Bool("vision").
+			Default(true).
+			Comment("whether the member model accepts image inputs."),
 	}
 }
 

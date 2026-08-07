@@ -43,6 +43,7 @@ type EnsembleProposer struct {
 	Platform  string    `json:"platform"`
 	Priority  int       `json:"priority"`
 	Enabled   bool      `json:"enabled"`
+	Vision    bool      `json:"vision"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -54,6 +55,7 @@ type EnsembleProposerInput struct {
 	Platform string
 	Priority int
 	Enabled  bool
+	Vision   bool
 }
 
 type EnsembleProposerRepository interface {

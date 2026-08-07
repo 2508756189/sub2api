@@ -53,6 +53,7 @@ export interface EnsembleMemberDesired {
   model: string
   platform: string
   priority: number
+  vision?: boolean
 }
 
 export interface EnsembleMemberReconciliationPlan {

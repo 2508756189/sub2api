@@ -866,6 +866,7 @@ var (
 		{Name: "platform", Type: field.TypeString, Size: 32, Default: ""},
 		{Name: "priority", Type: field.TypeInt, Default: 100},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "vision", Type: field.TypeBool, Default: true},
 		{Name: "group_id", Type: field.TypeInt64},
 	}
 	// EnsembleProposersTable holds the schema information for the "ensemble_proposers" table.
@@ -876,7 +877,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "ensemble_proposers_groups_group",
-				Columns:    []*schema.Column{EnsembleProposersColumns[9]},
+				Columns:    []*schema.Column{EnsembleProposersColumns[10]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -885,17 +886,17 @@ var (
 			{
 				Name:    "ensembleproposer_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{EnsembleProposersColumns[9]},
+				Columns: []*schema.Column{EnsembleProposersColumns[10]},
 			},
 			{
 				Name:    "ensembleproposer_group_id_enabled",
 				Unique:  false,
-				Columns: []*schema.Column{EnsembleProposersColumns[9], EnsembleProposersColumns[8]},
+				Columns: []*schema.Column{EnsembleProposersColumns[10], EnsembleProposersColumns[8]},
 			},
 			{
 				Name:    "ensembleproposer_group_id_role",
 				Unique:  false,
-				Columns: []*schema.Column{EnsembleProposersColumns[9], EnsembleProposersColumns[4]},
+				Columns: []*schema.Column{EnsembleProposersColumns[10], EnsembleProposersColumns[4]},
 			},
 			{
 				Name:    "ensembleproposer_deleted_at",

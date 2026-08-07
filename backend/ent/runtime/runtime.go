@@ -993,6 +993,10 @@ func init() {
 	ensembleproposerDescEnabled := ensembleproposerFields[5].Descriptor()
 	// ensembleproposer.DefaultEnabled holds the default value on creation for the enabled field.
 	ensembleproposer.DefaultEnabled = ensembleproposerDescEnabled.Default.(bool)
+	// ensembleproposerDescVision is the schema descriptor for vision field.
+	ensembleproposerDescVision := ensembleproposerFields[6].Descriptor()
+	// ensembleproposer.DefaultVision holds the default value on creation for the vision field.
+	ensembleproposer.DefaultVision = ensembleproposerDescVision.Default.(bool)
 	errorpassthroughruleMixin := schema.ErrorPassthroughRule{}.Mixin()
 	errorpassthroughruleMixinFields0 := errorpassthroughruleMixin[0].Fields()
 	_ = errorpassthroughruleMixinFields0

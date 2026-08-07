@@ -245,6 +245,7 @@ func ensembleProposerFromInput(groupID int64, input EnsembleProposerInput) (*Ens
 		Platform: input.Platform,
 		Priority: input.Priority,
 		Enabled:  input.Enabled,
+		Vision:   input.Vision,
 	}, nil
 }
 

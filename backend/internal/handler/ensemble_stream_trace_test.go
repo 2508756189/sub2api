@@ -11,6 +11,7 @@ package handler
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -418,4 +419,96 @@ func TestEnsembleSubCallPoolFallsBackToCallerGroup(t *testing.T) {
 	require.Len(t, capture.pools, 1)
 	require.Equal(t, []int64{7}, capture.pools[0],
 		"without source groups the pool must stay the caller's own group")
+}
+
+// bodyCapturingDispatchWithCalls records every sub-call body, extending the
+// pool capture so tests can assert which members were actually called.
+type bodyCapturingDispatchWithCalls struct {
+	inner  gin.HandlerFunc
+	mu     sync.Mutex
+	models []string
+	bodies []string
+}
+
+func (d *bodyCapturingDispatchWithCalls) dispatch(c *gin.Context) {
+	raw, _ := io.ReadAll(c.Request.Body)
+	var request struct {
+		Model string `json:"model"`
+	}
+	_ = json.Unmarshal(raw, &request)
+	d.mu.Lock()
+	d.models = append(d.models, request.Model)
+	d.bodies = append(d.bodies, string(raw))
+	d.mu.Unlock()
+	c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+	d.inner(c)
+}
+
+// A non-vision member must never be called on an image request: it would fail
+// upstream and break the whole ensemble. It is skipped instead, and the
+// vision-capable member serves the request alone.
+func TestEnsembleSkipsNonVisionMemberOnImageRequest(t *testing.T) {
+	inner := &ensembleDispatchStub{responses: map[string]dispatchResponse{
+		"gpt-5":   {status: http.StatusOK, body: chatCompletion("vision answer", 4, 3)},
+		"gpt-5.1": {status: http.StatusOK, body: chatCompletion("text model", 2, 1)},
+	}}
+	capture := &bodyCapturingDispatchWithCalls{inner: inner.dispatch}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{
+			{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true, Vision: true},
+			{ID: 2, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5.1", Enabled: true, Vision: false},
+		},
+		// min_proposers=2 exceeds the active member count (1): the skipped
+		// member must not count against the requirement.
+		service.EnsembleConfig{MinProposers: 2, ExposeMetadata: true},
+		capture.dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":[{"type":"text","text":"what is this"},{"type":"image_url","image_url":{"url":"data:image/png;base64,AAAA"}}]}],"stream":false}`,
+	)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, []string{"gpt-5"}, capture.models,
+		"only the vision-capable member may be called on an image request")
+	require.Contains(t, recorder.Body.String(), "vision answer")
+
+	// The skipped member is reported, not failed.
+	body := recorder.Body.String()
+	require.Contains(t, body, "skipped")
+	require.NotContains(t, body, "Only 0 proposers succeeded")
+}
+
+// Text requests call every member regardless of the vision flag.
+func TestEnsembleCallsAllMembersOnTextRequest(t *testing.T) {
+	inner := &ensembleDispatchStub{responses: map[string]dispatchResponse{
+		"gpt-5":   {status: http.StatusOK, body: chatCompletion("a", 1, 1)},
+		"gpt-5.1": {status: http.StatusOK, body: chatCompletion("b", 1, 1)},
+	}}
+	capture := &bodyCapturingDispatchWithCalls{inner: inner.dispatch}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{
+			{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true, Vision: true},
+			{ID: 2, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5.1", Enabled: true, Vision: false},
+		},
+		service.EnsembleConfig{MinProposers: 1, ExposeMetadata: true},
+		capture.dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":"plain text"}],"stream":false}`,
+	)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.ElementsMatch(t, []string{"gpt-5", "gpt-5.1"}, capture.models,
+		"vision flag must not affect text requests")
+}
+
+// ensembleBodyContainsImage must detect images in any message position,
+// including the Responses-style input_image part.
+func TestEnsembleBodyContainsImageDetection(t *testing.T) {
+	require.False(t, ensembleBodyContainsImage([]byte(`{"messages":[{"role":"user","content":"text"}]}`)))
+	require.False(t, ensembleBodyContainsImage([]byte(`{"messages":[{"role":"user","content":[{"type":"text","text":"hi"}]}]}`)))
+	require.True(t, ensembleBodyContainsImage([]byte(`{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,AAAA"}}]}]}`)))
+	require.True(t, ensembleBodyContainsImage([]byte(`{"messages":[{"role":"user","content":[{"type":"input_image","image_url":"data:image/png;base64,AAAA"}]}]}`)))
+	require.True(t, ensembleBodyContainsImage([]byte(`{"messages":[{"role":"user","content":{"type":"image","source":{"type":"base64"}}}]}`)))
+	// Assistant turns may echo image parts; only user turns carry the request's
+	// actual input, and the detector ignores assistant content.
+	require.False(t, ensembleBodyContainsImage([]byte(`{"messages":[{"role":"assistant","content":[{"type":"image_url","image_url":{"url":"x"}}]}]}`)))
 }

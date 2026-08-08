@@ -379,6 +379,13 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	proposals := make([]ensembleProposal, 0, len(results))
 	stats := make([]ensembleMemberStat, 0, len(results)+1)
 	structured := []map[string]any(nil)
+	// structuredPreface is the prose the *same* member emitted alongside its tool
+	// calls. Models routinely explain what they are about to do before calling a
+	// tool, and on a tool-call turn that sentence is the only thing the caller can
+	// read. It is taken from the member that won the tool-call race rather than
+	// from the proposal pool: pairing one model's tool_calls with another model's
+	// prose would narrate an action that member never requested.
+	structuredPreface := ""
 	successfulMembers := 0
 	for _, res := range results {
 		stats = append(stats, res.stat)
@@ -386,6 +393,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 			successfulMembers++
 			if len(res.toolCalls) > 0 && len(structured) == 0 {
 				structured = res.toolCalls
+				structuredPreface = res.content
 			}
 			if strings.TrimSpace(res.content) != "" {
 				proposals = append(proposals, ensembleProposal{Model: res.model, Content: res.content})
@@ -425,10 +433,14 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	// structured so the client can execute the requested tool and send the next
 	// turn back with its history; converting them to candidate text would end
 	// the agent loop after the first answer.
+	//
+	// The member's own preface travels with them. Aggregation is skipped on this
+	// turn (there is no answer to synthesize yet), so discarding that prose left
+	// the caller with a silent tool invocation and no statement of intent.
 	if len(structured) > 0 {
-		payload := buildEnsembleChatResponse(requestedModel, "", structured, stats, plan.Config.ExposeMetadata, includeMemberContent, false, time.Since(started))
+		payload := buildEnsembleChatResponse(requestedModel, structuredPreface, structured, stats, plan.Config.ExposeMetadata, includeMemberContent, false, time.Since(started))
 		if stream != nil {
-			stream.finish("", payload)
+			stream.finish(structuredPreface, payload)
 			return
 		}
 		c.JSON(http.StatusOK, payload)
@@ -1083,12 +1095,50 @@ func prepareEnsembleSubCallBody(body []byte, model string, maxTokens int) ([]byt
 	if out, err = sjson.SetBytes(out, "stream_options.include_usage", true); err != nil {
 		return nil, err
 	}
-	if maxTokens > 0 {
-		if out, err = sjson.SetBytes(out, "max_tokens", maxTokens); err != nil {
-			return nil, err
+	return applyEnsembleMaxTokens(out, maxTokens)
+}
+
+// applyEnsembleMaxTokens applies the group's per-member output limit as a ceiling.
+//
+// Three properties matter, and unconditionally writing max_tokens broke all
+// three:
+//
+//   - It is a ceiling, not an override. A client that asked for fewer tokens than
+//     the group limit meant it, and raising the limit spends the caller's quota on
+//     output nobody asked for.
+//   - It has to land on the field the client actually used. Reasoning models
+//     reject max_tokens in favour of max_completion_tokens, and some upstreams
+//     reject a body carrying both, so introducing the other spelling can turn a
+//     working request into a 400.
+//   - It must never cut below a declared thinking budget. Anthropic requires
+//     max_tokens to exceed thinking.budget_tokens, so a limit that violates that
+//     makes every member fail with invalid_request_error instead of merely
+//     answering more briefly. When the limit cannot be honoured, the client's own
+//     value stands.
+func applyEnsembleMaxTokens(body []byte, maxTokens int) ([]byte, error) {
+	if maxTokens <= 0 {
+		return body, nil
+	}
+	field := "max_tokens"
+	if !gjson.GetBytes(body, field).Exists() && gjson.GetBytes(body, "max_completion_tokens").Exists() {
+		field = "max_completion_tokens"
+	}
+	if current := gjson.GetBytes(body, field); current.Exists() && current.Int() > 0 && current.Int() <= int64(maxTokens) {
+		return body, nil
+	}
+	// Reasoning budgets are spelled differently per protocol; the limit has to
+	// clear whichever one this request carries.
+	for _, path := range []string{
+		"thinking.budget_tokens",
+		"reasoning.max_tokens",
+		"extra_body.thinking.budget_tokens",
+		"output_config.thinking.budget_tokens",
+	} {
+		if budget := gjson.GetBytes(body, path); budget.Exists() && budget.Int() >= int64(maxTokens) {
+			return body, nil
 		}
 	}
-	return out, nil
+	return sjson.SetBytes(body, field, maxTokens)
 }
 
 // buildEnsembleAggregatorBody appends the aggregation instruction plus every
@@ -1341,7 +1391,13 @@ func buildEnsembleChatResponse(
 	message := map[string]any{"role": "assistant", "content": content}
 	finishReason := "stop"
 	if len(toolCalls) > 0 {
-		delete(message, "content")
+		// OpenAI's own tool-call shape carries content alongside tool_calls, so a
+		// model's preface ("我先查一下配置文件…") is kept. Only genuinely empty prose
+		// is dropped, which is the null-content turn a client expects when the model
+		// requested a tool without saying anything.
+		if strings.TrimSpace(content) == "" {
+			delete(message, "content")
+		}
 		message["tool_calls"] = toolCalls
 		finishReason = "tool_calls"
 	}

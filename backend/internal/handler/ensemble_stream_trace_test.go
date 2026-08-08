@@ -439,7 +439,13 @@ func TestEnsemblePartialFailureStillReturnsWhenMinimumMet(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.NotContains(t, recorder.Body.String(), "minimum")
-	// The two successful answers must be present.
-	require.Contains(t, recorder.Body.String(), "first")
-	require.Contains(t, recorder.Body.String(), "second")
+
+	// With no aggregator the answer is the longest surviving proposal. The failed
+	// member must not turn the request into an error, and the metadata must still
+	// account for all three members so the failure stays visible.
+	require.Equal(t, "second", gjson.GetBytes(recorder.Body.Bytes(), "choices.0.message.content").String())
+	metadata := gjson.GetBytes(recorder.Body.Bytes(), "ensemble_metadata")
+	require.Equal(t, int64(3), metadata.Get("members_total").Int())
+	require.Equal(t, int64(2), metadata.Get("members_succeeded").Int())
+	require.Contains(t, metadata.Get("members.1.error").String(), "502")
 }

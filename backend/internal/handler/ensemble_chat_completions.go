@@ -117,6 +117,21 @@ const (
 	ensembleStatusFailed           = "failed"
 	maxEnsembleAggregatorBodyBytes = 2 << 20
 	ensembleProgressSinkKey        = "ensemble.progress.sink"
+	// ensembleDiagnosticKey marks the admin diagnostic run. Only that path needs
+	// every member's full answer text echoed back in ensemble_metadata; putting it
+	// on production responses multiplies the payload by the member count for data
+	// no caller reads.
+	ensembleDiagnosticKey = "ensemble.diagnostic"
+	// ensembleFailureNoticePrefix marks the in-band failure text emitted by fail().
+	//
+	// That text has to ride delta.content to stay visible in every client, which
+	// means the client stores it as a normal assistant turn and echoes it back on
+	// every later turn. Without a marker the fan-out cannot tell its own failure
+	// notice apart from a real answer, and "Only 0 proposers succeeded…" becomes
+	// permanent conversation history fed to every member. The prefix is visible on
+	// purpose: a caller reading the stream should be able to see that the line came
+	// from the gateway and not from a model.
+	ensembleFailureNoticePrefix = "[ensemble] "
 	// ensembleKeepAliveInterval bounds how long a streaming client waits without
 	// receiving any bytes. Fan-out plus aggregation can legitimately take minutes,
 	// which is longer than the idle-read timeout of most SDKs and proxies.
@@ -265,6 +280,9 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	}
 
 	clientWantsStream := gjson.GetBytes(body, "stream").Bool()
+	// Only the admin diagnostic run echoes every member's full answer back in
+	// ensemble_metadata; see ensembleDiagnosticKey.
+	_, includeMemberContent := c.Get(ensembleDiagnosticKey)
 
 	plan, err := h.runtime.LoadPlan(c.Request.Context(), apiKey.Group.ID, apiKey.Group.EnsembleConfig)
 	if err != nil {
@@ -350,7 +368,10 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 					Member: &stat,
 				})
 			}()
-			result = h.runSubCall(c, idx, member.Model, member.Platform, service.EnsembleRoleProposer, body, plan.Config.MaxTokens, timeout)
+			// Proposers run in parallel, so interleaving several models' reasoning on
+			// one stream would be unreadable. Only the aggregator's reasoning is
+			// forwarded; proposers stay buffered.
+			result = h.runSubCall(c, idx, member.Model, member.Platform, service.EnsembleRoleProposer, body, plan.Config.MaxTokens, timeout, nil)
 		}(i, plan.Proposers[i])
 	}
 	wg.Wait()
@@ -405,7 +426,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	// turn back with its history; converting them to candidate text would end
 	// the agent loop after the first answer.
 	if len(structured) > 0 {
-		payload := buildEnsembleChatResponse(requestedModel, "", structured, stats, plan.Config.ExposeMetadata, false, time.Since(started))
+		payload := buildEnsembleChatResponse(requestedModel, "", structured, stats, plan.Config.ExposeMetadata, includeMemberContent, false, time.Since(started))
 		if stream != nil {
 			stream.finish("", payload)
 			return
@@ -438,8 +459,17 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 				Platform: plan.Aggregator.Platform,
 				Role:     service.EnsembleRoleAggregator,
 			})
+			// The aggregator writes the answer the caller actually receives, so its
+			// reasoning is the one piece of real model thinking that belongs on the
+			// caller's stream. A direct single-model call forwards reasoning_content
+			// verbatim; without this the ensemble silently drops it and the caller
+			// only ever sees our scheduling trace.
+			var aggReasoning ensembleReasoningSink
+			if stream != nil {
+				aggReasoning = stream.modelReasoning
+			}
 			aggRes := h.runSubCall(c, len(results), plan.Aggregator.Model, plan.Aggregator.Platform, service.EnsembleRoleAggregator,
-				aggBody, plan.Config.MaxTokens, timeout)
+				aggBody, plan.Config.MaxTokens, timeout, aggReasoning)
 			stats = append(stats, aggRes.stat)
 			stat := aggRes.stat
 			emitEnsembleProgress(c, EnsembleProgressEvent{
@@ -476,7 +506,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		zap.Bool("aggregated", aggregated),
 		zap.Duration("duration", time.Since(started)))
 
-	payload := buildEnsembleChatResponse(requestedModel, finalContent, finalToolCalls, stats, plan.Config.ExposeMetadata, aggregated, time.Since(started))
+	payload := buildEnsembleChatResponse(requestedModel, finalContent, finalToolCalls, stats, plan.Config.ExposeMetadata, includeMemberContent, aggregated, time.Since(started))
 	if stream != nil {
 		stream.finish(finalContent, payload)
 		return
@@ -669,6 +699,9 @@ func (h *EnsembleHandler) TestStream(c *gin.Context) {
 	diagnosticAPIKey := *apiKey
 	diagnosticAPIKey.Group = &diagnosticGroup
 	diagnosticContext.Set(string(middleware2.ContextKeyAPIKey), &diagnosticAPIKey)
+	// The admin view renders every member's raw answer, so this run also opts into
+	// the member content that production responses no longer carry.
+	diagnosticContext.Set(ensembleDiagnosticKey, true)
 	diagnosticContext.Set(ensembleProgressSinkKey, func(event EnsembleProgressEvent) {
 		select {
 		case events <- event:
@@ -716,6 +749,9 @@ func (h *EnsembleHandler) TestStream(c *gin.Context) {
 // with the member's model substituted in. The resolved target platform on the
 // sub-request context both routes the call to the right upstream handler and acts
 // as the recursion guard (the outer ensemble gate only fires when it is absent).
+// reasoningSink, when non-nil, receives the member's own delta.reasoning_content
+// as it streams. Only the member whose thinking the caller asked to see passes
+// one; the rest run with nil and are buffered exactly as before.
 func (h *EnsembleHandler) runSubCall(
 	parent *gin.Context,
 	index int,
@@ -725,9 +761,10 @@ func (h *EnsembleHandler) runSubCall(
 	body []byte,
 	maxTokens int,
 	timeout time.Duration,
+	reasoningSink ensembleReasoningSink,
 ) ensembleSubResult {
 	for attempt := 0; attempt <= ensembleEmptyCompletionRetryCount; attempt++ {
-		result := h.runSubCallOnce(parent, index, model, platform, role, body, maxTokens, timeout)
+		result := h.runSubCallOnce(parent, index, model, platform, role, body, maxTokens, timeout, reasoningSink)
 		if result.err == nil || !errors.Is(result.err, errEnsembleEmptyCompletion) {
 			return result
 		}
@@ -747,6 +784,7 @@ func (h *EnsembleHandler) runSubCallOnce(
 	body []byte,
 	maxTokens int,
 	timeout time.Duration,
+	reasoningSink ensembleReasoningSink,
 ) ensembleSubResult {
 	res := ensembleSubResult{index: index, model: model, role: role}
 	callStart := time.Now()
@@ -772,7 +810,18 @@ func (h *EnsembleHandler) runSubCallOnce(
 	}
 
 	recorder := httptest.NewRecorder()
-	subCtx, _ := gin.CreateTestContext(recorder)
+	// The member streams internally so the normal gateway records TTFT and usage,
+	// and the Ensemble boundary needs the whole body to normalize. The tee adds a
+	// live read of delta.reasoning_content on top of that buffering, which is how a
+	// caller sees the model actually thinking instead of only our scheduling trace.
+	// Proposers pass a nil sink and stay buffered exactly as before.
+	tee := newEnsembleReasoningTee(recorder, reasoningSink)
+	// The dispatcher runs in its own goroutine, and a provider that ignores context
+	// cancellation can still be writing after this function returns on timeout. The
+	// recorder is per-sub-call so a late write there is harmless, but the sink
+	// writes to the shared client stream, so it must be closed on every return path.
+	defer tee.disable()
+	subCtx, _ := gin.CreateTestContext(tee)
 
 	ctx, cancel := context.WithTimeout(parent.Request.Context(), timeout)
 	defer cancel()
@@ -901,34 +950,118 @@ func (h *EnsembleHandler) runSubCallOnce(
 // context the members aggregate over. The trace is presentation for the caller,
 // never model input, so it is dropped at the ensemble boundary.
 //
-// Only the assistant-carried reasoning/thinking fields are removed; content and
-// tool_calls are conversation facts and must survive.
+// Three shapes carry echoed reasoning, and all three have to go:
+//   - a top-level field on the assistant message (reasoning_content, the OpenAI
+//     reasoning spelling, or Anthropic's thinking);
+//   - a typed block inside a content array, which is how Anthropic-shaped clients
+//     store thinking — deleting the sibling field would leave the block untouched;
+//   - our own in-band failure notice, which rides delta.content to stay visible
+//     and is therefore stored by the client as a normal assistant turn.
+//
+// Real content and tool_calls are conversation facts and must survive.
 func stripEnsembleReasoningFields(body []byte) ([]byte, error) {
-	if !bytes.Contains(body, []byte("reasoning_content")) && !bytes.Contains(body, []byte(`"thinking"`)) {
+	// Cheap reject for the common case. The probes are deliberately loose (no
+	// quotes, so "redacted_thinking" and "reasoning_content" both match): a false
+	// positive only costs one full scan, while a false negative would silently let
+	// echoed reasoning through.
+	if !bytes.Contains(body, []byte("reasoning")) &&
+		!bytes.Contains(body, []byte("thinking")) &&
+		!bytes.Contains(body, []byte(ensembleFailureNoticePrefix)) {
 		return body, nil
 	}
 	messages := gjson.GetBytes(body, "messages")
 	if !messages.Exists() || !messages.IsArray() {
 		return body, nil
 	}
+
 	out := body
+	// Whole-message deletions are collected and applied last, in descending order:
+	// removing an array element shifts every later index, which would corrupt the
+	// per-field edits below if the two were interleaved.
+	drop := make([]int, 0, 4)
 	index := 0
 	messages.ForEach(func(_, message gjson.Result) bool {
+		current := index
+		index++
 		if message.Get("role").String() != "assistant" {
-			index++
 			return true
 		}
-		prefix := fmt.Sprintf("messages.%d.", index)
-		if message.Get("reasoning_content").Exists() {
-			out, _ = sjson.DeleteBytes(out, prefix+"reasoning_content")
+		if ensembleIsFailureNotice(message) {
+			drop = append(drop, current)
+			return true
 		}
-		if message.Get("thinking").Exists() {
-			out, _ = sjson.DeleteBytes(out, prefix+"thinking")
+		prefix := fmt.Sprintf("messages.%d.", current)
+		for _, field := range []string{"reasoning_content", "reasoning", "thinking"} {
+			if message.Get(field).Exists() {
+				out, _ = sjson.DeleteBytes(out, prefix+field)
+			}
 		}
-		index++
+		var emptied bool
+		out, emptied = stripEnsembleReasoningBlocks(out, message, current)
+		// An assistant turn whose content was nothing but thinking carries no
+		// conversation fact once the thinking is gone, and an empty content array is
+		// rejected by some upstreams. Drop the turn instead of sending a hollow one.
+		if emptied && !message.Get("tool_calls").Exists() {
+			drop = append(drop, current)
+		}
 		return true
 	})
+
+	for i := len(drop) - 1; i >= 0; i-- {
+		out, _ = sjson.DeleteBytes(out, fmt.Sprintf("messages.%d", drop[i]))
+	}
 	return out, nil
+}
+
+// stripEnsembleReasoningBlocks removes typed reasoning blocks from an assistant
+// message's content array, reporting whether the array ended up empty.
+//
+// Anthropic-shaped clients store thinking as content blocks rather than as a
+// sibling field, so a pass that only deletes messages[N].thinking leaves the
+// echoed reasoning sitting inside messages[N].content.
+func stripEnsembleReasoningBlocks(out []byte, message gjson.Result, messageIndex int) ([]byte, bool) {
+	content := message.Get("content")
+	if !content.IsArray() {
+		return out, false
+	}
+	total := 0
+	drop := make([]int, 0, 2)
+	content.ForEach(func(_, block gjson.Result) bool {
+		current := total
+		total++
+		switch block.Get("type").String() {
+		case "thinking", "redacted_thinking", "reasoning":
+			drop = append(drop, current)
+		}
+		return true
+	})
+	if len(drop) == 0 {
+		return out, false
+	}
+	for i := len(drop) - 1; i >= 0; i-- {
+		out, _ = sjson.DeleteBytes(out, fmt.Sprintf("messages.%d.content.%d", messageIndex, drop[i]))
+	}
+	return out, len(drop) == total
+}
+
+// ensembleIsFailureNotice reports whether an assistant message is the in-band
+// failure text this handler emitted on an earlier turn.
+//
+// A turn carrying tool_calls is never a failure notice, and dropping one would
+// break the agent loop, so it is excluded regardless of its text.
+func ensembleIsFailureNotice(message gjson.Result) bool {
+	if message.Get("tool_calls").Exists() {
+		return false
+	}
+	content := message.Get("content")
+	if content.Type == gjson.String {
+		return strings.HasPrefix(content.String(), ensembleFailureNoticePrefix)
+	}
+	if content.IsArray() {
+		text := content.Get("0.text")
+		return text.Type == gjson.String && strings.HasPrefix(text.String(), ensembleFailureNoticePrefix)
+	}
+	return false
 }
 
 // prepareEnsembleSubCallBody rewrites the client body for one member call.
@@ -1190,6 +1323,7 @@ func buildEnsembleChatResponse(
 	toolCalls []map[string]any,
 	stats []ensembleMemberStat,
 	exposeMetadata bool,
+	includeMemberContent bool,
 	aggregated bool,
 	elapsed time.Duration,
 ) map[string]any {
@@ -1242,7 +1376,7 @@ func buildEnsembleChatResponse(
 
 	if exposeMetadata {
 		payload["ensemble_metadata"] = map[string]any{
-			"members":           stats,
+			"members":           ensembleMetadataMembers(stats, includeMemberContent),
 			"members_total":     len(stats),
 			"members_succeeded": succeeded,
 			"aggregated":        aggregated,
@@ -1250,6 +1384,26 @@ func buildEnsembleChatResponse(
 		}
 	}
 	return payload
+}
+
+// ensembleMetadataMembers prepares the per-member records for the response.
+//
+// Each stat carries the member's full answer text, which the admin diagnostic
+// view renders as "候选模型原始回答". On the production path nothing reads it: a
+// caller already has the final answer, so echoing every member's complete answer
+// back multiplies the response size by the member count for no one's benefit.
+// The text is therefore kept for diagnostics and dropped everywhere else, which
+// is what makes expose_metadata cheap enough to leave on.
+func ensembleMetadataMembers(stats []ensembleMemberStat, includeContent bool) []ensembleMemberStat {
+	if includeContent {
+		return stats
+	}
+	trimmed := make([]ensembleMemberStat, len(stats))
+	for i, stat := range stats {
+		stat.Content = ""
+		trimmed[i] = stat
+	}
+	return trimmed
 }
 
 // ensembleStreamWriter owns the client SSE connection for a stream=true request.
@@ -1269,7 +1423,10 @@ type ensembleStreamWriter struct {
 
 	// traceEnabled mirrors the group's stream_trace setting; exposeModels mirrors
 	// expose_metadata, which decides whether a trace line may name the member
-	// model or has to fall back to its ordinal.
+	// model or has to fall back to its ordinal. Both settings answer the same
+	// question — how much of the group's composition may leave it — so they stay
+	// coupled; what used to make expose_metadata expensive (every member's full
+	// answer echoed back in the response) is no longer on the production path.
 	traceEnabled bool
 	exposeModels bool
 
@@ -1277,6 +1434,9 @@ type ensembleStreamWriter struct {
 	done    chan struct{}
 	stopped chan struct{}
 	once    sync.Once
+	// ttftOnce records time-to-first-token exactly once, for whichever real model
+	// output reaches the client first — a member's reasoning delta or the answer.
+	ttftOnce sync.Once
 }
 
 // beginStreamResponse commits the response as SSE and starts the keepalive.
@@ -1376,6 +1536,39 @@ func (w *ensembleStreamWriter) traceLine(text string) {
 	})
 }
 
+// modelReasoning forwards a member model's own reasoning delta to the caller
+// verbatim, as it arrives.
+//
+// This is the model's output, not our scheduling log, so it carries no elapsed
+// stamp and is not gated on stream_trace: a direct call to the same model streams
+// its thinking, and the ensemble must not silently drop that. Only the aggregator
+// is wired to this — running proposers in parallel would interleave several
+// models' thinking into one unreadable field.
+func (w *ensembleStreamWriter) modelReasoning(text string) {
+	if w == nil || text == "" {
+		return
+	}
+	w.markTTFT()
+	w.writeChunk(map[string]any{
+		"id": w.id, "object": "chat.completion.chunk", "created": w.created, "model": w.model,
+		"choices": []map[string]any{
+			{"index": 0, "delta": map[string]any{"reasoning_content": text}, "finish_reason": nil},
+		},
+	})
+}
+
+// markTTFT records the ensemble row's TTFT on the first real model
+// output. Members run in isolated sub-contexts and record their own TTFT against
+// their own usage rows; without this the ensemble row itself would report null.
+// Reasoning tokens are model output, so whichever of reasoning or answer lands
+// first is the honest first token. Following the platform convention, TTFT is
+// recorded for streaming requests only.
+func (w *ensembleStreamWriter) markTTFT() {
+	w.ttftOnce.Do(func() {
+		service.SetOpsLatencyMs(w.ctx, service.OpsTimeToFirstTokenMsKey, time.Since(w.start).Milliseconds())
+	})
+}
+
 // traceProgress renders one progress event as a human-readable trace line.
 // Returning "" means the event carries nothing worth showing a caller.
 func (w *ensembleStreamWriter) traceProgress(event EnsembleProgressEvent) string {
@@ -1464,13 +1657,14 @@ func (w *ensembleStreamWriter) finish(content string, payload map[string]any) {
 		}
 	}
 
-	// This chunk is the first one carrying real payload, so it is the client's
-	// actual time-to-first-token. Members run in isolated sub-contexts and record
-	// their own TTFT against their own usage rows; without this the ensemble row
-	// itself would always report a null TTFT. Following the platform convention,
-	// TTFT is recorded for streaming requests only.
+	// Members run in isolated sub-contexts and record their own TTFT against their
+	// own usage rows; without this the ensemble row itself would always report a
+	// null TTFT. Following the platform convention, TTFT is recorded for streaming
+	// requests only. The guard is shared with modelReasoning: when the aggregator
+	// streams its thinking first, that delta is the real first token and this
+	// chunk must not overwrite it.
 	if len(delta) > 0 {
-		service.SetOpsLatencyMs(w.ctx, service.OpsTimeToFirstTokenMsKey, time.Since(w.start).Milliseconds())
+		w.markTTFT()
 	}
 
 	w.writeChunk(map[string]any{
@@ -1505,13 +1699,35 @@ func (w *ensembleStreamWriter) finish(content string, payload map[string]any) {
 // still records the failure for the ops error logger, which otherwise only
 // collects rows with status >= 400 and would never see a failure riding on a
 // committed 200.
+//
+// Two properties beyond the chunk shape matter:
+//
+// The text is prefixed with ensembleFailureNoticePrefix. Because it rides
+// delta.content, a client stores it as a normal assistant turn and echoes it back
+// forever after; the marker is what lets the fan-out boundary recognize its own
+// failure notice next turn and drop it instead of feeding "Only 0 proposers
+// succeeded…" to every member as conversation history.
+//
+// A terminal chunk carrying a non-nil finish_reason is emitted before [DONE],
+// mirroring finish(). A stream that ends on finish_reason: null leaves the turn
+// open as far as a strict client is concerned, which is not a state any caller
+// can cleanly resume from.
 func (w *ensembleStreamWriter) fail(errType, message string, intendedStatus int) {
 	w.stopKeepAlive()
 	service.MarkOpsStreamFailure(w.ctx, errType, "", message, intendedStatus)
 	w.writeChunk(map[string]any{
 		"id": w.id, "object": "chat.completion.chunk", "created": w.created, "model": w.model,
 		"choices": []map[string]any{
-			{"index": 0, "delta": map[string]any{"role": "assistant", "content": message}, "finish_reason": nil},
+			{"index": 0, "delta": map[string]any{
+				"role":    "assistant",
+				"content": ensembleFailureNoticePrefix + message,
+			}, "finish_reason": nil},
+		},
+	})
+	w.writeChunk(map[string]any{
+		"id": w.id, "object": "chat.completion.chunk", "created": w.created, "model": w.model,
+		"choices": []map[string]any{
+			{"index": 0, "delta": map[string]any{}, "finish_reason": "stop"},
 		},
 	})
 	w.writeRaw("data: [DONE]\n\n")

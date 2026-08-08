@@ -755,7 +755,7 @@ func TestEnsembleSubCallReturnsWhenDispatcherIgnoresContext(t *testing.T) {
 	resultCh := make(chan ensembleSubResult, 1)
 	go func() {
 		resultCh <- h.runSubCall(c, 0, "gpt-5", service.PlatformOpenAI, service.EnsembleRoleProposer,
-			[]byte(`{"model":"ensemble-public","messages":[]}`), 0, 20*time.Millisecond)
+			[]byte(`{"model":"ensemble-public","messages":[]}`), 0, 20*time.Millisecond, nil)
 	}()
 	<-started
 

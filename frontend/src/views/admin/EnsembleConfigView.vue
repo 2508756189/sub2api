@@ -250,14 +250,14 @@
               <div class="option-toggle mt-4">
                 <div>
                   <div class="text-sm font-medium text-gray-800 dark:text-gray-200">返回 Ensemble 执行明细</div>
-                  <p class="field-hint">开启后响应会附带每个候选/聚合调用的耗时、Token 和成本信息；普通调用建议关闭。</p>
+                  <p class="field-hint">开启后响应附带每个候选/聚合调用的耗时、Token 和成本，执行轨迹里也会显示真实模型名。候选答案原文只在后台测试里返回，不会进入正常响应，因此开启的额外开销很小。关闭后轨迹改用「模型 1 / 模型 2」指代，适合把该分组转售给第三方的场景。</p>
                 </div>
                 <Toggle v-model="options.exposeMetadata" aria-label="返回 Ensemble 执行明细" />
               </div>
               <div class="option-toggle mt-4">
                 <div>
                   <div class="text-sm font-medium text-gray-800 dark:text-gray-200">流式输出执行过程（推理轨迹）</div>
-                  <p class="field-hint">开启后流式调用会通过 reasoning_content 实时展示候选模型调用、完成耗时与失败原因，未启用该字段的客户端会自动忽略。该轨迹仅用于展示，不会进入模型上下文。</p>
+                  <p class="field-hint">开启后流式调用会通过 reasoning_content 实时展示候选模型调用、完成耗时与失败原因，未启用该字段的客户端会自动忽略。该轨迹仅用于展示，不会进入模型上下文。聚合模型自己的思考过程不受此开关控制，始终按单模型调用的方式实时透传。</p>
                 </div>
                 <Toggle v-model="options.streamTrace" aria-label="流式输出执行过程" />
               </div>

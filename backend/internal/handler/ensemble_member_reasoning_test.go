@@ -248,6 +248,20 @@ func TestEnsembleReasoningTeeStopsForwardingAfterDisable(t *testing.T) {
 		"a write arriving after the sub-call returned must not reach the client stream")
 }
 
+// ensembleResponseMembers digs ensemble_metadata.members out of a built response.
+// Each hop is asserted separately: errcheck runs with check-type-assertions, so a
+// bare chained assertion fails lint, and a checked one names the hop that broke if
+// the response shape ever changes.
+func ensembleResponseMembers(t *testing.T, response map[string]any) []ensembleMemberStat {
+	t.Helper()
+
+	metadata, ok := response["ensemble_metadata"].(map[string]any)
+	require.True(t, ok, "response must carry ensemble_metadata when expose_metadata is on")
+	members, ok := metadata["members"].([]ensembleMemberStat)
+	require.True(t, ok, "ensemble_metadata.members must be a member-stat slice")
+	return members
+}
+
 // members[].content repeats every member's full answer. Only the admin diagnostic
 // view renders it; on the production path it multiplies the response size by the
 // member count for data no caller reads.
@@ -257,14 +271,14 @@ func TestEnsembleMetadataOmitsMemberContentOnProductionPath(t *testing.T) {
 	}
 
 	production := buildEnsembleChatResponse("ensemble", "final", nil, stats, true, false, false, time.Second)
-	members := production["ensemble_metadata"].(map[string]any)["members"].([]ensembleMemberStat)
+	members := ensembleResponseMembers(t, production)
 	require.Len(t, members, 1)
 	require.Equal(t, "", members[0].Content,
 		"a caller already has the final answer; echoing every member's answer back is pure payload")
 	require.Equal(t, "gpt-5", members[0].Model, "the useful per-member fields must survive")
 
 	diagnostic := buildEnsembleChatResponse("ensemble", "final", nil, stats, true, true, false, time.Second)
-	diagnosticMembers := diagnostic["ensemble_metadata"].(map[string]any)["members"].([]ensembleMemberStat)
+	diagnosticMembers := ensembleResponseMembers(t, diagnostic)
 	require.Equal(t, "FULL_MEMBER_ANSWER", diagnosticMembers[0].Content,
 		"the admin diagnostic view still needs the raw member answers")
 

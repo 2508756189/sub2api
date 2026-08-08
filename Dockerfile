@@ -26,6 +26,11 @@ ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
 ENV COREPACK_NPM_REGISTRY=${NPM_CONFIG_REGISTRY}
 
 WORKDIR /app/frontend
+# vue-tsc plus the Vite bundle exceeds 1.5 GiB in the full admin frontend.
+# Keep the limit explicit so local Docker and CI builds do not fail with an
+# opaque JavaScript heap out-of-memory error. deploy/Dockerfile already carries
+# this; this file is the one docker-compose and our own builds actually use.
+ENV NODE_OPTIONS=--max-old-space-size=3072
 
 # Install pnpm (pinned to v9 to match CI and keep builds reproducible)
 RUN corepack enable && corepack prepare pnpm@9 --activate

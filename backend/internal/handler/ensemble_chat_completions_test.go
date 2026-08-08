@@ -41,8 +41,7 @@ func (s *ensembleHandlerRepoStub) Create(context.Context, *service.EnsemblePropo
 func (s *ensembleHandlerRepoStub) Update(context.Context, *service.EnsembleProposer) error {
 	return nil
 }
-func (s *ensembleHandlerRepoStub) Delete(context.Context, int64) error        { return nil }
-func (s *ensembleHandlerRepoStub) DeleteByGroup(context.Context, int64) error { return nil }
+func (s *ensembleHandlerRepoStub) Delete(context.Context, int64) error { return nil }
 
 type ensembleDispatchStub struct {
 	mu             sync.Mutex
@@ -298,6 +297,64 @@ func TestPrepareEnsembleSubCallBodyKeepsStreamingForTTFT(t *testing.T) {
 	require.True(t, gjson.GetBytes(body, "stream_options.include_usage").Bool())
 }
 
+// The group limit is a ceiling on member output, not an override of the client's
+// intent. Raising a client's own lower limit spends its quota on tokens nobody
+// asked for.
+func TestApplyEnsembleMaxTokensNeverRaisesClientLimit(t *testing.T) {
+	body, err := applyEnsembleMaxTokens([]byte(`{"model":"gpt-5","max_tokens":512}`), 4096)
+	require.NoError(t, err)
+	require.Equal(t, int64(512), gjson.GetBytes(body, "max_tokens").Int())
+}
+
+func TestApplyEnsembleMaxTokensCapsHigherClientLimit(t *testing.T) {
+	body, err := applyEnsembleMaxTokens([]byte(`{"model":"gpt-5","max_tokens":100000}`), 4096)
+	require.NoError(t, err)
+	require.Equal(t, int64(4096), gjson.GetBytes(body, "max_tokens").Int())
+}
+
+func TestApplyEnsembleMaxTokensSetsLimitWhenClientOmitsIt(t *testing.T) {
+	body, err := applyEnsembleMaxTokens([]byte(`{"model":"gpt-5"}`), 4096)
+	require.NoError(t, err)
+	require.Equal(t, int64(4096), gjson.GetBytes(body, "max_tokens").Int())
+}
+
+// Reasoning models reject max_tokens in favour of max_completion_tokens, and some
+// upstreams reject a body carrying both. The ceiling must land on the field the
+// client actually used rather than introducing the other spelling.
+func TestApplyEnsembleMaxTokensRespectsCompletionTokensSpelling(t *testing.T) {
+	body, err := applyEnsembleMaxTokens([]byte(`{"model":"o3","max_completion_tokens":100000}`), 4096)
+	require.NoError(t, err)
+	require.Equal(t, int64(4096), gjson.GetBytes(body, "max_completion_tokens").Int())
+	require.False(t, gjson.GetBytes(body, "max_tokens").Exists())
+}
+
+// Anthropic requires max_tokens > thinking.budget_tokens. A ceiling that violates
+// that turns every member into a 400 invalid_request_error instead of a shorter
+// answer, so the client's own value has to stand.
+func TestApplyEnsembleMaxTokensYieldsToThinkingBudget(t *testing.T) {
+	original := `{"model":"claude","max_tokens":32000,"thinking":{"type":"enabled","budget_tokens":16000}}`
+	body, err := applyEnsembleMaxTokens([]byte(original), 8000)
+	require.NoError(t, err)
+	require.Equal(t, int64(32000), gjson.GetBytes(body, "max_tokens").Int())
+	require.Equal(t, int64(16000), gjson.GetBytes(body, "thinking.budget_tokens").Int())
+}
+
+// A ceiling that still clears the thinking budget is applied normally.
+func TestApplyEnsembleMaxTokensAppliesAboveThinkingBudget(t *testing.T) {
+	body, err := applyEnsembleMaxTokens(
+		[]byte(`{"model":"claude","max_tokens":64000,"thinking":{"type":"enabled","budget_tokens":4000}}`),
+		8000,
+	)
+	require.NoError(t, err)
+	require.Equal(t, int64(8000), gjson.GetBytes(body, "max_tokens").Int())
+}
+
+func TestApplyEnsembleMaxTokensNoLimitConfigured(t *testing.T) {
+	body, err := applyEnsembleMaxTokens([]byte(`{"model":"gpt-5","max_tokens":123}`), 0)
+	require.NoError(t, err)
+	require.Equal(t, int64(123), gjson.GetBytes(body, "max_tokens").Int())
+}
+
 // A sub-call replaces the request body, so the body length no longer matches the
 // client's Content-Length. Request.Clone copies the header map verbatim, so the
 // stale header must be dropped: any consumer that trusts the header over
@@ -457,6 +514,120 @@ func TestEnsembleChatCompletionsPreservesToolCallsForContinuation(t *testing.T) 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Contains(t, recorder.Body.String(), `"tool_calls"`)
 	require.Contains(t, recorder.Body.String(), `"finish_reason":"tool_calls"`)
+	// A member that requested a tool without saying anything yields the
+	// null-content turn a client expects; the key must be absent, not empty.
+	require.False(t, gjson.Get(recorder.Body.String(), "choices.0.message.content").Exists())
+}
+
+// A tool-call turn skips aggregation, so the member's own preface is the only
+// prose the caller ever sees for it. Discarding it left agent clients executing
+// a tool with no statement of intent, which reads as the model acting silently.
+func TestEnsembleToolCallKeepsMemberPreface(t *testing.T) {
+	dispatch := func(c *gin.Context) {
+		c.JSON(http.StatusOK, map[string]any{
+			"choices": []map[string]any{{
+				"message": map[string]any{
+					"role":    "assistant",
+					"content": "我先看一下配置文件。",
+					"tool_calls": []map[string]any{{
+						"id": "call_1", "type": "function",
+						"function": map[string]any{"name": "inspect", "arguments": `{"path":"."}`},
+					}},
+				},
+				"finish_reason": "tool_calls",
+			}},
+			"usage": map[string]any{"prompt_tokens": 2, "completion_tokens": 1},
+		})
+	}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true}},
+		service.EnsembleConfig{MinProposers: 1},
+		dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":"inspect"}],"tools":[{"type":"function","function":{"name":"inspect"}}],"stream":false}`,
+	)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	body := recorder.Body.String()
+	require.Equal(t, "我先看一下配置文件。", gjson.Get(body, "choices.0.message.content").String())
+	require.Equal(t, "inspect", gjson.Get(body, "choices.0.message.tool_calls.0.function.name").String())
+	require.Equal(t, "tool_calls", gjson.Get(body, "choices.0.finish_reason").String())
+}
+
+// The preface must come from the member that won the tool-call race. Pairing one
+// model's tool_calls with another model's prose would narrate an action that
+// member never requested.
+func TestEnsembleToolCallPrefacePairsWithItsOwnMember(t *testing.T) {
+	dispatch := func(c *gin.Context) {
+		body, _ := io.ReadAll(c.Request.Body)
+		if gjson.GetBytes(body, "model").String() == "gpt-5-tools" {
+			c.JSON(http.StatusOK, map[string]any{
+				"choices": []map[string]any{{
+					"message": map[string]any{
+						"role":    "assistant",
+						"content": "tool member preface",
+						"tool_calls": []map[string]any{{
+							"id": "call_1", "type": "function",
+							"function": map[string]any{"name": "inspect", "arguments": "{}"},
+						}},
+					},
+					"finish_reason": "tool_calls",
+				}},
+				"usage": map[string]any{"prompt_tokens": 2, "completion_tokens": 1},
+			})
+			return
+		}
+		c.JSON(http.StatusOK, chatCompletion("a much longer prose-only answer from the other member", 2, 5))
+	}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{
+			{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5-tools", Platform: service.PlatformOpenAI, Enabled: true},
+			{ID: 2, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5-prose", Platform: service.PlatformOpenAI, Enabled: true},
+		},
+		service.EnsembleConfig{MinProposers: 1},
+		dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":"inspect"}],"stream":false}`,
+	)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	content := gjson.Get(recorder.Body.String(), "choices.0.message.content").String()
+	require.Equal(t, "tool member preface", content)
+	require.NotContains(t, content, "other member")
+}
+
+// The streaming path has its own content guard, so the preface has to be proven
+// on the wire and not only in the non-stream payload.
+func TestEnsembleToolCallStreamsMemberPreface(t *testing.T) {
+	dispatch := func(c *gin.Context) {
+		c.JSON(http.StatusOK, map[string]any{
+			"choices": []map[string]any{{
+				"message": map[string]any{
+					"role":    "assistant",
+					"content": "streamed preface",
+					"tool_calls": []map[string]any{{
+						"id": "call_1", "type": "function",
+						"function": map[string]any{"name": "inspect", "arguments": "{}"},
+					}},
+				},
+				"finish_reason": "tool_calls",
+			}},
+			"usage": map[string]any{"prompt_tokens": 2, "completion_tokens": 1},
+		})
+	}
+
+	recorder := newEnsembleHandlerRequest(t,
+		[]service.EnsembleProposer{{ID: 1, GroupID: 7, Role: service.EnsembleRoleProposer, Model: "gpt-5", Enabled: true}},
+		service.EnsembleConfig{MinProposers: 1},
+		dispatch,
+		`{"model":"ensemble","messages":[{"role":"user","content":"inspect"}],"stream":true}`,
+	)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	stream := recorder.Body.String()
+	require.Contains(t, stream, `"content":"streamed preface"`)
+	require.Contains(t, stream, `"finish_reason":"tool_calls"`)
+	require.Contains(t, stream, "[DONE]")
 }
 
 func TestEnsembleCompactCallsOnlyConfiguredAggregator(t *testing.T) {

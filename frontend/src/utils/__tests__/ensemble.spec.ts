@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   buildEnsembleGroupPayload,
   deriveEnsembleModelOptions,
-  deriveEnsembleModels,
   findSharedEnsembleChannel,
   getEnsembleSourceGroups,
   planEnsembleMemberReconciliation,
@@ -40,7 +39,8 @@ describe('Ensemble configuration helpers', () => {
       }
     ]
 
-    expect(deriveEnsembleModels([1], channels)).toEqual(['claude-sonnet-4.5', 'gpt-5.6'])
+    expect(deriveEnsembleModelOptions([1], channels).map(option => option.model))
+      .toEqual(['claude-sonnet-4.5', 'gpt-5.6'])
   })
 
   it('keeps the concrete pricing platform for opaque model names', () => {

@@ -81,13 +81,6 @@ func (r *ensembleProposerRepository) Delete(ctx context.Context, id int64) error
 	return translatePersistenceError(err, service.ErrEnsembleProposerNotFound, nil)
 }
 
-func (r *ensembleProposerRepository) DeleteByGroup(ctx context.Context, groupID int64) error {
-	_, err := clientFromContext(ctx, r.client).EnsembleProposer.Delete().
-		Where(ensembleproposer.GroupIDEQ(groupID)).
-		Exec(ctx)
-	return err
-}
-
 func ensembleProposerEntityToService(row *dbent.EnsembleProposer) *service.EnsembleProposer {
 	if row == nil {
 		return nil

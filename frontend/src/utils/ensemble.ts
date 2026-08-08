@@ -109,19 +109,12 @@ export function getEnsembleSourceGroups<T extends EnsembleSourceGroup>(groups: T
 }
 
 /**
- * Resolve models from channel pricing, scoped to the selected source groups.
+ * Resolve models from channel pricing, scoped to the selected source groups, and
+ * pair each public model with the concrete platform that prices it.
+ *
  * Platform default model lists are intentionally excluded: they are not proof
  * that a model is configured or billable for the selected accounts.
  */
-export function deriveEnsembleModels(
-  selectedGroupIds: number[],
-  channels: EnsembleChannel[],
-  sourceGroups: EnsembleSourceGroup[] = []
-): string[] {
-  return deriveEnsembleModelOptions(selectedGroupIds, channels, sourceGroups).map(option => option.model)
-}
-
-/** Resolve each public model to the concrete platform that prices it. */
 export function deriveEnsembleModelOptions(
   selectedGroupIds: number[],
   channels: EnsembleChannel[],

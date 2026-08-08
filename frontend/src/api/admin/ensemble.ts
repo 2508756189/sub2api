@@ -135,35 +135,10 @@ export const ensembleAPI = {
   },
 
   /**
-   * Send a real gateway request through the selected Ensemble group's API key.
-   * This is deliberately a one-off test credential, not a Router configuration.
-   */
-  test: async (
-    apiKey: string,
-    messages: Array<{ role: string; content: string }>
-  ): Promise<EnsembleTestResponse> => {
-    const response = await fetch(buildGatewayUrl('/v1/chat/completions'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'ensemble',
-        messages,
-        stream: false
-      })
-    })
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok) {
-      throw new Error(data?.error?.message ?? data?.message ?? response.statusText)
-    }
-    return data as EnsembleTestResponse
-  },
-
-  /**
-   * Run the same gateway request as test(), but receive execution diagnostics
-   * as server-sent events so the admin page can show where a slow call stops.
+   * Send a real gateway request through the selected Ensemble group's API key,
+   * receiving execution diagnostics as server-sent events so the admin page can
+   * show where a slow call stops. The key is deliberately a one-off test
+   * credential, not a Router configuration.
    */
   testStream: async (
     apiKey: string,

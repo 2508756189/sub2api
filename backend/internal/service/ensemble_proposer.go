@@ -56,12 +56,17 @@ type EnsembleProposerInput struct {
 	Enabled  bool
 }
 
+// EnsembleProposerRepository persists a group's ensemble members.
+//
+// There is deliberately no DeleteByGroup: deleting a group soft-deletes its
+// members inside the group cascade transaction (repository.group_repo), because
+// the group itself is only soft-deleted and the FK cascade therefore never runs.
+// A second entry point here would bypass that transaction.
 type EnsembleProposerRepository interface {
 	ListByGroup(ctx context.Context, groupID int64, includeDisabled bool) ([]EnsembleProposer, error)
 	Create(ctx context.Context, proposer *EnsembleProposer) error
 	Update(ctx context.Context, proposer *EnsembleProposer) error
 	Delete(ctx context.Context, id int64) error
-	DeleteByGroup(ctx context.Context, groupID int64) error
 }
 
 func normalizeEnsembleRole(role string) string {

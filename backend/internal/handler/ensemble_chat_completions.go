@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -162,7 +163,6 @@ type EnsembleProgressEvent struct {
 	ProposersTotal     int                 `json:"proposers_total,omitempty"`
 	ProposersSucceeded int                 `json:"proposers_succeeded,omitempty"`
 	Aggregator         string              `json:"aggregator,omitempty"`
-	Aggregated         bool                `json:"aggregated,omitempty"`
 	DurationMs         int64               `json:"duration_ms,omitempty"`
 	StatusCode         int                 `json:"status_code,omitempty"`
 	Response           json.RawMessage     `json:"response,omitempty"`
@@ -379,6 +379,13 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	proposals := make([]ensembleProposal, 0, len(results))
 	stats := make([]ensembleMemberStat, 0, len(results)+1)
 	structured := []map[string]any(nil)
+	// structuredPreface is the prose the *same* member emitted alongside its tool
+	// calls. Models routinely explain what they are about to do before calling a
+	// tool, and on a tool-call turn that sentence is the only thing the caller can
+	// read. It is taken from the member that won the tool-call race rather than
+	// from the proposal pool: pairing one model's tool_calls with another model's
+	// prose would narrate an action that member never requested.
+	structuredPreface := ""
 	successfulMembers := 0
 	for _, res := range results {
 		stats = append(stats, res.stat)
@@ -386,6 +393,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 			successfulMembers++
 			if len(res.toolCalls) > 0 && len(structured) == 0 {
 				structured = res.toolCalls
+				structuredPreface = res.content
 			}
 			if strings.TrimSpace(res.content) != "" {
 				proposals = append(proposals, ensembleProposal{Model: res.model, Content: res.content})
@@ -425,13 +433,17 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	// structured so the client can execute the requested tool and send the next
 	// turn back with its history; converting them to candidate text would end
 	// the agent loop after the first answer.
+	//
+	// The member's own preface travels with them. Aggregation is skipped on this
+	// turn (there is no answer to synthesize yet), so discarding that prose left
+	// the caller with a silent tool invocation and no statement of intent.
 	if len(structured) > 0 {
-		payload := buildEnsembleChatResponse(requestedModel, "", structured, stats, plan.Config.ExposeMetadata, includeMemberContent, false, time.Since(started))
+		payload := buildEnsembleChatResponse(requestedModel, structuredPreface, structured, stats, plan.Config.ExposeMetadata, includeMemberContent, false, time.Since(started))
 		if stream != nil {
-			stream.finish("", payload)
+			stream.finish(structuredPreface, payload)
 			return
 		}
-		c.JSON(http.StatusOK, payload)
+		h.writeEnsemblePayload(c, payload)
 		return
 	}
 
@@ -444,12 +456,11 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		if buildErr != nil {
 			reqLog.Warn("failed to build aggregator request, falling back to longest proposal", zap.Error(buildErr))
 			emitEnsembleProgress(c, EnsembleProgressEvent{
-				Type:       "fallback",
-				Model:      plan.Aggregator.Model,
-				Role:       service.EnsembleRoleAggregator,
-				Status:     ensembleStatusFailed,
-				Error:      buildErr.Error(),
-				Aggregated: false,
+				Type:   "fallback",
+				Model:  plan.Aggregator.Model,
+				Role:   service.EnsembleRoleAggregator,
+				Status: ensembleStatusFailed,
+				Error:  buildErr.Error(),
 			})
 		} else {
 			emitEnsembleProgress(c, EnsembleProgressEvent{
@@ -486,12 +497,11 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 				aggregated = true
 			} else {
 				emitEnsembleProgress(c, EnsembleProgressEvent{
-					Type:       "fallback",
-					Model:      plan.Aggregator.Model,
-					Role:       service.EnsembleRoleAggregator,
-					Status:     ensembleStatusFailed,
-					Error:      aggRes.stat.Error,
-					Aggregated: false,
+					Type:   "fallback",
+					Model:  plan.Aggregator.Model,
+					Role:   service.EnsembleRoleAggregator,
+					Status: ensembleStatusFailed,
+					Error:  aggRes.stat.Error,
 				})
 				reqLog.Warn("ensemble aggregator failed, falling back to longest proposal",
 					zap.String("model", plan.Aggregator.Model),
@@ -511,7 +521,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		stream.finish(finalContent, payload)
 		return
 	}
-	c.JSON(http.StatusOK, payload)
+	h.writeEnsemblePayload(c, payload)
 }
 
 // Compact handles the OpenAI Responses compaction endpoint for Ensemble
@@ -1083,12 +1093,50 @@ func prepareEnsembleSubCallBody(body []byte, model string, maxTokens int) ([]byt
 	if out, err = sjson.SetBytes(out, "stream_options.include_usage", true); err != nil {
 		return nil, err
 	}
-	if maxTokens > 0 {
-		if out, err = sjson.SetBytes(out, "max_tokens", maxTokens); err != nil {
-			return nil, err
+	return applyEnsembleMaxTokens(out, maxTokens)
+}
+
+// applyEnsembleMaxTokens applies the group's per-member output limit as a ceiling.
+//
+// Three properties matter, and unconditionally writing max_tokens broke all
+// three:
+//
+//   - It is a ceiling, not an override. A client that asked for fewer tokens than
+//     the group limit meant it, and raising the limit spends the caller's quota on
+//     output nobody asked for.
+//   - It has to land on the field the client actually used. Reasoning models
+//     reject max_tokens in favour of max_completion_tokens, and some upstreams
+//     reject a body carrying both, so introducing the other spelling can turn a
+//     working request into a 400.
+//   - It must never cut below a declared thinking budget. Anthropic requires
+//     max_tokens to exceed thinking.budget_tokens, so a limit that violates that
+//     makes every member fail with invalid_request_error instead of merely
+//     answering more briefly. When the limit cannot be honoured, the client's own
+//     value stands.
+func applyEnsembleMaxTokens(body []byte, maxTokens int) ([]byte, error) {
+	if maxTokens <= 0 {
+		return body, nil
+	}
+	field := "max_tokens"
+	if !gjson.GetBytes(body, field).Exists() && gjson.GetBytes(body, "max_completion_tokens").Exists() {
+		field = "max_completion_tokens"
+	}
+	if current := gjson.GetBytes(body, field); current.Exists() && current.Int() > 0 && current.Int() <= int64(maxTokens) {
+		return body, nil
+	}
+	// Reasoning budgets are spelled differently per protocol; the limit has to
+	// clear whichever one this request carries.
+	for _, path := range []string{
+		"thinking.budget_tokens",
+		"reasoning.max_tokens",
+		"extra_body.thinking.budget_tokens",
+		"output_config.thinking.budget_tokens",
+	} {
+		if budget := gjson.GetBytes(body, path); budget.Exists() && budget.Int() >= int64(maxTokens) {
+			return body, nil
 		}
 	}
-	return out, nil
+	return sjson.SetBytes(body, field, maxTokens)
 }
 
 // buildEnsembleAggregatorBody appends the aggregation instruction plus every
@@ -1341,7 +1389,13 @@ func buildEnsembleChatResponse(
 	message := map[string]any{"role": "assistant", "content": content}
 	finishReason := "stop"
 	if len(toolCalls) > 0 {
-		delete(message, "content")
+		// OpenAI's own tool-call shape carries content alongside tool_calls, so a
+		// model's preface ("我先查一下配置文件…") is kept. Only genuinely empty prose
+		// is dropped, which is the null-content turn a client expects when the model
+		// requested a tool without saying anything.
+		if strings.TrimSpace(content) == "" {
+			delete(message, "content")
+		}
 		message["tool_calls"] = toolCalls
 		finishReason = "tool_calls"
 	}
@@ -1437,6 +1491,13 @@ type ensembleStreamWriter struct {
 	// ttftOnce records time-to-first-token exactly once, for whichever real model
 	// output reaches the client first — a member's reasoning delta or the answer.
 	ttftOnce sync.Once
+
+	// protocol is the wire protocol the client used. Chunks are always built in
+	// Chat Completions shape and transcoded on the way out, so the fan-out itself
+	// never has to know which protocol it is serving.
+	protocol       ensembleWireProtocol
+	anthropicState *apicompat.ChatCompletionsToAnthropicStreamState
+	responsesState *apicompat.ChatCompletionsToResponsesStreamState
 }
 
 // beginStreamResponse commits the response as SSE and starts the keepalive.
@@ -1459,6 +1520,17 @@ func (h *EnsembleHandler) beginStreamResponse(c *gin.Context, model string, trac
 		exposeModels: exposeModels,
 		done:         make(chan struct{}),
 		stopped:      make(chan struct{}),
+		protocol:     ensembleProtocolFromContext(c),
+	}
+	switch w.protocol {
+	case ensembleWireAnthropic:
+		w.anthropicState = apicompat.NewChatCompletionsToAnthropicStreamState(model)
+	case ensembleWireResponses:
+		w.responsesState = apicompat.NewChatCompletionsToResponsesStreamState(model)
+		toolCtx := ensembleResponsesToolsFromContext(c)
+		w.responsesState.CustomTools = toolCtx.customTools
+		w.responsesState.ToolSearchDeclared = toolCtx.toolSearch
+		w.responsesState.NamespaceTools = toolCtx.namespaceTools
 	}
 
 	// An empty role delta is the conventional stream opener and tells the client
@@ -1500,6 +1572,16 @@ func (w *ensembleStreamWriter) stopKeepAlive() {
 func (w *ensembleStreamWriter) writeRaw(payload string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	w.writeRawLocked(payload)
+}
+
+// writeRawLocked requires w.mu.
+//
+// One Chat Completions chunk can transcode into several protocol frames, and
+// they have to reach the wire as one contiguous run: a keepalive comment or
+// another member's frames spliced into the middle of a content_block sequence
+// is not something a client can reassemble.
+func (w *ensembleStreamWriter) writeRawLocked(payload string) {
 	_, _ = fmt.Fprint(w.ctx.Writer, payload)
 	w.ctx.Writer.Flush()
 }
@@ -1509,7 +1591,15 @@ func (w *ensembleStreamWriter) writeChunk(chunk map[string]any) {
 	if err != nil {
 		return
 	}
-	w.writeRaw(fmt.Sprintf("data: %s\n\n", encoded))
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.protocol == ensembleWireChat {
+		w.writeRawLocked(fmt.Sprintf("data: %s\n\n", encoded))
+		return
+	}
+	for _, frame := range w.transcodeChunkLocked(encoded) {
+		w.writeRawLocked(frame)
+	}
 }
 
 // traceLine sends one execution-progress line to the client as a
@@ -1685,7 +1775,7 @@ func (w *ensembleStreamWriter) finish(content string, payload map[string]any) {
 		terminal["ensemble_metadata"] = metadata
 	}
 	w.writeChunk(terminal)
-	w.writeRaw("data: [DONE]\n\n")
+	w.writeTerminal()
 }
 
 // fail reports a mid-stream failure. Headers are already sent, so the status code
@@ -1730,16 +1820,16 @@ func (w *ensembleStreamWriter) fail(errType, message string, intendedStatus int)
 			{"index": 0, "delta": map[string]any{}, "finish_reason": "stop"},
 		},
 	})
-	w.writeRaw("data: [DONE]\n\n")
+	w.writeTerminal()
 }
 
+// errorResponse writes a pre-stream error in whichever protocol the client used.
+//
+// Every existing call site was written as a Chat Completions envelope; routing
+// them all through errorResponseAs is what makes the same guard clauses correct
+// for /v1/messages and /v1/responses without editing each one.
 func (h *EnsembleHandler) errorResponse(c *gin.Context, status int, errType, message string) {
-	c.JSON(status, gin.H{
-		"error": gin.H{
-			"type":    errType,
-			"message": message,
-		},
-	})
+	h.errorResponseAs(c, ensembleProtocolFromContext(c), status, errType, message)
 }
 
 func ensembleTruncate(s string, limit int) string {

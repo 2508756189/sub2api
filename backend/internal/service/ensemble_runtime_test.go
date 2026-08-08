@@ -30,7 +30,6 @@ func (s *ensembleRuntimeRepoStub) ListByGroup(_ context.Context, groupID int64, 
 func (s *ensembleRuntimeRepoStub) Create(context.Context, *EnsembleProposer) error { return nil }
 func (s *ensembleRuntimeRepoStub) Update(context.Context, *EnsembleProposer) error { return nil }
 func (s *ensembleRuntimeRepoStub) Delete(context.Context, int64) error             { return nil }
-func (s *ensembleRuntimeRepoStub) DeleteByGroup(context.Context, int64) error      { return nil }
 
 func TestEnsembleRuntimePlanOrdersMembersAndPreservesConfiguredMinimum(t *testing.T) {
 	repo := &ensembleRuntimeRepoStub{members: []EnsembleProposer{

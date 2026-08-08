@@ -47,7 +47,6 @@ func (s *ensembleProposerRepoForAdminTest) Delete(_ context.Context, proposerID 
 	s.deleted = proposerID
 	return nil
 }
-func (s *ensembleProposerRepoForAdminTest) DeleteByGroup(context.Context, int64) error { return nil }
 
 func TestAdminServiceRejectsEnsembleModelUnavailableInBoundAccounts(t *testing.T) {
 	groupRepo := &groupRepoStubForAdmin{getByIDByID: map[int64]*Group{

@@ -162,7 +162,6 @@ type EnsembleProgressEvent struct {
 	ProposersTotal     int                 `json:"proposers_total,omitempty"`
 	ProposersSucceeded int                 `json:"proposers_succeeded,omitempty"`
 	Aggregator         string              `json:"aggregator,omitempty"`
-	Aggregated         bool                `json:"aggregated,omitempty"`
 	DurationMs         int64               `json:"duration_ms,omitempty"`
 	StatusCode         int                 `json:"status_code,omitempty"`
 	Response           json.RawMessage     `json:"response,omitempty"`
@@ -456,12 +455,11 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		if buildErr != nil {
 			reqLog.Warn("failed to build aggregator request, falling back to longest proposal", zap.Error(buildErr))
 			emitEnsembleProgress(c, EnsembleProgressEvent{
-				Type:       "fallback",
-				Model:      plan.Aggregator.Model,
-				Role:       service.EnsembleRoleAggregator,
-				Status:     ensembleStatusFailed,
-				Error:      buildErr.Error(),
-				Aggregated: false,
+				Type:   "fallback",
+				Model:  plan.Aggregator.Model,
+				Role:   service.EnsembleRoleAggregator,
+				Status: ensembleStatusFailed,
+				Error:  buildErr.Error(),
 			})
 		} else {
 			emitEnsembleProgress(c, EnsembleProgressEvent{
@@ -498,12 +496,11 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 				aggregated = true
 			} else {
 				emitEnsembleProgress(c, EnsembleProgressEvent{
-					Type:       "fallback",
-					Model:      plan.Aggregator.Model,
-					Role:       service.EnsembleRoleAggregator,
-					Status:     ensembleStatusFailed,
-					Error:      aggRes.stat.Error,
-					Aggregated: false,
+					Type:   "fallback",
+					Model:  plan.Aggregator.Model,
+					Role:   service.EnsembleRoleAggregator,
+					Status: ensembleStatusFailed,
+					Error:  aggRes.stat.Error,
 				})
 				reqLog.Warn("ensemble aggregator failed, falling back to longest proposal",
 					zap.String("model", plan.Aggregator.Model),

@@ -41,8 +41,7 @@ func (s *ensembleHandlerRepoStub) Create(context.Context, *service.EnsemblePropo
 func (s *ensembleHandlerRepoStub) Update(context.Context, *service.EnsembleProposer) error {
 	return nil
 }
-func (s *ensembleHandlerRepoStub) Delete(context.Context, int64) error        { return nil }
-func (s *ensembleHandlerRepoStub) DeleteByGroup(context.Context, int64) error { return nil }
+func (s *ensembleHandlerRepoStub) Delete(context.Context, int64) error { return nil }
 
 type ensembleDispatchStub struct {
 	mu             sync.Mutex

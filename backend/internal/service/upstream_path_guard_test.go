@@ -158,3 +158,30 @@ func newResponsesSuffixTestContext(t *testing.T, path string) *gin.Context {
 	c.Request = httptest.NewRequest(http.MethodPost, path, nil)
 	return c
 }
+
+// TestIsBareOpenAIResponsesRequestPath 锁定不变式：只有裸 /responses 才算“新请求”。
+//
+// 端点归一化区分不了这件事——/v1/responses/{id} 和 /v1/responses 都会归一化成
+// EndpointResponses，而两者语义完全不同：前者按 id 操作一条已存在的上游响应，
+// 后者才是一次要作答的新请求。Ensemble 扇出只能发生在后者上，否则一次
+// retrieve/cancel 会被扇成 N 个成员调用，既烧配额又拿不到目标响应。
+func TestIsBareOpenAIResponsesRequestPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	for path, want := range map[string]bool{
+		"/v1/responses":                        true,
+		"/v1/responses/":                       true,
+		"/responses":                           true,
+		"/backend-api/codex/responses":         true,
+		"/v1/responses/compact":                false,
+		"/backend-api/codex/responses/compact": false,
+		"/v1/responses/resp_123":               false,
+		"/v1/responses/resp_123/cancel":        false,
+	} {
+		t.Run(path, func(t *testing.T) {
+			c := newResponsesSuffixTestContext(t, path)
+			require.Equal(t, want, IsBareOpenAIResponsesRequestPath(c),
+				"path %q bare=%v", path, want)
+		})
+	}
+}

@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -442,7 +443,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 			stream.finish(structuredPreface, payload)
 			return
 		}
-		c.JSON(http.StatusOK, payload)
+		h.writeEnsemblePayload(c, payload)
 		return
 	}
 
@@ -520,7 +521,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 		stream.finish(finalContent, payload)
 		return
 	}
-	c.JSON(http.StatusOK, payload)
+	h.writeEnsemblePayload(c, payload)
 }
 
 // Compact handles the OpenAI Responses compaction endpoint for Ensemble
@@ -1490,6 +1491,13 @@ type ensembleStreamWriter struct {
 	// ttftOnce records time-to-first-token exactly once, for whichever real model
 	// output reaches the client first — a member's reasoning delta or the answer.
 	ttftOnce sync.Once
+
+	// protocol is the wire protocol the client used. Chunks are always built in
+	// Chat Completions shape and transcoded on the way out, so the fan-out itself
+	// never has to know which protocol it is serving.
+	protocol       ensembleWireProtocol
+	anthropicState *apicompat.ChatCompletionsToAnthropicStreamState
+	responsesState *apicompat.ChatCompletionsToResponsesStreamState
 }
 
 // beginStreamResponse commits the response as SSE and starts the keepalive.
@@ -1512,6 +1520,17 @@ func (h *EnsembleHandler) beginStreamResponse(c *gin.Context, model string, trac
 		exposeModels: exposeModels,
 		done:         make(chan struct{}),
 		stopped:      make(chan struct{}),
+		protocol:     ensembleProtocolFromContext(c),
+	}
+	switch w.protocol {
+	case ensembleWireAnthropic:
+		w.anthropicState = apicompat.NewChatCompletionsToAnthropicStreamState(model)
+	case ensembleWireResponses:
+		w.responsesState = apicompat.NewChatCompletionsToResponsesStreamState(model)
+		toolCtx := ensembleResponsesToolsFromContext(c)
+		w.responsesState.CustomTools = toolCtx.customTools
+		w.responsesState.ToolSearchDeclared = toolCtx.toolSearch
+		w.responsesState.NamespaceTools = toolCtx.namespaceTools
 	}
 
 	// An empty role delta is the conventional stream opener and tells the client
@@ -1553,6 +1572,16 @@ func (w *ensembleStreamWriter) stopKeepAlive() {
 func (w *ensembleStreamWriter) writeRaw(payload string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	w.writeRawLocked(payload)
+}
+
+// writeRawLocked requires w.mu.
+//
+// One Chat Completions chunk can transcode into several protocol frames, and
+// they have to reach the wire as one contiguous run: a keepalive comment or
+// another member's frames spliced into the middle of a content_block sequence
+// is not something a client can reassemble.
+func (w *ensembleStreamWriter) writeRawLocked(payload string) {
 	_, _ = fmt.Fprint(w.ctx.Writer, payload)
 	w.ctx.Writer.Flush()
 }
@@ -1562,7 +1591,15 @@ func (w *ensembleStreamWriter) writeChunk(chunk map[string]any) {
 	if err != nil {
 		return
 	}
-	w.writeRaw(fmt.Sprintf("data: %s\n\n", encoded))
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.protocol == ensembleWireChat {
+		w.writeRawLocked(fmt.Sprintf("data: %s\n\n", encoded))
+		return
+	}
+	for _, frame := range w.transcodeChunkLocked(encoded) {
+		w.writeRawLocked(frame)
+	}
 }
 
 // traceLine sends one execution-progress line to the client as a
@@ -1738,7 +1775,7 @@ func (w *ensembleStreamWriter) finish(content string, payload map[string]any) {
 		terminal["ensemble_metadata"] = metadata
 	}
 	w.writeChunk(terminal)
-	w.writeRaw("data: [DONE]\n\n")
+	w.writeTerminal()
 }
 
 // fail reports a mid-stream failure. Headers are already sent, so the status code
@@ -1783,16 +1820,16 @@ func (w *ensembleStreamWriter) fail(errType, message string, intendedStatus int)
 			{"index": 0, "delta": map[string]any{}, "finish_reason": "stop"},
 		},
 	})
-	w.writeRaw("data: [DONE]\n\n")
+	w.writeTerminal()
 }
 
+// errorResponse writes a pre-stream error in whichever protocol the client used.
+//
+// Every existing call site was written as a Chat Completions envelope; routing
+// them all through errorResponseAs is what makes the same guard clauses correct
+// for /v1/messages and /v1/responses without editing each one.
 func (h *EnsembleHandler) errorResponse(c *gin.Context, status int, errType, message string) {
-	c.JSON(status, gin.H{
-		"error": gin.H{
-			"type":    errType,
-			"message": message,
-		},
-	})
+	h.errorResponseAs(c, ensembleProtocolFromContext(c), status, errType, message)
 }
 
 func ensembleTruncate(s string, limit int) string {

@@ -73,6 +73,13 @@ func RegisterGatewayRoutes(
 			h.Ensemble.Compact(c)
 			return
 		}
+		// A bare /v1/responses call is a question to answer, so an Ensemble group
+		// fans it out to its members. Subpath operations address one existing
+		// upstream response by id and have nothing to fan out.
+		if h.Ensemble != nil && isEnsembleFanOutRequest(c) && service.IsBareOpenAIResponsesRequestPath(c) {
+			h.Ensemble.Responses(c)
+			return
+		}
 		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
 			h.OpenAIGateway.Responses(c)
 			return
@@ -224,6 +231,11 @@ func RegisterGatewayRoutes(
 	{
 		// /v1/messages: auto-route based on group platform
 		gateway.POST("/messages", func(c *gin.Context) {
+			// platform=ensemble fans the request out to the group's member models.
+			if h.Ensemble != nil && isEnsembleFanOutRequest(c) {
+				h.Ensemble.Messages(c)
+				return
+			}
 			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
 				h.OpenAIGateway.Messages(c)
 				return

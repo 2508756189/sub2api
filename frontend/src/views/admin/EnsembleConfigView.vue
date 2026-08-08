@@ -3,16 +3,16 @@
     <TablePageLayout>
       <template #filters>
         <div class="flex justify-end gap-2">
-          <button type="button" class="btn btn-secondary" :disabled="loading" title="刷新" @click="init">
+          <button type="button" class="btn btn-secondary" :disabled="loading" :title="t('common.refresh')" @click="init">
             <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
           </button>
           <button v-if="!isNew" type="button" class="btn btn-secondary" :disabled="saving || !canSaveAsNew" @click="save(true)">
             <Icon name="plus" size="md" class="mr-1.5" />
-            另存为新分组
+            {{ t('admin.ensemble.actions.saveAsNew') }}
           </button>
           <button type="button" class="btn btn-primary" :disabled="saving || !canSave" @click="save()">
             <Icon name="check" size="md" class="mr-1.5" />
-            {{ saving ? '保存中…' : '保存配置' }}
+            {{ saving ? t('admin.ensemble.actions.saving') : t('admin.ensemble.actions.save') }}
           </button>
         </div>
       </template>
@@ -30,33 +30,33 @@
             <div class="intro-panel">
               <div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="intro-kicker">原生组内聚合</span>
-                  <span class="intro-rule">内置组内调度</span>
+                  <span class="intro-kicker">{{ t('admin.ensemble.intro.kicker') }}</span>
+                  <span class="intro-rule">{{ t('admin.ensemble.intro.rule') }}</span>
                 </div>
                 <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                  先创建一个 Ensemble 分组，再把来源分组的账号复制到这个新分组。请求进入新分组后，只在该分组绑定的账号范围内并行调用候选模型。
+                  {{ t('admin.ensemble.intro.body') }}
                 </p>
               </div>
               <div class="intro-flow">
-                <span>来源分组账号</span><Icon name="arrowRight" size="sm" /><span>候选模型</span><Icon name="arrowRight" size="sm" /><span>聚合输出</span>
+                <span>{{ t('admin.ensemble.intro.flowSource') }}</span><Icon name="arrowRight" size="sm" /><span>{{ t('admin.ensemble.intro.flowProposers') }}</span><Icon name="arrowRight" size="sm" /><span>{{ t('admin.ensemble.intro.flowAggregate') }}</span>
               </div>
             </div>
 
             <div class="readiness-bar">
               <div class="readiness-item">
-                <span class="readiness-label">当前入口</span>
-                <strong>{{ isNew ? '尚未保存' : 'ensemble' }}</strong>
-                <span class="readiness-meta">{{ isNew ? '保存后生成可调用分组' : `${selectedEnsembleGroup?.account_count ?? 0} 个绑定账号` }}</span>
+                <span class="readiness-label">{{ t('admin.ensemble.readiness.entry') }}</span>
+                <strong>{{ isNew ? t('admin.ensemble.readiness.entryUnsaved') : 'ensemble' }}</strong>
+                <span class="readiness-meta">{{ isNew ? t('admin.ensemble.readiness.entryUnsavedHint') : t('admin.ensemble.readiness.entryAccounts', { count: selectedEnsembleGroup?.account_count ?? 0 }) }}</span>
               </div>
               <div class="readiness-item">
-                <span class="readiness-label">候选调度</span>
+                <span class="readiness-label">{{ t('admin.ensemble.readiness.dispatch') }}</span>
                 <strong>{{ proposers.length }} / {{ MAX_PROPOSERS }}</strong>
-                <span class="readiness-meta">至少 {{ options.minProposers }} 个成功</span>
+                <span class="readiness-meta">{{ t('admin.ensemble.readiness.dispatchHint', { count: options.minProposers }) }}</span>
               </div>
               <div class="readiness-item">
-                <span class="readiness-label">测试方式</span>
-                <strong>分组 API Key</strong>
-                <span class="readiness-meta">账号直连测试不适用于 ensemble</span>
+                <span class="readiness-label">{{ t('admin.ensemble.readiness.testMethod') }}</span>
+                <strong>{{ t('admin.ensemble.readiness.testMethodValue') }}</strong>
+                <span class="readiness-meta">{{ t('admin.ensemble.readiness.testMethodHint') }}</span>
               </div>
             </div>
 
@@ -64,50 +64,50 @@
               <section class="section-card">
                 <div class="section-header">
                   <div>
-                    <h2 class="section-title"><span class="step-no">1</span>创建或编辑 Ensemble 分组</h2>
-                    <p class="section-desc">分组是实际的计费和路由边界；来源组只用于创建时复制账号绑定。</p>
+                    <h2 class="section-title"><span class="step-no">1</span>{{ t('admin.ensemble.group.title') }}</h2>
+                    <p class="section-desc">{{ t('admin.ensemble.group.description') }}</p>
                   </div>
                   <span :class="['state-badge', isNew ? 'state-new' : 'state-existing']">
-                    {{ isNew ? '新建分组' : '编辑已有分组' }}
+                    {{ isNew ? t('admin.ensemble.group.stateNew') : t('admin.ensemble.group.stateExisting') }}
                   </span>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="md:col-span-2">
-                    <label class="field-label">编辑中的 Ensemble 分组</label>
+                    <label class="field-label">{{ t('admin.ensemble.group.selectLabel') }}</label>
                     <Select
                       v-model="selectedEnsembleGroupId"
                       :options="ensembleGroupOptions"
-                      placeholder="新建 Ensemble 分组"
+                      :placeholder="t('admin.ensemble.group.newOption')"
                       searchable="auto"
-                      aria-label="选择 Ensemble 分组"
+                      :aria-label="t('admin.ensemble.group.selectAria')"
                       @change="onEnsembleGroupChange"
                     />
-                    <p class="field-hint">选择已有分组会加载它当前保存的候选和聚合设置；选择“新建”不会覆盖已有分组。</p>
+                    <p class="field-hint">{{ t('admin.ensemble.group.selectHint') }}</p>
                   </div>
 
                   <div>
-                    <label class="field-label">分组名称 <span class="required">*</span></label>
-                    <input v-model="draft.name" class="field-input" placeholder="例如：研发 Ensemble" maxlength="80" />
+                    <label class="field-label">{{ t('admin.ensemble.group.nameLabel') }} <span class="required">*</span></label>
+                    <input v-model="draft.name" class="field-input" :placeholder="t('admin.ensemble.group.namePlaceholder')" maxlength="80" />
                   </div>
                   <div>
-                    <label class="field-label">下游计费倍率</label>
+                    <label class="field-label">{{ t('admin.ensemble.group.rateLabel') }}</label>
                     <input v-model.number="draft.rateMultiplier" class="field-input" type="number" min="0.01" step="0.01" />
-                    <p class="field-hint">候选和聚合的实际上游调用会分别产生用量；此倍率沿用普通分组计费。</p>
+                    <p class="field-hint">{{ t('admin.ensemble.group.rateHint') }}</p>
                   </div>
                   <div class="md:col-span-2">
-                    <label class="field-label">描述</label>
-                    <textarea v-model="draft.description" class="field-input min-h-20 resize-y" placeholder="说明这个 Ensemble 分组的用途" maxlength="240" />
+                    <label class="field-label">{{ t('admin.ensemble.group.descriptionLabel') }}</label>
+                    <textarea v-model="draft.description" class="field-input min-h-20 resize-y" :placeholder="t('admin.ensemble.group.descriptionPlaceholder')" maxlength="240" />
                   </div>
                 </div>
 
                 <div v-if="isNew" class="source-panel mt-5">
                   <div class="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <h3 class="subsection-title">账号来源分组 <span class="required">*</span></h3>
-                      <p class="section-desc">可添加多个普通分组；创建后这些分组的账号会绑定到新的 Ensemble 分组。</p>
+                      <h3 class="subsection-title">{{ t('admin.ensemble.source.title') }} <span class="required">*</span></h3>
+                      <p class="section-desc">{{ t('admin.ensemble.source.description') }}</p>
                     </div>
-                    <span class="badge-count">已选 {{ selectedSourceGroupIds.length }}</span>
+                    <span class="badge-count">{{ t('admin.ensemble.source.selectedCount', { count: selectedSourceGroupIds.length }) }}</span>
                   </div>
 
                   <div v-if="selectedSourceGroups.length" class="flex flex-wrap gap-2">
@@ -115,50 +115,54 @@
                       <Icon name="server" size="xs" class="text-primary-500" />
                       <span class="truncate">{{ group.name }}</span>
                       <span class="chip-platform">{{ group.platform }}</span>
-                      <button type="button" class="chip-remove" :aria-label="`移除 ${group.name}`" @click="removeSourceGroup(group.id)">
+                      <button type="button" class="chip-remove" :aria-label="t('admin.ensemble.source.removeAria', { name: group.name })" @click="removeSourceGroup(group.id)">
                         <Icon name="x" size="xs" />
                       </button>
                     </span>
                   </div>
-                  <div v-else class="empty-inline">尚未选择来源分组。没有来源账号时，新的 Ensemble 分组无法调用任何模型。</div>
+                  <div v-else class="empty-inline">{{ t('admin.ensemble.source.empty') }}</div>
 
                   <div class="relative mt-3">
                     <button type="button" class="add-button" :disabled="sourceGroupOptions.length === 0" @click="toggleSourcePicker">
                       <Icon name="plus" size="sm" />
-                      {{ sourceGroupOptions.length ? '添加来源分组' : '没有可添加的普通分组' }}
+                      {{ sourceGroupOptions.length ? t('admin.ensemble.source.add') : t('admin.ensemble.source.addEmpty') }}
                     </button>
                     <div v-if="sourcePickerOpen" class="picker-panel">
                       <div class="picker-search">
                         <Icon name="search" size="sm" class="text-gray-400" />
-                        <input ref="sourcePickerInput" v-model="sourceQuery" class="picker-input" placeholder="搜索分组名称或平台" @keydown.esc="sourcePickerOpen = false" />
+                        <input ref="sourcePickerInput" v-model="sourceQuery" class="picker-input" :placeholder="t('admin.ensemble.source.searchPlaceholder')" @keydown.esc="sourcePickerOpen = false" />
                       </div>
                       <button v-for="group in filteredSourceGroupOptions" :key="group.id" type="button" class="picker-option" @click="addSourceGroup(group.id)">
                         <span class="min-w-0 truncate">{{ group.name }}</span>
                         <span class="chip-platform">{{ group.platform }}</span>
                       </button>
-                      <div v-if="filteredSourceGroupOptions.length === 0" class="picker-empty">没有匹配的来源分组</div>
+                      <div v-if="filteredSourceGroupOptions.length === 0" class="picker-empty">{{ t('admin.ensemble.source.noMatch') }}</div>
                     </div>
                   </div>
                   <div v-if="billingChannel" class="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700 dark:border-green-900/50 dark:bg-green-900/10 dark:text-green-300">
-                    计费渠道：<strong>{{ billingChannel.name }}</strong>。新 Ensemble 分组保存后会自动加入该渠道，并沿用其中的模型定价。
+                    <i18n-t keypath="admin.ensemble.source.billingChannel" tag="span" scope="global">
+                      <template #name>
+                        <strong>{{ billingChannel.name }}</strong>
+                      </template>
+                    </i18n-t>
                   </div>
                   <div v-else-if="selectedSourceGroupIds.length" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/10 dark:text-amber-300">
-                    当前来源分组不属于同一个启用渠道。请调整来源分组，保证计费规则唯一后再保存。
+                    {{ t('admin.ensemble.source.billingChannelConflict') }}
                   </div>
                 </div>
 
                 <div v-else class="existing-note mt-5">
                   <Icon name="infoCircle" size="md" class="flex-shrink-0 text-primary-500" />
                   <div>
-                    <p>这个分组的账号绑定已在分组管理中保存。当前页面只修改 Ensemble 成员和聚合参数，不会偷偷跨组读取账号。</p>
+                    <p>{{ t('admin.ensemble.source.existingNote') }}</p>
                     <div v-if="selectedSourceGroups.length" class="mt-2 flex flex-wrap gap-1.5">
                       <span v-for="group in selectedSourceGroups" :key="group.id" class="source-chip">
-                        <span class="truncate">来源：{{ group.name }}</span>
+                        <span class="truncate">{{ t('admin.ensemble.source.fromLabel', { name: group.name }) }}</span>
                         <span class="chip-platform">{{ group.platform }}</span>
                       </span>
                     </div>
-                    <p v-if="billingChannel" class="mt-2">计费渠道：{{ billingChannel.name }}</p>
-                    <p v-else class="mt-2 text-amber-700 dark:text-amber-300">尚未关联启用渠道，模型定价和实际调用不可用。</p>
+                    <p v-if="billingChannel" class="mt-2">{{ t('admin.ensemble.source.billingChannelPlain', { name: billingChannel.name }) }}</p>
+                    <p v-else class="mt-2 text-amber-700 dark:text-amber-300">{{ t('admin.ensemble.source.billingChannelMissing') }}</p>
                   </div>
                 </div>
               </section>
@@ -166,8 +170,8 @@
               <section class="section-card">
                 <div class="section-header">
                   <div>
-                    <h2 class="section-title"><span class="step-no">2</span>候选模型</h2>
-                    <p class="section-desc">模型来源于所选来源分组关联渠道的真实定价，不读取平台内置默认清单。</p>
+                    <h2 class="section-title"><span class="step-no">2</span>{{ t('admin.ensemble.proposers.title') }}</h2>
+                    <p class="section-desc">{{ t('admin.ensemble.proposers.description') }}</p>
                   </div>
                   <span :class="['badge-count', proposers.length >= 2 ? '' : 'badge-danger']">{{ proposers.length }} / {{ MAX_PROPOSERS }}</span>
                 </div>
@@ -176,127 +180,131 @@
                   <div v-for="(model, index) in proposers" :key="model" class="member-row">
                     <span class="member-index">{{ index + 1 }}</span>
                     <span class="min-w-0 flex-1 truncate font-mono text-sm">{{ model }}</span>
-                    <span class="member-role">候选</span>
-                    <button type="button" class="icon-button" :aria-label="`移除 ${model}`" title="移除" @click="removeProposer(model)">
+                    <span class="member-role">{{ t('admin.ensemble.proposers.roleLabel') }}</span>
+                    <button type="button" class="icon-button" :aria-label="t('admin.ensemble.proposers.removeAria', { model })" :title="t('admin.ensemble.proposers.remove')" @click="removeProposer(model)">
                       <Icon name="x" size="sm" />
                     </button>
                   </div>
                 </div>
-                <div v-else class="empty-inline">还没有添加候选模型，请点击下面的加号按钮。</div>
+                <div v-else class="empty-inline">{{ t('admin.ensemble.proposers.empty') }}</div>
 
                 <div class="relative mt-3">
                   <button type="button" class="add-button" :disabled="overProposerLimit || availableModels.length === 0" @click="toggleModelPicker">
                     <Icon name="plus" size="sm" />
-                    {{ availableModels.length === 0 ? '暂无可用模型' : overProposerLimit ? '已达到候选上限' : '添加候选模型' }}
+                    {{ availableModels.length === 0 ? t('admin.ensemble.proposers.noModels') : overProposerLimit ? t('admin.ensemble.proposers.limitReached') : t('admin.ensemble.proposers.add') }}
                   </button>
                   <div v-if="modelPickerOpen" class="picker-panel">
                     <div class="picker-search">
                       <Icon name="search" size="sm" class="text-gray-400" />
-                      <input ref="modelPickerInput" v-model="modelQuery" class="picker-input" placeholder="搜索模型名称" @keydown.esc="modelPickerOpen = false" />
+                      <input ref="modelPickerInput" v-model="modelQuery" class="picker-input" :placeholder="t('admin.ensemble.proposers.searchPlaceholder')" @keydown.esc="modelPickerOpen = false" />
                     </div>
                     <button v-for="model in filteredModelOptions" :key="model" type="button" class="picker-option" @click="addProposer(model)">
                       <span class="truncate font-mono text-xs">{{ model }}</span>
                       <Icon name="plus" size="sm" class="text-primary-500" />
                     </button>
-                    <div v-if="filteredModelOptions.length === 0" class="picker-empty">没有匹配的模型</div>
+                    <div v-if="filteredModelOptions.length === 0" class="picker-empty">{{ t('admin.ensemble.proposers.noMatch') }}</div>
                   </div>
                 </div>
-                <p class="field-hint mt-2">建议至少选择 2 个候选，最多 {{ MAX_PROPOSERS }} 个。每增加一个候选，实际上游调用和成本也会增加。</p>
+                <p class="field-hint mt-2">{{ t('admin.ensemble.proposers.hint', { max: MAX_PROPOSERS }) }}</p>
               </section>
             </div>
 
             <section class="section-card">
               <div class="section-header">
                 <div>
-                  <h2 class="section-title"><span class="step-no">3</span>聚合模型</h2>
-                  <p class="section-desc">聚合模型读取成功的候选答案并输出终稿；不选择时返回最长的候选答案。</p>
+                  <h2 class="section-title"><span class="step-no">3</span>{{ t('admin.ensemble.aggregator.title') }}</h2>
+                  <p class="section-desc">{{ t('admin.ensemble.aggregator.description') }}</p>
                 </div>
               </div>
               <div class="max-w-xl">
                 <Select
                   v-model="aggregator"
                   :options="aggregatorOptions"
-                  placeholder="不使用聚合（返回最长候选）"
+                  :placeholder="t('admin.ensemble.aggregator.none')"
                   searchable="auto"
                   clearable
-                  aria-label="选择聚合模型"
+                  :aria-label="t('admin.ensemble.aggregator.selectAria')"
                 />
-                <p class="field-hint">聚合模型可以是候选之一，也可以是同一来源范围内的另一个已定价模型。</p>
+                <p class="field-hint">{{ t('admin.ensemble.aggregator.hint') }}</p>
               </div>
             </section>
 
             <section class="section-card">
               <div class="section-header">
                 <div>
-                  <h2 class="section-title"><span class="step-no">4</span>运行参数</h2>
-                  <p class="section-desc">这些设置保存到 Ensemble 分组本身，不会修改来源分组。</p>
+                  <h2 class="section-title"><span class="step-no">4</span>{{ t('admin.ensemble.options.title') }}</h2>
+                  <p class="section-desc">{{ t('admin.ensemble.options.description') }}</p>
                 </div>
               </div>
               <div class="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <label class="field-label">最少成功候选数</label>
+                  <label class="field-label">{{ t('admin.ensemble.options.minProposers') }}</label>
                   <input v-model.number="options.minProposers" class="field-input" type="number" min="1" :max="Math.max(1, proposers.length)" />
-                  <p class="field-hint">低于此数量时请求返回失败。</p>
+                  <p class="field-hint">{{ t('admin.ensemble.options.minProposersHint') }}</p>
                 </div>
                 <div>
-                  <label class="field-label">单模型超时（秒）</label>
+                  <label class="field-label">{{ t('admin.ensemble.options.timeout') }}</label>
                   <input v-model.number="options.timeoutSeconds" class="field-input" type="number" min="1" max="600" />
                 </div>
                 <div>
-                  <label class="field-label">单模型最大输出 Token</label>
-                  <input v-model.number="options.maxTokens" class="field-input" type="number" min="0" placeholder="0 表示不限制" />
+                  <label class="field-label">{{ t('admin.ensemble.options.maxTokens') }}</label>
+                  <input v-model.number="options.maxTokens" class="field-input" type="number" min="0" :placeholder="t('admin.ensemble.options.maxTokensPlaceholder')" />
                 </div>
               </div>
               <div class="option-toggle mt-4">
                 <div>
-                  <div class="text-sm font-medium text-gray-800 dark:text-gray-200">返回 Ensemble 执行明细</div>
-                  <p class="field-hint">开启后响应附带每个候选/聚合调用的耗时、Token 和成本，执行轨迹里也会显示真实模型名。候选答案原文只在后台测试里返回，不会进入正常响应，因此开启的额外开销很小。关闭后轨迹改用「模型 1 / 模型 2」指代，适合把该分组转售给第三方的场景。</p>
+                  <div class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ t('admin.ensemble.options.exposeMetadata') }}</div>
+                  <p class="field-hint">{{ t('admin.ensemble.options.exposeMetadataHint') }}</p>
                 </div>
-                <Toggle v-model="options.exposeMetadata" aria-label="返回 Ensemble 执行明细" />
+                <Toggle v-model="options.exposeMetadata" :aria-label="t('admin.ensemble.options.exposeMetadata')" />
               </div>
               <div class="option-toggle mt-4">
                 <div>
-                  <div class="text-sm font-medium text-gray-800 dark:text-gray-200">流式输出执行过程（推理轨迹）</div>
-                  <p class="field-hint">开启后流式调用会通过 reasoning_content 实时展示候选模型调用、完成耗时与失败原因，未启用该字段的客户端会自动忽略。该轨迹仅用于展示，不会进入模型上下文。聚合模型自己的思考过程不受此开关控制，始终按单模型调用的方式实时透传。</p>
+                  <div class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ t('admin.ensemble.options.streamTrace') }}</div>
+                  <p class="field-hint">{{ t('admin.ensemble.options.streamTraceHint') }}</p>
                 </div>
-                <Toggle v-model="options.streamTrace" aria-label="流式输出执行过程" />
+                <Toggle v-model="options.streamTrace" :aria-label="t('admin.ensemble.options.streamTraceAria')" />
               </div>
               <div class="estimate-bar mt-4">
-                <span>预计上游调用次数</span>
-                <strong>{{ proposers.length + (aggregator ? 1 : 0) }} 次</strong>
-                <span class="text-gray-500 dark:text-gray-400">候选并行调用{{ aggregator ? '，再调用 1 次聚合模型' : '，不执行聚合' }}</span>
+                <span>{{ t('admin.ensemble.options.estimate') }}</span>
+                <strong>{{ t('admin.ensemble.options.estimateCalls', { count: proposers.length + (aggregator ? 1 : 0) }) }}</strong>
+                <span class="text-gray-500 dark:text-gray-400">{{ aggregator ? t('admin.ensemble.options.estimateWithAggregator') : t('admin.ensemble.options.estimateWithoutAggregator') }}</span>
               </div>
             </section>
 
             <section class="section-card">
               <div class="section-header">
                 <div>
-                  <h2 class="section-title"><Icon name="play" size="md" class="mr-2 text-primary-500" />保存后测试</h2>
-                  <p class="section-desc">测试不会保存 API Key。请输入一个已经绑定到当前 Ensemble 分组的 API Key，页面会直接请求本地网关。</p>
+                  <h2 class="section-title"><Icon name="play" size="md" class="mr-2 text-primary-500" />{{ t('admin.ensemble.test.title') }}</h2>
+                  <p class="section-desc">{{ t('admin.ensemble.test.description') }}</p>
                 </div>
               </div>
               <div class="test-key-field">
-                <label class="field-label">测试用 API Key</label>
+                <label class="field-label">{{ t('admin.ensemble.test.keyLabel') }}</label>
                 <div class="test-key-row">
-                  <input v-model="testApiKey" class="field-input font-mono" type="password" autocomplete="off" placeholder="粘贴当前 Ensemble 分组的 API Key" />
+                  <input v-model="testApiKey" class="field-input font-mono" type="password" autocomplete="off" :placeholder="t('admin.ensemble.test.keyPlaceholder')" />
                   <button type="button" class="btn btn-secondary test-run-button" :disabled="testing || !canTest" @click="runTest">
-                    <Icon name="play" size="md" class="mr-1.5" />{{ testing ? '测试中…' : '运行一次测试' }}
+                    <Icon name="play" size="md" class="mr-1.5" />{{ testing ? t('admin.ensemble.test.running') : t('admin.ensemble.test.run') }}
                   </button>
                 </div>
-                <p class="field-hint">这是测试请求的临时凭证，不属于 Ensemble 配置，也不会发送给任何外部 Router。请求固定使用虚拟模型 <code>ensemble</code>。</p>
+                <i18n-t keypath="admin.ensemble.test.keyHint" tag="p" class="field-hint" scope="global">
+                  <template #model>
+                    <code>ensemble</code>
+                  </template>
+                </i18n-t>
               </div>
             </section>
 
             <section v-if="testResult" class="section-card">
               <div class="section-header">
                 <div>
-                  <h2 class="section-title"><Icon name="chartBar" size="md" class="mr-2 text-primary-500" />最近一次测试结果</h2>
-                  <p class="section-desc">每一行对应一次实际上游调用；聚合调用也会单独列出。</p>
+                  <h2 class="section-title"><Icon name="chartBar" size="md" class="mr-2 text-primary-500" />{{ t('admin.ensemble.result.title') }}</h2>
+                  <p class="section-desc">{{ t('admin.ensemble.result.description') }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <span>{{ testResult.metadataPresent ? `成功 ${testResult.successCount} / ${testResult.members.length}` : '未读取到 Ensemble 执行明细' }}</span>
-                  <span>耗时 {{ testResult.durationText }}</span>
-                  <span>总 Token {{ testResult.totalTokens }}</span>
+                  <span>{{ testResult.metadataPresent ? t('admin.ensemble.result.successCount', { succeeded: testResult.successCount, total: testResult.members.length }) : t('admin.ensemble.result.noMetadata') }}</span>
+                  <span>{{ t('admin.ensemble.stats.duration', { value: testResult.durationText }) }}</span>
+                  <span>{{ t('admin.ensemble.stats.totalTokens', { value: testResult.totalTokens }) }}</span>
                 </div>
               </div>
               <div v-if="testResult.warning" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
@@ -305,13 +313,13 @@
               <div class="overflow-x-auto">
                 <table class="result-table">
                   <thead>
-                    <tr><th>角色</th><th>模型</th><th>状态</th><th class="text-right">耗时</th><th class="text-right">输入 Token</th><th class="text-right">输出 Token</th><th class="text-right">成本</th></tr>
+                    <tr><th>{{ t('admin.ensemble.result.columns.role') }}</th><th>{{ t('admin.ensemble.result.columns.model') }}</th><th>{{ t('admin.ensemble.result.columns.status') }}</th><th class="text-right">{{ t('admin.ensemble.result.columns.duration') }}</th><th class="text-right">{{ t('admin.ensemble.result.columns.promptTokens') }}</th><th class="text-right">{{ t('admin.ensemble.result.columns.completionTokens') }}</th><th class="text-right">{{ t('admin.ensemble.result.columns.cost') }}</th></tr>
                   </thead>
                   <tbody>
                     <tr v-for="(member, index) in testResult.members" :key="`${member.role}-${member.model}-${index}`">
-                      <td>{{ member.role === 'aggregator' ? '聚合' : `候选 ${index + 1}` }}</td>
+                      <td>{{ member.role === 'aggregator' ? t('admin.ensemble.result.roleAggregator') : t('admin.ensemble.result.roleProposer', { index: index + 1 }) }}</td>
                       <td class="font-mono text-xs">{{ member.model }}</td>
-                      <td><span :class="member.status === 'ok' ? 'pill-ok' : 'pill-fail'">{{ member.status === 'ok' ? '成功' : '失败' }}</span><span v-if="member.error" class="ml-2 text-xs text-red-500">{{ member.error }}</span></td>
+                      <td><span :class="member.status === 'ok' ? 'pill-ok' : 'pill-fail'">{{ member.status === 'ok' ? t('admin.ensemble.stats.statusOk') : t('admin.ensemble.stats.statusFailed') }}</span><span v-if="member.error" class="ml-2 text-xs text-red-500">{{ member.error }}</span></td>
                       <td class="text-right">{{ formatDuration(member.durationMs) }}</td>
                       <td class="text-right">{{ member.promptTokens ?? '—' }}</td>
                       <td class="text-right">{{ member.completionTokens ?? '—' }}</td>
@@ -324,11 +332,11 @@
                 </table>
               </div>
               <div class="mt-4">
-                <div class="mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">最终回答</div>
-                <div class="result-content">{{ testResult.content || '（没有返回内容）' }}</div>
+                <div class="mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.ensemble.result.finalAnswer') }}</div>
+                <div class="result-content">{{ testResult.content || t('admin.ensemble.result.emptyContent') }}</div>
               </div>
               <details v-if="testResult.proposals.length" class="mt-4">
-                <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">查看候选模型原始回答（{{ testResult.proposals.length }} 份）</summary>
+                <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">{{ t('admin.ensemble.result.viewProposals', { count: testResult.proposals.length }) }}</summary>
                 <div class="mt-2 space-y-2">
                   <div v-for="proposal in testResult.proposals" :key="proposal.model" class="proposal-card">
                     <div class="mb-1 font-mono text-xs text-gray-500">{{ proposal.model }}</div>
@@ -355,6 +363,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import Select from '@/components/common/Select.vue'
@@ -374,6 +383,8 @@ import {
   planEnsembleMemberReconciliation,
   validateEnsembleDraft
 } from '@/utils/ensemble'
+
+const { t } = useI18n()
 
 const TARGET_STORAGE_KEY = 'ensemble.native.targetGroupId'
 const MAX_PROPOSERS = 6
@@ -465,8 +476,11 @@ const filteredSourceGroupOptions = computed(() => {
   return sourceGroupOptions.value.filter(group => `${group.name} ${group.platform}`.toLowerCase().includes(query))
 })
 const ensembleGroupOptions = computed<SelectOption[]>(() => [
-  { value: null, label: '新建 Ensemble 分组' },
-  ...ensembleGroups.value.map(group => ({ value: group.id, label: `${group.name}（${group.account_count ?? 0} 个账号）` }))
+  { value: null, label: t('admin.ensemble.group.newOption') },
+  ...ensembleGroups.value.map(group => ({
+    value: group.id,
+    label: t('admin.ensemble.group.optionLabel', { name: group.name, count: group.account_count ?? 0 })
+  }))
 ])
 const availableModels = computed(() => models.value.filter(model => !proposers.value.includes(model)))
 const filteredModelOptions = computed(() => {
@@ -474,7 +488,7 @@ const filteredModelOptions = computed(() => {
   return query ? availableModels.value.filter(model => model.toLowerCase().includes(query)) : availableModels.value
 })
 const aggregatorOptions = computed<SelectOption[]>(() => [
-  { value: null, label: '不使用聚合（返回最长候选）' },
+  { value: null, label: t('admin.ensemble.aggregator.none') },
   ...models.value.map(model => ({ value: model, label: model }))
 ])
 const overProposerLimit = computed(() => proposers.value.length >= MAX_PROPOSERS)
@@ -515,7 +529,7 @@ async function init() {
       : null
     await loadTarget(target)
   } catch (error) {
-    show(errorMessage(error, '加载 Ensemble 配置失败'), 'err')
+    show(errorMessage(error, t('admin.ensemble.errors.loadConfig')), 'err')
   } finally {
     loading.value = false
   }
@@ -571,7 +585,7 @@ async function loadTarget(groupId: number | null) {
     localStorage.setItem(TARGET_STORAGE_KEY, String(groupId))
     await refreshModels()
   } catch (error) {
-    show(errorMessage(error, '加载 Ensemble 分组配置失败'), 'err')
+    show(errorMessage(error, t('admin.ensemble.errors.loadGroupConfig')), 'err')
   }
 }
 
@@ -662,7 +676,7 @@ async function save(forceCreate = false) {
     ? findSharedEnsembleChannel(selectedSourceGroupIds.value, channels.value)
     : billingChannel.value
   if (!effectiveBillingChannel) {
-    show('所选来源组必须属于同一个启用中的渠道，才能保证模型定价和计费规则唯一。', 'err')
+    show(t('admin.ensemble.errors.sharedChannelRequired'), 'err')
     return
   }
   const duplicate = allGroups.value.find(group =>
@@ -670,7 +684,7 @@ async function save(forceCreate = false) {
     (creating || group.id !== selectedEnsembleGroupId.value)
   )
   if (duplicate) {
-    show(`分组名称“${draft.value.name.trim()}”已存在，请换一个名称。`, 'err')
+    show(t('admin.ensemble.errors.duplicateName', { name: draft.value.name.trim() }), 'err')
     return
   }
 
@@ -681,7 +695,7 @@ async function save(forceCreate = false) {
     let groupId = creating ? null : selectedEnsembleGroupId.value
     if (groupId === null) {
       const channel = effectiveBillingChannel
-      if (!channel) throw new Error('来源分组没有共同的启用渠道，无法创建 Ensemble 分组。')
+      if (!channel) throw new Error(t('admin.ensemble.errors.noSharedChannel'))
       const created = await groupsAPI.create(buildEnsembleGroupPayload({
         name: draft.value.name,
         description: draft.value.description,
@@ -716,17 +730,28 @@ async function save(forceCreate = false) {
     creationConfigured = true
     localStorage.setItem(TARGET_STORAGE_KEY, String(groupId))
     await reloadGroupsAndTarget(groupId)
-    show(`Ensemble 分组“${draft.value.name.trim()}”已保存，共 ${proposers.value.length} 个候选${aggregator.value ? `，聚合模型为 ${aggregator.value}` : '，不使用聚合模型'}`, 'ok')
+    show(aggregator.value
+      ? t('admin.ensemble.messages.savedWithAggregator', {
+        name: draft.value.name.trim(),
+        count: proposers.value.length,
+        aggregator: aggregator.value
+      })
+      : t('admin.ensemble.messages.savedWithoutAggregator', {
+        name: draft.value.name.trim(),
+        count: proposers.value.length
+      }), 'ok')
   } catch (error) {
     if (createdGroupId !== null && !creationConfigured) {
       try {
         await groupsAPI.delete(createdGroupId)
       } catch {
-        show(`保存失败，且自动清理新建分组失败，请检查分组“${draft.value.name.trim()}”。`, 'err')
+        show(t('admin.ensemble.errors.rollbackFailed', { name: draft.value.name.trim() }), 'err')
         return
       }
     }
-    show(`保存失败：${errorMessage(error, '服务器返回未知错误')}`, 'err')
+    show(t('admin.ensemble.errors.saveFailed', {
+      message: errorMessage(error, t('admin.ensemble.errors.unknownServerError'))
+    }), 'err')
   } finally {
     saving.value = false
   }
@@ -758,11 +783,11 @@ async function reloadGroupsAndTarget(groupId: number) {
 
 async function runTest() {
   if (isNew.value) {
-    show('请先保存配置，创建 Ensemble 分组后再测试。', 'warn')
+    show(t('admin.ensemble.errors.saveBeforeTest'), 'warn')
     return
   }
   if (!testApiKey.value.trim()) {
-    show('请输入当前 Ensemble 分组的测试 API Key。', 'warn')
+    show(t('admin.ensemble.errors.testKeyRequired'), 'warn')
     return
   }
   testing.value = true
@@ -774,11 +799,11 @@ async function runTest() {
   testAbortController.value = new AbortController()
   try {
     const data = await ensembleAPI.testStream(testApiKey.value.trim(), [
-      { role: 'user', content: '请用两三句话说明什么是多模型聚合。' }
+      { role: 'user', content: t('admin.ensemble.test.prompt') }
     ], event => {
       testEvents.value.push(event)
       if (event.type === 'error' || event.type === 'fallback') {
-        testDialogError.value = event.error ?? (event.type === 'fallback' ? '聚合模型失败，已回退到候选回答。' : '')
+        testDialogError.value = event.error ?? (event.type === 'fallback' ? t('admin.ensemble.messages.fallbackNotice') : '')
       }
       if (event.type === 'completed' && event.response) {
         testResult.value = normalizeTestResult(event.response)
@@ -786,17 +811,21 @@ async function runTest() {
     }, testAbortController.value.signal)
     if (data && !testResult.value) testResult.value = normalizeTestResult(data)
     if (testDialogError.value) {
-      show(`测试结束：${testDialogError.value}`, 'warn')
+      show(t('admin.ensemble.messages.testFinished', { message: testDialogError.value }), 'warn')
     } else if (testResult.value) {
-      show(`测试完成：${testResult.value.successCount}/${testResult.value.members.length} 个调用成功，耗时 ${testResult.value.durationText}`, testResult.value.successCount > 0 ? 'ok' : 'warn')
+      show(t('admin.ensemble.messages.testCompleted', {
+        succeeded: testResult.value.successCount,
+        total: testResult.value.members.length,
+        duration: testResult.value.durationText
+      }), testResult.value.successCount > 0 ? 'ok' : 'warn')
     }
   } catch (error) {
     if ((error as { name?: string })?.name === 'AbortError') {
-      testDialogError.value = '测试已取消。'
-      show('测试已取消。', 'warn')
+      testDialogError.value = t('admin.ensemble.messages.testCancelled')
+      show(t('admin.ensemble.messages.testCancelled'), 'warn')
     } else {
-      testDialogError.value = errorMessage(error, '网关请求失败')
-      show(`测试失败：${testDialogError.value}`, 'err')
+      testDialogError.value = errorMessage(error, t('admin.ensemble.errors.gatewayFailed'))
+      show(t('admin.ensemble.errors.testFailed', { message: testDialogError.value }), 'err')
     }
   } finally {
     testing.value = false
@@ -848,7 +877,7 @@ function normalizeTestResult(data: any): TestResult {
     content: data?.choices?.[0]?.message?.content ?? '',
     proposals,
     metadataPresent,
-    warning: metadataPresent ? undefined : '网关没有返回 Ensemble 执行元数据，可能没有进入 Ensemble 路由；请检查测试 Key 是否绑定到 Ensemble 分组。'
+    warning: metadataPresent ? undefined : t('admin.ensemble.result.metadataWarning')
   }
 }
 
@@ -857,24 +886,27 @@ function formatDuration(value: number): string {
 }
 
 function formatCost(value?: number): string {
-  return typeof value === 'number' ? `$${value.toFixed(6)}` : '未返回'
+  return typeof value === 'number' ? `$${value.toFixed(6)}` : t('admin.ensemble.stats.costUnavailable')
 }
 
 function formatCostSource(source?: string): string {
-  if (source === 'upstream') return '上游返回'
-  if (source === 'channel') return '渠道估算'
-  if (source === 'litellm') return '全局估算'
-  if (source === 'fallback') return '默认估算'
+  if (source === 'upstream') return t('admin.ensemble.costSource.upstream')
+  if (source === 'channel') return t('admin.ensemble.costSource.channel')
+  if (source === 'litellm') return t('admin.ensemble.costSource.litellm')
+  if (source === 'fallback') return t('admin.ensemble.costSource.fallback')
   return source ?? ''
 }
 
 function validationMessage(key: string): string {
-  return {
-    'name-required': '请先填写 Ensemble 分组名称。',
-    'source-group-required': '请至少添加一个账号来源分组。',
-    'at-least-two-proposers': '请至少添加 2 个候选模型。',
-    'invalid-min-proposers': '最少成功候选数必须在 1 和已添加候选数之间。'
-  }[key] ?? '请检查 Ensemble 配置。'
+  // validateEnsembleDraft returns stable kebab-case reason codes; they stay the
+  // lookup keys so the util has no reason to know about i18n.
+  const messages: Record<string, string> = {
+    'name-required': t('admin.ensemble.validation.nameRequired'),
+    'source-group-required': t('admin.ensemble.validation.sourceGroupRequired'),
+    'at-least-two-proposers': t('admin.ensemble.validation.atLeastTwoProposers'),
+    'invalid-min-proposers': t('admin.ensemble.validation.invalidMinProposers')
+  }
+  return messages[key] ?? t('admin.ensemble.validation.generic')
 }
 
 function errorMessage(error: unknown, fallback: string): string {

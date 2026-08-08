@@ -855,6 +855,60 @@ var (
 			},
 		},
 	}
+	// EnsembleProposersColumns holds the columns for the "ensemble_proposers" table.
+	EnsembleProposersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "role", Type: field.TypeString, Size: 20, Default: "proposer"},
+		{Name: "model", Type: field.TypeString, Size: 200},
+		{Name: "platform", Type: field.TypeString, Size: 32, Default: ""},
+		{Name: "priority", Type: field.TypeInt, Default: 100},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "group_id", Type: field.TypeInt64},
+	}
+	// EnsembleProposersTable holds the schema information for the "ensemble_proposers" table.
+	EnsembleProposersTable = &schema.Table{
+		Name:       "ensemble_proposers",
+		Columns:    EnsembleProposersColumns,
+		PrimaryKey: []*schema.Column{EnsembleProposersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "ensemble_proposers_groups_group",
+				Columns:    []*schema.Column{EnsembleProposersColumns[9]},
+				RefColumns: []*schema.Column{GroupsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ensembleproposer_group_id",
+				Unique:  false,
+				Columns: []*schema.Column{EnsembleProposersColumns[9]},
+			},
+			{
+				Name:    "ensembleproposer_group_id_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{EnsembleProposersColumns[9], EnsembleProposersColumns[8]},
+			},
+			{
+				Name:    "ensembleproposer_group_id_role",
+				Unique:  false,
+				Columns: []*schema.Column{EnsembleProposersColumns[9], EnsembleProposersColumns[4]},
+			},
+			{
+				Name:    "ensembleproposer_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{EnsembleProposersColumns[3]},
+			},
+			{
+				Name:    "ensembleproposer_priority",
+				Unique:  false,
+				Columns: []*schema.Column{EnsembleProposersColumns[7]},
+			},
+		},
+	}
 	// ErrorPassthroughRulesColumns holds the columns for the "error_passthrough_rules" table.
 	ErrorPassthroughRulesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -950,6 +1004,7 @@ var (
 		{Name: "profit_control_enabled", Type: field.TypeBool, Default: false},
 		{Name: "profit_min_margin", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
 		{Name: "profit_safety_buffer", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "ensemble_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{
@@ -2083,6 +2138,7 @@ var (
 		ChannelMonitorHistoriesTable,
 		ChannelMonitorRequestTemplatesTable,
 		CompositeModelRoutesTable,
+		EnsembleProposersTable,
 		ErrorPassthroughRulesTable,
 		GroupsTable,
 		IdempotencyRecordsTable,
@@ -2169,6 +2225,10 @@ func init() {
 	CompositeModelRoutesTable.ForeignKeys[0].RefTable = GroupsTable
 	CompositeModelRoutesTable.Annotation = &entsql.Annotation{
 		Table: "composite_model_routes",
+	}
+	EnsembleProposersTable.ForeignKeys[0].RefTable = GroupsTable
+	EnsembleProposersTable.Annotation = &entsql.Annotation{
+		Table: "ensemble_proposers",
 	}
 	ErrorPassthroughRulesTable.Annotation = &entsql.Annotation{
 		Table: "error_passthrough_rules",

@@ -144,6 +144,20 @@ func ProvideBatchImageHandler(
 	return h
 }
 
+func ProvideEnsembleHandler(
+	runtime *service.EnsembleRuntimeService,
+	billingService *service.BillingService,
+	modelPricingResolver *service.ModelPricingResolver,
+	contentModerationService *service.ContentModerationService,
+	coordinator *securityaudit.Coordinator,
+) *EnsembleHandler {
+	costEstimator := service.NewBillingEnsembleCostEstimator(billingService, modelPricingResolver)
+	h := NewEnsembleHandler(runtime, costEstimator)
+	h.contentModerationService = contentModerationService
+	h.securityAuditCoordinator = coordinator
+	return h
+}
+
 // ProvideSystemHandler creates admin.SystemHandler with UpdateService
 func ProvideSystemHandler(updateService *service.UpdateService, lockService *service.SystemOperationLockService) *admin.SystemHandler {
 	return admin.NewSystemHandler(updateService, lockService)
@@ -188,6 +202,7 @@ func ProvideHandlers(
 	modelPlazaHandler *ModelPlazaHandler,
 	asyncImageHandler *AsyncImageHandler,
 	batchImageHandler *BatchImageHandler,
+	ensembleHandler *EnsembleHandler,
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 ) *Handlers {
@@ -212,6 +227,7 @@ func ProvideHandlers(
 		ModelPlaza:       modelPlazaHandler,
 		AsyncImage:       asyncImageHandler,
 		BatchImage:       batchImageHandler,
+		Ensemble:         ensembleHandler,
 	}
 }
 
@@ -237,6 +253,7 @@ var ProviderSet = wire.NewSet(
 	NewModelPlazaHandler,
 	NewAsyncImageHandler,
 	ProvideBatchImageHandler,
+	ProvideEnsembleHandler,
 
 	// Admin handlers
 	admin.NewDashboardHandler,

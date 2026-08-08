@@ -731,7 +731,7 @@ func (s *OpenAIGatewayService) tryStickySessionHit(ctx context.Context, groupID 
 		return nil
 	}
 	account = s.recheckSelectedOpenAIAccountFromDB(ctx, account, groupID, platform, requestedModel, requireCompact, requiredCapability)
-	if account == nil || !s.openAIAccountMatchesSchedulingGroup(account, groupID) {
+	if account == nil || !s.openAIAccountMatchesSchedulingGroup(ctx, account, groupID) {
 		_ = s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
 		return nil
 	}
@@ -932,7 +932,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 					account = s.recheckSelectedOpenAIAccountFromDB(ctx, account, groupID, platform, requestedModel, requireCompact, requiredCapability)
 					if account == nil {
 						_ = s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
-					} else if !s.openAIAccountMatchesSchedulingGroup(account, groupID) {
+					} else if !s.openAIAccountMatchesSchedulingGroup(ctx, account, groupID) {
 						_ = s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
 					} else if s.isOpenAIAccountRequestRuntimeBlocked(account, requestedModel) {
 						_ = s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
@@ -1204,6 +1204,28 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64, platform string) ([]Account, error) {
 	platform = normalizeOpenAICompatiblePlatform(platform)
+	if poolGroupIDs := AccountPoolGroupIDsFromContext(ctx); len(poolGroupIDs) > 0 {
+		// Ensemble member sub-calls draw their pool from the union of the
+		// caller's group and the configured source groups. Accounts are merged
+		// across the groups and deduplicated; the rest of the scheduler
+		// (load balance, failover, capacity slots) is unchanged, so members are
+		// scheduled exactly like direct calls to their source groups.
+		merged := make(map[int64]Account, 16)
+		for _, poolGroupID := range poolGroupIDs {
+			groupAccounts, groupErr := s.accountRepo.ListSchedulableByGroupIDAndPlatform(ctx, poolGroupID, platform)
+			if groupErr != nil {
+				return nil, fmt.Errorf("query accounts failed: %w", groupErr)
+			}
+			for _, account := range groupAccounts {
+				merged[account.ID] = account
+			}
+		}
+		accounts := make([]Account, 0, len(merged))
+		for _, account := range merged {
+			accounts = append(accounts, account)
+		}
+		return accounts, nil
+	}
 	if s.schedulerSnapshot != nil {
 		accounts, _, err := s.schedulerSnapshot.ListSchedulableAccounts(ctx, groupID, platform, false)
 		return accounts, err
@@ -1296,7 +1318,7 @@ func (s *OpenAIGatewayService) recheckSelectedOpenAIAccountFromDB(ctx context.Co
 	if err != nil || latest == nil {
 		return nil
 	}
-	if !s.openAIAccountMatchesSchedulingGroup(latest, groupID) {
+	if !s.openAIAccountMatchesSchedulingGroup(ctx, latest, groupID) {
 		return nil
 	}
 	if !isOpenAICompatibleAccountEligibleForRequest(ctx, latest, platform, requestedModel, requireCompact, requiredCapability) {
@@ -1314,9 +1336,12 @@ func (s *OpenAIGatewayService) recheckSelectedOpenAIAccountFromDB(ctx context.Co
 	return latest
 }
 
-func (s *OpenAIGatewayService) openAIAccountMatchesSchedulingGroup(account *Account, groupID *int64) bool {
+func (s *OpenAIGatewayService) openAIAccountMatchesSchedulingGroup(ctx context.Context, account *Account, groupID *int64) bool {
 	if s != nil && s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
 		return account != nil
+	}
+	if poolGroupIDs := AccountPoolGroupIDsFromContext(ctx); len(poolGroupIDs) > 0 {
+		return openAIStickyAccountMatchesPoolGroupIDs(account, poolGroupIDs)
 	}
 	return openAIStickyAccountMatchesGroup(account, groupID)
 }

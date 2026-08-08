@@ -352,6 +352,53 @@ func (s *stubAdminService) PreviewCompositeRoute(ctx context.Context, groupID in
 	return &decision, nil
 }
 
+func (s *stubAdminService) ListEnsembleProposers(ctx context.Context, groupID int64) ([]service.EnsembleProposer, error) {
+	return []service.EnsembleProposer{
+		{
+			ID:       1,
+			GroupID:  groupID,
+			Role:     service.EnsembleRoleProposer,
+			Model:    "gpt-5",
+			Priority: 100,
+			Enabled:  true,
+		},
+	}, nil
+}
+
+func (s *stubAdminService) CreateEnsembleProposer(ctx context.Context, groupID int64, input service.EnsembleProposerInput) (*service.EnsembleProposer, error) {
+	return &service.EnsembleProposer{
+		ID:       2,
+		GroupID:  groupID,
+		Role:     input.Role,
+		Model:    input.Model,
+		Priority: input.Priority,
+		Enabled:  input.Enabled,
+	}, nil
+}
+
+func (s *stubAdminService) UpdateEnsembleProposer(ctx context.Context, groupID, proposerID int64, input service.EnsembleProposerInput) (*service.EnsembleProposer, error) {
+	return &service.EnsembleProposer{
+		ID:       proposerID,
+		GroupID:  groupID,
+		Role:     input.Role,
+		Model:    input.Model,
+		Priority: input.Priority,
+		Enabled:  input.Enabled,
+	}, nil
+}
+
+func (s *stubAdminService) DeleteEnsembleProposer(ctx context.Context, groupID, proposerID int64) error {
+	return nil
+}
+
+func (s *stubAdminService) GetEnsembleConfig(ctx context.Context, groupID int64) (service.EnsembleConfig, error) {
+	return service.EnsembleConfig{}, nil
+}
+
+func (s *stubAdminService) UpdateEnsembleConfig(ctx context.Context, groupID int64, config service.EnsembleConfig) (service.EnsembleConfig, error) {
+	return config, nil
+}
+
 func (s *stubAdminService) CreateGroup(ctx context.Context, input *service.CreateGroupInput) (*service.Group, error) {
 	group := service.Group{ID: 200, Name: input.Name, Status: service.StatusActive}
 	return &group, nil

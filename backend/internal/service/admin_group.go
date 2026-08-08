@@ -63,6 +63,39 @@ func (s *adminServiceImpl) GetGroupModelsListCandidates(ctx context.Context, id 
 		platform = PlatformAnthropic
 	}
 
+	if platform == PlatformEnsemble {
+		if id <= 0 || s.accountRepo == nil {
+			return []string{}, nil
+		}
+		accounts, err := s.accountRepo.ListSchedulableByGroupID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		seen := make(map[string]struct{})
+		candidates := make([]string, 0)
+		for _, account := range accounts {
+			for _, model := range defaultModelsListCandidateIDs(account.Platform) {
+				if _, exists := seen[model]; exists {
+					continue
+				}
+				seen[model] = struct{}{}
+				candidates = append(candidates, model)
+			}
+			for model := range account.GetModelMapping() {
+				model = strings.TrimSpace(model)
+				if model == "" {
+					continue
+				}
+				if _, exists := seen[model]; exists {
+					continue
+				}
+				seen[model] = struct{}{}
+				candidates = append(candidates, model)
+			}
+		}
+		return candidates, nil
+	}
+
 	candidates := defaultModelsListCandidateIDs(platform)
 	if id <= 0 || s.accountRepo == nil {
 		return candidates, nil
@@ -280,6 +313,9 @@ func compositeDefaultModelsListCandidateIDs() []string {
 }
 
 func canCopyAccountsFromGroupPlatform(targetPlatform, sourcePlatform string) bool {
+	if targetPlatform == PlatformEnsemble {
+		return isConcreteRequestPlatform(sourcePlatform)
+	}
 	if targetPlatform == PlatformComposite {
 		return sourcePlatform == PlatformComposite || isConcreteRequestPlatform(sourcePlatform)
 	}

@@ -48,6 +48,19 @@ func (h *GatewayHandler) openAISecurityAuditError(c *gin.Context, decision *secu
 	}})
 }
 
+func (h *EnsembleHandler) openAISecurityAuditError(c *gin.Context, decision *securityaudit.Decision) {
+	if decision == nil {
+		return
+	}
+	errType := "api_error"
+	if decision.Kind == securityaudit.DecisionBlock {
+		errType = "permission_error"
+	}
+	c.JSON(securityAuditStatus(decision), gin.H{"error": gin.H{
+		"type": errType, "code": securityAuditErrorCode(decision), "message": securityAuditMessage(decision),
+	}})
+}
+
 func (h *GatewayHandler) responsesSecurityAuditError(c *gin.Context, decision *securityaudit.Decision) {
 	if decision == nil {
 		return

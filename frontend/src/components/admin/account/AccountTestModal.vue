@@ -53,6 +53,9 @@
           label-key="display_name"
           :placeholder="loadingModels ? t('common.loading') + '...' : t('admin.accounts.selectTestModel')"
         />
+        <p v-if="filteredVirtualModelCount > 0" class="text-xs leading-5 text-amber-600 dark:text-amber-300">
+          已隐藏 {{ filteredVirtualModelCount }} 个分组路由入口。<code>ensemble</code> 需要在 Ensemble 配置页使用分组 API Key 测试，不能用单个账号直连。
+        </p>
       </div>
 
       <div v-if="isOpenAIAccount" class="space-y-1.5">
@@ -253,6 +256,7 @@ import { buildApiUrl } from '@/api/client'
 import { ADMIN_UI_REQUEST_HEADER } from '@/api/adminUIRequest'
 import { adminAPI } from '@/api/admin'
 import type { Account, ClaudeModel } from '@/types'
+import { filterAccountConnectivityModels } from '@/utils/accountTest'
 
 const { t } = useI18n()
 const { copyToClipboard } = useClipboard()
@@ -282,6 +286,7 @@ const outputLines = ref<OutputLine[]>([])
 const streamingContent = ref('')
 const errorMessage = ref('')
 const availableModels = ref<ClaudeModel[]>([])
+const filteredVirtualModelCount = ref(0)
 const selectedModelId = ref('')
 const testPrompt = ref('')
 const loadingModels = ref(false)
@@ -349,9 +354,11 @@ const loadAvailableModels = async () => {
   selectedModelId.value = '' // Reset selection before loading
   try {
     const models = await adminAPI.accounts.getAvailableModels(props.account.id)
+    const testableModels = filterAccountConnectivityModels(models)
+    filteredVirtualModelCount.value = models.length - testableModels.length
     availableModels.value = props.account.platform === 'gemini' || props.account.platform === 'antigravity'
-      ? sortTestModels(models)
-      : models
+      ? sortTestModels(testableModels)
+      : testableModels
     // Default selection by platform
     if (availableModels.value.length > 0) {
       if (props.account.platform === 'gemini') {
@@ -366,6 +373,7 @@ const loadAvailableModels = async () => {
     console.error('Failed to load available models:', error)
     // Fallback to empty list
     availableModels.value = []
+    filteredVirtualModelCount.value = 0
     selectedModelId.value = ''
   } finally {
     loadingModels.value = false

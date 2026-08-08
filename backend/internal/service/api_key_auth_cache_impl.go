@@ -14,7 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 18 // v18: include group profit control fields (force refresh of pre-fix snapshots)
+const apiKeyAuthSnapshotVersion = 19 // v19: include Ensemble group configuration in auth snapshots
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -423,6 +423,7 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			ProfitControlEnabled:            apiKey.Group.ProfitControlEnabled,
 			ProfitMinMargin:                 apiKey.Group.ProfitMinMargin,
 			ProfitSafetyBuffer:              apiKey.Group.ProfitSafetyBuffer,
+			EnsembleConfig:                  apiKey.Group.EnsembleConfig,
 		}
 	}
 	return snapshot
@@ -513,6 +514,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			ProfitControlEnabled:            snapshot.Group.ProfitControlEnabled,
 			ProfitMinMargin:                 snapshot.Group.ProfitMinMargin,
 			ProfitSafetyBuffer:              snapshot.Group.ProfitSafetyBuffer,
+			EnsembleConfig:                  snapshot.Group.EnsembleConfig,
 		}
 	}
 	s.compileAPIKeyIPRules(apiKey)

@@ -56,6 +56,39 @@ func RegisterGatewayRoutes(
 	isOpenAIGatewayPlatform := func(c *gin.Context) bool {
 		return getGroupPlatform(c) == service.PlatformOpenAI
 	}
+	// chatCompletionsByPlatform routes a Chat Completions request to the gateway
+	// handler that serves the request's effective platform. Ensemble member
+	// sub-calls reuse it so they take exactly the same path as a direct call.
+	chatCompletionsByPlatform := func(c *gin.Context) {
+		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
+			h.OpenAIGateway.ChatCompletions(c)
+			return
+		}
+		h.Gateway.ChatCompletions(c)
+	}
+	responsesHandler := func(c *gin.Context) {
+		// Compact is context maintenance, so an Ensemble compact request uses
+		// exactly one configured aggregator call.
+		if h.Ensemble != nil && handler.GetInboundEndpoint(c) == handler.EndpointResponsesCompact && isEnsembleFanOutRequest(c) {
+			h.Ensemble.Compact(c)
+			return
+		}
+		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
+			h.OpenAIGateway.Responses(c)
+			return
+		}
+		h.Gateway.Responses(c)
+	}
+	if h.Ensemble != nil {
+		h.Ensemble.SetSubCallDispatcher(chatCompletionsByPlatform)
+		h.Ensemble.SetResponsesSubCallDispatcher(func(c *gin.Context) {
+			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
+				h.OpenAIGateway.Responses(c)
+				return
+			}
+			h.Gateway.Responses(c)
+		})
+	}
 	countTokensHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
 		case service.PlatformOpenAI:
@@ -180,6 +213,12 @@ func RegisterGatewayRoutes(
 	gateway.Use(endpointNorm)
 	gateway.Use(gin.HandlerFunc(apiKeyAuth))
 	gateway.GET("/sub2api/billing", h.Gateway.KeyBillingInfo)
+	// Keep the Ensemble diagnostic stream on the same API-key-authenticated
+	// gateway path, but before protocol-specific group guards that are not
+	// applicable to an Ensemble group.
+	if h.Ensemble != nil {
+		gateway.POST("/ensemble/test", h.Ensemble.TestStream)
+	}
 	gateway.Use(compositeTarget)
 	gateway.Use(requireGroupAnthropic)
 	{
@@ -202,31 +241,20 @@ func RegisterGatewayRoutes(
 		gateway.POST("/live", h.OpenAIGateway.Live)
 		gateway.GET("/live/:call_id", h.OpenAIGateway.LiveSideband)
 		// OpenAI Responses API: auto-route based on group platform
-		gateway.POST("/responses", func(c *gin.Context) {
-			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-				h.OpenAIGateway.Responses(c)
-				return
-			}
-			h.Gateway.Responses(c)
-		})
-		gateway.POST("/responses/*subpath", guardResponsesSubpath(func(c *gin.Context) {
-			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-				h.OpenAIGateway.Responses(c)
-				return
-			}
-			h.Gateway.Responses(c)
-		}))
+		gateway.POST("/responses", responsesHandler)
+		gateway.POST("/responses/*subpath", guardResponsesSubpath(responsesHandler))
 		gateway.POST("/alpha/search", textBodyLimit, h.OpenAIGateway.AlphaSearch)
 		gateway.GET("/responses", func(c *gin.Context) {
 			h.OpenAIGateway.ResponsesWebSocket(c)
 		})
-		// OpenAI Chat Completions API: auto-route based on group platform
+		// OpenAI Chat Completions API: auto-route based on group platform.
+		// platform=ensemble fans the request out to the group's member models.
 		gateway.POST("/chat/completions", func(c *gin.Context) {
-			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-				h.OpenAIGateway.ChatCompletions(c)
+			if h.Ensemble != nil && isEnsembleFanOutRequest(c) {
+				h.Ensemble.ChatCompletions(c)
 				return
 			}
-			h.Gateway.ChatCompletions(c)
+			chatCompletionsByPlatform(c)
 		})
 		gateway.POST("/embeddings", textBodyLimit, func(c *gin.Context) {
 			if !isOpenAIOnlyEndpointGatewayPlatform(c) {
@@ -280,13 +308,6 @@ func RegisterGatewayRoutes(
 	}
 
 	// OpenAI Responses API（不带v1前缀的别名）— auto-route based on group platform
-	responsesHandler := func(c *gin.Context) {
-		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
-			h.OpenAIGateway.Responses(c)
-			return
-		}
-		h.Gateway.Responses(c)
-	}
 	r.POST("/responses", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, responsesHandler)
 	r.POST("/responses/*subpath", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, guardResponsesSubpath(responsesHandler))
 	r.POST("/alpha/search", textBodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.OpenAIGateway.AlphaSearch)
@@ -310,12 +331,19 @@ func RegisterGatewayRoutes(
 	}
 	// OpenAI Chat Completions API（不带v1前缀的别名）— auto-route based on group platform
 	r.POST("/chat/completions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, func(c *gin.Context) {
+		if h.Ensemble != nil && isEnsembleFanOutRequest(c) {
+			h.Ensemble.ChatCompletions(c)
+			return
+		}
 		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
 			h.OpenAIGateway.ChatCompletions(c)
 			return
 		}
 		h.Gateway.ChatCompletions(c)
 	})
+	if h.Ensemble != nil {
+		r.POST("/ensemble/test", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), h.Ensemble.TestStream)
+	}
 	r.POST("/embeddings", textBodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, func(c *gin.Context) {
 		if !isOpenAIOnlyEndpointGatewayPlatform(c) {
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
@@ -381,12 +409,36 @@ func getGroupPlatform(c *gin.Context) string {
 	if !ok || apiKey.Group == nil {
 		return ""
 	}
-	if apiKey.Group.Platform == service.PlatformComposite {
+	// Composite groups resolve a concrete platform per request. Ensemble groups do
+	// the same for member sub-calls: the fan-out sets the resolved target platform
+	// from the member model, so the sub-call reaches that platform's gateway handler.
+	if apiKey.Group.Platform == service.PlatformComposite || apiKey.Group.Platform == service.PlatformEnsemble {
 		if platform, ok := service.ResolvedTargetPlatformFromContext(c.Request.Context()); ok {
 			return platform
 		}
 	}
 	return apiKey.Group.Platform
+}
+
+// isEnsembleFanOutRequest reports whether this request is the outer call on an
+// ensemble group and must therefore be fanned out across member models.
+//
+// Member sub-calls carry a resolved target platform on their request context, so
+// they return false here and fall through to the normal per-platform handler.
+// That is what stops the fan-out from recursing into itself.
+func isEnsembleFanOutRequest(c *gin.Context) bool {
+	apiKey, ok := middleware.GetAPIKeyFromContext(c)
+	if !ok || apiKey == nil || apiKey.Group == nil {
+		return false
+	}
+	if apiKey.Group.Platform != service.PlatformEnsemble {
+		return false
+	}
+	if c.Request == nil {
+		return false
+	}
+	_, resolved := service.ResolvedTargetPlatformFromContext(c.Request.Context())
+	return !resolved
 }
 
 func compositeTargetPlatformMiddleware(resolver *service.CompositeRouteResolver) gin.HandlerFunc {

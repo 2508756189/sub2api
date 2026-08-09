@@ -44,10 +44,14 @@ func (s *ensembleHandlerRepoStub) Update(context.Context, *service.EnsemblePropo
 func (s *ensembleHandlerRepoStub) Delete(context.Context, int64) error { return nil }
 
 type ensembleDispatchStub struct {
-	mu             sync.Mutex
-	models         []string
-	streams        []bool
-	clientIDs      []string
+	mu        sync.Mutex
+	models    []string
+	streams   []bool
+	clientIDs []string
+	// bodies keeps each sub-call's request body keyed by the model it was sent
+	// for, so a test can tell an aggregator-only change from one that leaked
+	// into the proposers.
+	bodies         map[string]string
 	startGate      chan struct{}
 	started        int
 	responses      map[string]dispatchResponse
@@ -80,6 +84,10 @@ func (s *ensembleDispatchStub) dispatch(c *gin.Context) {
 	s.mu.Lock()
 	s.models = append(s.models, request.Model)
 	s.streams = append(s.streams, request.Stream)
+	if s.bodies == nil {
+		s.bodies = make(map[string]string)
+	}
+	s.bodies[request.Model] = string(body)
 	clientID, _ := c.Request.Context().Value(ctxkey.ClientRequestID).(string)
 	s.clientIDs = append(s.clientIDs, clientID)
 	response, ok := s.responses[request.Model]
@@ -944,6 +952,7 @@ func TestEnsembleAggregatorBodyRejectsOversizedCandidateContext(t *testing.T) {
 	_, err := buildEnsembleAggregatorBody(
 		[]byte(`{"model":"ensemble-public","messages":[]}`),
 		[]ensembleProposal{{Model: "gpt-5", Content: strings.Repeat("x", maxEnsembleAggregatorBodyBytes)}},
+		nil,
 	)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "aggregator request exceeds")

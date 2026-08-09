@@ -265,6 +265,49 @@
                 </div>
                 <Toggle v-model="options.streamTrace" :aria-label="t('admin.ensemble.options.streamTraceAria')" />
               </div>
+              <div class="mt-4">
+                <div class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ t('admin.ensemble.options.aggregatorOverrides') }}</div>
+                <p class="field-hint">{{ t('admin.ensemble.options.aggregatorOverridesHint') }}</p>
+                <div v-if="options.aggregatorOverrides.length" class="mt-3 space-y-2">
+                  <div v-for="row in options.aggregatorOverrides" :key="row.uid" class="member-row">
+                    <input
+                      v-model="row.path"
+                      class="field-input min-w-0 flex-1 font-mono"
+                      type="text"
+                      :placeholder="t('admin.ensemble.options.aggregatorOverridePathPlaceholder')"
+                      :aria-label="t('admin.ensemble.options.aggregatorOverridePath')"
+                    />
+                    <input
+                      v-model="row.value"
+                      class="field-input min-w-0 flex-1 font-mono"
+                      type="text"
+                      :placeholder="t('admin.ensemble.options.aggregatorOverrideValuePlaceholder')"
+                      :aria-label="t('admin.ensemble.options.aggregatorOverrideValue')"
+                    />
+                    <button
+                      type="button"
+                      class="icon-button"
+                      :aria-label="t('admin.ensemble.options.aggregatorOverrideRemoveAria', { path: row.path || t('admin.ensemble.options.aggregatorOverridePath') })"
+                      :title="t('admin.ensemble.options.aggregatorOverrideRemove')"
+                      @click="removeAggregatorOverride(row.uid)"
+                    >
+                      <Icon name="x" size="sm" />
+                    </button>
+                  </div>
+                </div>
+                <div v-else class="empty-inline mt-3">{{ t('admin.ensemble.options.aggregatorOverridesEmpty') }}</div>
+                <button
+                  type="button"
+                  class="add-button mt-3"
+                  :disabled="options.aggregatorOverrides.length >= MAX_AGGREGATOR_OVERRIDES"
+                  @click="addAggregatorOverride"
+                >
+                  <Icon name="plus" size="sm" />
+                  {{ options.aggregatorOverrides.length >= MAX_AGGREGATOR_OVERRIDES
+                    ? t('admin.ensemble.options.aggregatorOverrideLimitReached', { count: MAX_AGGREGATOR_OVERRIDES })
+                    : t('admin.ensemble.options.aggregatorOverrideAdd') }}
+                </button>
+              </div>
               <div class="estimate-bar mt-4">
                 <span>{{ t('admin.ensemble.options.estimate') }}</span>
                 <strong>{{ t('admin.ensemble.options.estimateCalls', { count: proposers.length + (aggregator ? 1 : 0) }) }}</strong>
@@ -395,12 +438,19 @@ interface Draft {
   rateMultiplier: number
 }
 
+interface AggregatorOverrideRow {
+  uid: number
+  path: string
+  value: string
+}
+
 interface Options {
   minProposers: number
   timeoutSeconds: number
   maxTokens: number
   exposeMetadata: boolean
   streamTrace: boolean
+  aggregatorOverrides: AggregatorOverrideRow[]
 }
 
 interface ResultMember {
@@ -449,7 +499,65 @@ const proposers = ref<string[]>([])
 const aggregator = ref<string | null>(null)
 const loadedMembers = ref<EnsembleProposer[]>([])
 const draft = ref<Draft>({ name: '', description: '', rateMultiplier: 1 })
-const options = ref<Options>({ minProposers: 2, timeoutSeconds: 120, maxTokens: 0, exposeMetadata: false, streamTrace: true })
+const options = ref<Options>({ minProposers: 2, timeoutSeconds: 120, maxTokens: 0, exposeMetadata: false, streamTrace: true, aggregatorOverrides: [] })
+
+// Matches MaxEnsembleAggregatorBodyOverrides in the backend. Capping here only
+// saves a round-trip; the backend is what actually refuses an over-long set.
+const MAX_AGGREGATOR_OVERRIDES = 16
+let aggregatorOverrideUid = 0
+
+// Values are edited as text but stored as JSON, so `4096` saves as a number and
+// `max` saves as a string. A string that would itself parse as JSON is shown
+// quoted, otherwise "true" would come back as a boolean on the next load.
+function formatAggregatorOverrideValue(value: unknown): string {
+  if (typeof value !== 'string') return JSON.stringify(value) ?? ''
+  try {
+    if (typeof JSON.parse(value) !== 'string') return JSON.stringify(value)
+  } catch {
+    return value
+  }
+  return value
+}
+
+function parseAggregatorOverrideValue(raw: string): unknown {
+  const trimmed = raw.trim()
+  if (trimmed === '') return ''
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return trimmed
+  }
+}
+
+// Sorted by path so the editor shows a stable order: the backend stores the set
+// as a JSON object, and Go marshals object keys sorted anyway.
+function aggregatorOverridesToRows(overrides: Record<string, unknown> | undefined): AggregatorOverrideRow[] {
+  if (!overrides) return []
+  return Object.keys(overrides)
+    .sort((a, b) => a.localeCompare(b))
+    .map(path => ({ uid: aggregatorOverrideUid++, path, value: formatAggregatorOverrideValue(overrides[path]) }))
+}
+
+// Returns undefined rather than {} when nothing is configured, so the field is
+// omitted from the payload and the stored config keeps its previous shape.
+function rowsToAggregatorOverrides(rows: AggregatorOverrideRow[]): Record<string, unknown> | undefined {
+  const overrides: Record<string, unknown> = {}
+  for (const row of rows) {
+    const path = row.path.trim()
+    if (path === '') continue
+    overrides[path] = parseAggregatorOverrideValue(row.value)
+  }
+  return Object.keys(overrides).length > 0 ? overrides : undefined
+}
+
+function addAggregatorOverride() {
+  if (options.value.aggregatorOverrides.length >= MAX_AGGREGATOR_OVERRIDES) return
+  options.value.aggregatorOverrides.push({ uid: aggregatorOverrideUid++, path: '', value: '' })
+}
+
+function removeAggregatorOverride(uid: number) {
+  options.value.aggregatorOverrides = options.value.aggregatorOverrides.filter(row => row.uid !== uid)
+}
 
 const sourcePickerOpen = ref(false)
 const sourceQuery = ref('')
@@ -549,7 +657,7 @@ async function loadTarget(groupId: number | null) {
     proposers.value = []
     aggregator.value = null
     draft.value = { name: '', description: '', rateMultiplier: 1 }
-    options.value = { minProposers: 2, timeoutSeconds: 120, maxTokens: 0, exposeMetadata: false, streamTrace: true }
+    options.value = { minProposers: 2, timeoutSeconds: 120, maxTokens: 0, exposeMetadata: false, streamTrace: true, aggregatorOverrides: [] }
     await refreshModels()
     return
   }
@@ -572,7 +680,8 @@ async function loadTarget(groupId: number | null) {
       timeoutSeconds: config.timeout_seconds || 120,
       maxTokens: config.max_tokens || 0,
       exposeMetadata: config.expose_metadata === true,
-      streamTrace: config.stream_trace !== false
+      streamTrace: config.stream_trace !== false,
+      aggregatorOverrides: aggregatorOverridesToRows(config.aggregator_body_overrides)
     }
     selectedSourceGroupIds.value = [...(config.source_group_ids ?? [])]
     proposers.value = members
@@ -725,7 +834,8 @@ async function save(forceCreate = false) {
       max_tokens: options.value.maxTokens || 0,
       expose_metadata: options.value.exposeMetadata,
       stream_trace: options.value.streamTrace,
-      source_group_ids: [...selectedSourceGroupIds.value]
+      source_group_ids: [...selectedSourceGroupIds.value],
+      aggregator_body_overrides: rowsToAggregatorOverrides(options.value.aggregatorOverrides)
     })
     creationConfigured = true
     localStorage.setItem(TARGET_STORAGE_KEY, String(groupId))

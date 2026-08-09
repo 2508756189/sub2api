@@ -29,6 +29,9 @@ type EnsembleConfigRequest struct {
 	// StreamTrace is a pointer so an older admin client that omits the field
 	// keeps the default-on behaviour instead of silently disabling the trace.
 	StreamTrace *bool `json:"stream_trace"`
+	// AggregatorBodyOverrides sets request fields on the aggregator sub-call only,
+	// keyed by dotted path. The service refuses paths it manages itself.
+	AggregatorBodyOverrides map[string]any `json:"aggregator_body_overrides"`
 }
 
 func ensembleProposerRequestToInput(req EnsembleProposerRequest, defaultEnabled bool) service.EnsembleProposerInput {
@@ -169,13 +172,14 @@ func (h *GroupHandler) UpdateEnsembleConfig(c *gin.Context) {
 		return
 	}
 	cfg, err := h.adminService.UpdateEnsembleConfig(c.Request.Context(), groupID, service.EnsembleConfig{
-		SourceGroupIDs:    req.SourceGroupIDs,
-		AggregatorEnabled: req.AggregatorEnabled,
-		MinProposers:      req.MinProposers,
-		TimeoutSeconds:    req.TimeoutSeconds,
-		MaxTokens:         req.MaxTokens,
-		ExposeMetadata:    req.ExposeMetadata,
-		StreamTrace:       req.StreamTrace,
+		SourceGroupIDs:          req.SourceGroupIDs,
+		AggregatorEnabled:       req.AggregatorEnabled,
+		MinProposers:            req.MinProposers,
+		TimeoutSeconds:          req.TimeoutSeconds,
+		MaxTokens:               req.MaxTokens,
+		ExposeMetadata:          req.ExposeMetadata,
+		StreamTrace:             req.StreamTrace,
+		AggregatorBodyOverrides: req.AggregatorBodyOverrides,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

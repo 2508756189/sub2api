@@ -129,6 +129,13 @@ func (s *adminServiceImpl) UpdateEnsembleConfig(ctx context.Context, groupID int
 		return EnsembleConfig{}, err
 	}
 	group.EnsembleConfig = normalizeEnsembleConfig(config)
+	// Validate the normalized value so a path the admin typed with stray spaces is
+	// judged as it will be stored. A protected or malformed path is refused here
+	// rather than at fan-out time: a request that fails hours later over a saved
+	// typo gives the admin nothing to act on.
+	if err := ValidateEnsembleAggregatorBodyOverrides(group.EnsembleConfig.AggregatorBodyOverrides); err != nil {
+		return EnsembleConfig{}, err
+	}
 	if s.ensembleProposerRepo == nil {
 		return EnsembleConfig{}, ErrEnsembleRuntimeUnavailable
 	}
@@ -259,6 +266,7 @@ func normalizeEnsembleConfig(cfg EnsembleConfig) EnsembleConfig {
 	if cfg.MaxTokens < 0 {
 		cfg.MaxTokens = 0
 	}
+	cfg.AggregatorBodyOverrides = NormalizeEnsembleAggregatorBodyOverrides(cfg.AggregatorBodyOverrides)
 	return cfg
 }
 

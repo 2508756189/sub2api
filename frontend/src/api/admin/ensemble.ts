@@ -22,6 +22,13 @@ export interface EnsembleConfig {
   expose_metadata: boolean
   stream_trace?: boolean
   source_group_ids?: number[]
+  /**
+   * Request fields set on the aggregator sub-call only, keyed by dotted path
+   * (for example `reasoning_effort` or `thinking.type`). Values use the member
+   * model's own spelling, since providers disagree on both the field and the
+   * vocabulary. The backend refuses paths the ensemble runtime manages itself.
+   */
+  aggregator_body_overrides?: Record<string, unknown>
 }
 
 export interface EnsembleMemberStat {

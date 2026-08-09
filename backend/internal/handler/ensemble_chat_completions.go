@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -459,7 +460,7 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	finalToolCalls := []map[string]any(nil)
 	aggregated := false
 	if plan.ShouldAggregate() && len(proposals) > 0 {
-		aggBody, buildErr := buildEnsembleAggregatorBody(body, proposals)
+		aggBody, buildErr := buildEnsembleAggregatorBody(body, proposals, plan.Config.AggregatorBodyOverrides)
 		if buildErr != nil {
 			reqLog.Warn("failed to build aggregator request, falling back to longest proposal", zap.Error(buildErr))
 			emitEnsembleProgress(c, EnsembleProgressEvent{
@@ -1381,7 +1382,11 @@ func applyEnsembleMaxTokens(body []byte, maxTokens int) ([]byte, error) {
 
 // buildEnsembleAggregatorBody appends the aggregation instruction plus every
 // proposal as a trailing user message, preserving the original conversation.
-func buildEnsembleAggregatorBody(body []byte, proposals []ensembleProposal) ([]byte, error) {
+//
+// overrides are the group's configured aggregator-only request fields. They are
+// applied last, against the caller's own body, so nothing this function appends
+// can change whether an override is considered already set.
+func buildEnsembleAggregatorBody(body []byte, proposals []ensembleProposal, overrides map[string]any) ([]byte, error) {
 	var sb strings.Builder
 	_, _ = sb.WriteString("以下是多个模型对同一问题给出的候选回答。请综合这些回答，给出一个更完整、更准确的最终答案。\n")
 	_, _ = sb.WriteString("要求：\n")
@@ -1396,7 +1401,63 @@ func buildEnsembleAggregatorBody(body []byte, proposals []ensembleProposal) ([]b
 	}
 
 	message := map[string]string{"role": "user", "content": sb.String()}
-	return sjson.SetBytes(body, "messages.-1", message)
+	out, err := sjson.SetBytes(body, "messages.-1", message)
+	if err != nil {
+		return nil, err
+	}
+	return applyEnsembleAggregatorBodyOverrides(out, body, overrides)
+}
+
+// applyEnsembleAggregatorBodyOverrides writes the group's configured paths into
+// the aggregator body.
+//
+// The ensemble has no reasoning-effort control of its own — the group effort
+// policy is keyed on an openai/composite group platform and never fires for an
+// ensemble key, and no client can pick a depth for a virtual model that appears
+// in no model catalog — so this is the only place a configured depth can reach
+// the one member where it pays off.
+//
+// request is the caller's own body and is what existence is tested against, so a
+// path the client set explicitly stays untouched. That mirrors applyEnsembleMaxTokens:
+// a group setting is a default, not an override of a stated intent. Testing against
+// the accumulating output instead would let one applied override make the next one
+// look client-supplied.
+//
+// Paths are applied in sorted order. Go randomizes map iteration, so a config
+// naming both a parent and a child ("thinking" and "thinking.type") would
+// otherwise produce a different body from run to run.
+func applyEnsembleAggregatorBodyOverrides(out, request []byte, overrides map[string]any) ([]byte, error) {
+	if len(overrides) == 0 {
+		return out, nil
+	}
+	paths := make([]string, 0, len(overrides))
+	for path := range overrides {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+
+	for _, path := range paths {
+		// The admin API refuses protected paths at write time, so one arriving here
+		// was written straight to the column. Dropping the single key costs the
+		// aggregator its configured depth; letting it through would rewrite a
+		// fan-out invariant such as model or messages.
+		if !service.EnsembleBodyOverridePathAllowed(path) {
+			continue
+		}
+		if gjson.GetBytes(request, path).Exists() {
+			continue
+		}
+		updated, err := sjson.SetBytes(out, path, overrides[path])
+		if err != nil {
+			// Sending a half-applied set would mean the admin configured a depth and
+			// has no way to see that only part of it landed. Reporting instead puts
+			// the caller on the existing aggregator-failure path: a fallback progress
+			// event, a log line, and the longest proposal returned normally.
+			return nil, fmt.Errorf("apply aggregator body override %q: %w", path, err)
+		}
+		out = updated
+	}
+	return out, nil
 }
 
 // ensembleToolCallAccumulator merges streamed tool-call fragments back into

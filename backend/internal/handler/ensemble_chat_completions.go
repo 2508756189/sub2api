@@ -10,7 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -275,6 +275,13 @@ func (h *EnsembleHandler) ChatCompletions(c *gin.Context) {
 	// receive a clean conversation.
 	body, err = stripEnsembleReasoningFields(body)
 	if err != nil {
+		if errors.Is(err, errEnsembleNoConversationLeft) {
+			// Reporting a parse failure here would be a lie the caller cannot act on:
+			// the body parsed fine, it just carried nothing but our own earlier notice.
+			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error",
+				"Conversation contains only a previous ensemble failure notice; send a new message")
+			return
+		}
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to parse request body")
 		return
 	}
@@ -562,6 +569,11 @@ func (h *EnsembleHandler) Compact(c *gin.Context) {
 	// the compaction input is clean model context.
 	body, err = stripEnsembleReasoningFields(body)
 	if err != nil {
+		if errors.Is(err, errEnsembleNoConversationLeft) {
+			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error",
+				"Conversation contains only a previous ensemble failure notice; nothing to compact")
+			return
+		}
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Invalid compact request body")
 		return
 	}
@@ -762,6 +774,14 @@ func (h *EnsembleHandler) TestStream(c *gin.Context) {
 // reasoningSink, when non-nil, receives the member's own delta.reasoning_content
 // as it streams. Only the member whose thinking the caller asked to see passes
 // one; the rest run with nil and are buffered exactly as before.
+//
+// An empty completion is retried, and the retry must not repeat thinking the
+// caller has already seen. Streamed bytes cannot be retracted, so once an attempt
+// has forwarded a reasoning fragment the sink is detached for every later attempt:
+// the caller keeps the thinking of the attempt that already reached them and the
+// retry stays buffered. When nothing was forwarded — the upstream returned an
+// entirely empty body — the retry keeps the live sink, because there is no earlier
+// fragment for it to contradict.
 func (h *EnsembleHandler) runSubCall(
 	parent *gin.Context,
 	index int,
@@ -773,13 +793,27 @@ func (h *EnsembleHandler) runSubCall(
 	timeout time.Duration,
 	reasoningSink ensembleReasoningSink,
 ) ensembleSubResult {
+	forwarded := false
+	attemptSink := reasoningSink
+	if reasoningSink != nil {
+		attemptSink = func(fragment string) {
+			forwarded = true
+			reasoningSink(fragment)
+		}
+	}
 	for attempt := 0; attempt <= ensembleEmptyCompletionRetryCount; attempt++ {
-		result := h.runSubCallOnce(parent, index, model, platform, role, body, maxTokens, timeout, reasoningSink)
+		result := h.runSubCallOnce(parent, index, model, platform, role, body, maxTokens, timeout, attemptSink)
 		if result.err == nil || !errors.Is(result.err, errEnsembleEmptyCompletion) {
 			return result
 		}
 		if attempt == ensembleEmptyCompletionRetryCount {
 			return result
+		}
+		// runSubCallOnce detaches its tee before returning, and both the write of
+		// forwarded and that detach happen under the tee's mutex, so this read is
+		// ordered after every fragment the finished attempt could emit.
+		if forwarded {
+			attemptSink = nil
 		}
 	}
 	panic("unreachable")
@@ -985,14 +1019,15 @@ func stripEnsembleReasoningFields(body []byte) ([]byte, error) {
 	}
 
 	out := body
-	// Whole-message deletions are collected and applied last, in descending order:
-	// removing an array element shifts every later index, which would corrupt the
-	// per-field edits below if the two were interleaved.
+	// Whole-message deletions are collected and applied last: removing an array
+	// element shifts every later index, which would corrupt the per-field edits
+	// below if the two were interleaved.
 	drop := make([]int, 0, 4)
-	index := 0
+	total := 0
+	var editErr error
 	messages.ForEach(func(_, message gjson.Result) bool {
-		current := index
-		index++
+		current := total
+		total++
 		if message.Get("role").String() != "assistant" {
 			return true
 		}
@@ -1003,11 +1038,15 @@ func stripEnsembleReasoningFields(body []byte) ([]byte, error) {
 		prefix := fmt.Sprintf("messages.%d.", current)
 		for _, field := range []string{"reasoning_content", "reasoning", "thinking"} {
 			if message.Get(field).Exists() {
-				out, _ = sjson.DeleteBytes(out, prefix+field)
+				if out, editErr = sjson.DeleteBytes(out, prefix+field); editErr != nil {
+					return false
+				}
 			}
 		}
 		var emptied bool
-		out, emptied = stripEnsembleReasoningBlocks(out, message, current)
+		if out, emptied, editErr = stripEnsembleReasoningBlocks(out, message, current); editErr != nil {
+			return false
+		}
 		// An assistant turn whose content was nothing but thinking carries no
 		// conversation fact once the thinking is gone, and an empty content array is
 		// rejected by some upstreams. Drop the turn instead of sending a hollow one.
@@ -1016,11 +1055,166 @@ func stripEnsembleReasoningFields(body []byte) ([]byte, error) {
 		}
 		return true
 	})
-
-	for i := len(drop) - 1; i >= 0; i-- {
-		out, _ = sjson.DeleteBytes(out, fmt.Sprintf("messages.%d", drop[i]))
+	// A half-applied strip is worse than none: the caller believes the pass ran
+	// while a member receives echoed trace anyway. Surface the failure instead of
+	// fanning out over context nobody checked.
+	if editErr != nil {
+		return nil, editErr
 	}
-	return out, nil
+
+	return repairEnsembleMessages(out, drop, total)
+}
+
+// errEnsembleNoConversationLeft reports that dropping this handler's own echoed
+// output would empty the conversation, leaving nothing to send a member.
+var errEnsembleNoConversationLeft = errors.New("ensemble conversation contains nothing but echoed ensemble output")
+
+// repairEnsembleMessages removes the dropped turns and repairs the shape their
+// removal leaves behind.
+//
+// Deleting a message is not a local edit. `[user, assistant(notice), user]`
+// collapses to `[user, user]`, and consecutive same-role turns are rejected
+// outright by Anthropic and degrade answer quality on OpenAI-compatible
+// upstreams that silently accept them; a notice that was the only assistant turn
+// collapses to `messages: []`, which every upstream rejects. Both shapes were
+// reachable from one earlier ensemble failure, so the caller's next turn broke
+// for a reason that had nothing to do with what it sent.
+//
+// Only seams this pass created are repaired. A same-role pair the client sent
+// itself is left exactly as received: it is the client's conversation, and
+// rewriting it would change model input this pass has no business touching.
+func repairEnsembleMessages(out []byte, drop []int, total int) ([]byte, error) {
+	if len(drop) == 0 {
+		return out, nil
+	}
+	dropped := make(map[int]bool, len(drop))
+	for _, index := range drop {
+		dropped[index] = true
+	}
+	if len(dropped) >= total {
+		return nil, errEnsembleNoConversationLeft
+	}
+
+	messages := gjson.GetBytes(out, "messages").Array()
+	if len(messages) != total {
+		// The per-field edits above only touch fields inside a message, so the count
+		// cannot change. If it did, index-based repair is no longer sound.
+		return nil, fmt.Errorf("ensemble message count changed during strip: %d != %d", len(messages), total)
+	}
+
+	kept := make([]string, 0, total-len(dropped))
+	// seam records that a turn vanished between the previous kept message and the
+	// next one, which is the only case where merging is this pass's business.
+	seam := false
+	for index, message := range messages {
+		if dropped[index] {
+			seam = true
+			continue
+		}
+		if seam && len(kept) > 0 {
+			if merged, ok := mergeEnsembleAdjacentMessages(kept[len(kept)-1], message.Raw); ok {
+				kept[len(kept)-1] = merged
+				seam = false
+				continue
+			}
+		}
+		seam = false
+		kept = append(kept, message.Raw)
+	}
+	return sjson.SetRawBytes(out, "messages", []byte("["+strings.Join(kept, ",")+"]"))
+}
+
+// mergeEnsembleAdjacentMessages joins two messages that became neighbours when
+// the turn between them was dropped, reporting whether the merge was possible.
+//
+// The accepted shape is deliberately narrow: same role, user or assistant, and
+// nothing on either side but role and content. tool_calls, tool_call_id, name or
+// any other field would be silently lost by a merge, and a lost tool_call_id
+// breaks the pairing the agent loop depends on. Anything outside that shape is
+// left adjacent, which is what this code did before the repair existed.
+func mergeEnsembleAdjacentMessages(previous, next string) (string, bool) {
+	first := gjson.Parse(previous)
+	second := gjson.Parse(next)
+	role := first.Get("role").String()
+	if role != second.Get("role").String() {
+		return "", false
+	}
+	if role != "user" && role != "assistant" {
+		return "", false
+	}
+	if !ensembleMessageIsPlain(first) || !ensembleMessageIsPlain(second) {
+		return "", false
+	}
+
+	firstContent := first.Get("content")
+	secondContent := second.Get("content")
+	// Two plain strings stay a plain string: promoting them to blocks would change
+	// the request shape for a case that did not need it.
+	if firstContent.Type == gjson.String && secondContent.Type == gjson.String {
+		joined := firstContent.String()
+		if strings.TrimSpace(joined) != "" && strings.TrimSpace(secondContent.String()) != "" {
+			joined += "\n\n"
+		}
+		joined += secondContent.String()
+		merged, err := sjson.Set(previous, "content", joined)
+		if err != nil {
+			return "", false
+		}
+		return merged, true
+	}
+
+	blocks := append(ensembleContentBlocks(firstContent), ensembleContentBlocks(secondContent)...)
+	if len(blocks) == 0 {
+		return "", false
+	}
+	merged, err := sjson.SetRaw(previous, "content", "["+strings.Join(blocks, ",")+"]")
+	if err != nil {
+		return "", false
+	}
+	return merged, true
+}
+
+// ensembleMessageIsPlain reports whether a message carries nothing but role and
+// content, the only shape mergeEnsembleAdjacentMessages can join without
+// dropping a field.
+func ensembleMessageIsPlain(message gjson.Result) bool {
+	if !message.IsObject() || !message.Get("content").Exists() {
+		return false
+	}
+	plain := true
+	message.ForEach(func(key, _ gjson.Result) bool {
+		switch key.String() {
+		case "role", "content":
+			return true
+		default:
+			plain = false
+			return false
+		}
+	})
+	return plain
+}
+
+// ensembleContentBlocks renders a content value as content-array blocks so a
+// string shape and an array shape can be joined without losing either.
+func ensembleContentBlocks(content gjson.Result) []string {
+	if content.Type == gjson.String {
+		if strings.TrimSpace(content.String()) == "" {
+			return nil
+		}
+		block, err := sjson.Set(`{"type":"text"}`, "text", content.String())
+		if err != nil {
+			return nil
+		}
+		return []string{block}
+	}
+	if !content.IsArray() {
+		return nil
+	}
+	blocks := make([]string, 0, 4)
+	for _, block := range content.Array() {
+		blocks = append(blocks, block.Raw)
+	}
+	return blocks
 }
 
 // stripEnsembleReasoningBlocks removes typed reasoning blocks from an assistant
@@ -1029,10 +1223,10 @@ func stripEnsembleReasoningFields(body []byte) ([]byte, error) {
 // Anthropic-shaped clients store thinking as content blocks rather than as a
 // sibling field, so a pass that only deletes messages[N].thinking leaves the
 // echoed reasoning sitting inside messages[N].content.
-func stripEnsembleReasoningBlocks(out []byte, message gjson.Result, messageIndex int) ([]byte, bool) {
+func stripEnsembleReasoningBlocks(out []byte, message gjson.Result, messageIndex int) ([]byte, bool, error) {
 	content := message.Get("content")
 	if !content.IsArray() {
-		return out, false
+		return out, false, nil
 	}
 	total := 0
 	drop := make([]int, 0, 2)
@@ -1046,32 +1240,78 @@ func stripEnsembleReasoningBlocks(out []byte, message gjson.Result, messageIndex
 		return true
 	})
 	if len(drop) == 0 {
-		return out, false
+		return out, false, nil
 	}
+	// Descending, for the same index-shift reason the caller defers its own
+	// whole-message deletions.
 	for i := len(drop) - 1; i >= 0; i-- {
-		out, _ = sjson.DeleteBytes(out, fmt.Sprintf("messages.%d.content.%d", messageIndex, drop[i]))
+		var err error
+		if out, err = sjson.DeleteBytes(out, fmt.Sprintf("messages.%d.content.%d", messageIndex, drop[i])); err != nil {
+			return nil, false, err
+		}
 	}
-	return out, len(drop) == total
+	return out, len(drop) == total, nil
+}
+
+// ensembleContentHasToolBlock reports whether a content array carries an
+// Anthropic-shaped tool block. tool_use is the /v1/messages spelling of
+// tool_calls, and tool_result rides a user turn whose pairing depends on it, so
+// neither may be treated as disposable text.
+func ensembleContentHasToolBlock(content gjson.Result) bool {
+	found := false
+	content.ForEach(func(_, block gjson.Result) bool {
+		switch block.Get("type").String() {
+		case "tool_use", "tool_result":
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
 }
 
 // ensembleIsFailureNotice reports whether an assistant message is the in-band
 // failure text this handler emitted on an earlier turn.
 //
-// A turn carrying tool_calls is never a failure notice, and dropping one would
-// break the agent loop, so it is excluded regardless of its text.
+// A turn that continues an agent loop is never a failure notice, and dropping
+// one would strand the tool result that follows it, so both spellings of a tool
+// call are excluded regardless of the text alongside them: OpenAI's tool_calls
+// field and Anthropic's tool_use content block.
+//
+// The notice is matched against the first text-bearing block rather than block
+// zero. fail() writes a single text block, but a client that also stores
+// thinking puts that block first, so an index-zero probe missed the notice
+// entirely and fed "Only 0 proposers succeeded…" back to every member. Matching
+// the first text block instead of any text block keeps a real answer that
+// happens to quote an earlier notice from being deleted.
 func ensembleIsFailureNotice(message gjson.Result) bool {
 	if message.Get("tool_calls").Exists() {
 		return false
 	}
 	content := message.Get("content")
 	if content.Type == gjson.String {
-		return strings.HasPrefix(content.String(), ensembleFailureNoticePrefix)
+		return ensembleHasFailureNoticePrefix(content.String())
 	}
-	if content.IsArray() {
-		text := content.Get("0.text")
-		return text.Type == gjson.String && strings.HasPrefix(text.String(), ensembleFailureNoticePrefix)
+	if !content.IsArray() {
+		return false
+	}
+	if ensembleContentHasToolBlock(content) {
+		return false
+	}
+	for _, block := range content.Array() {
+		text := block.Get("text")
+		if text.Type != gjson.String || strings.TrimSpace(text.String()) == "" {
+			continue
+		}
+		return ensembleHasFailureNoticePrefix(text.String())
 	}
 	return false
+}
+
+// ensembleHasFailureNoticePrefix tolerates the leading whitespace a client can
+// introduce when it re-serializes a stored assistant turn.
+func ensembleHasFailureNoticePrefix(text string) bool {
+	return strings.HasPrefix(strings.TrimLeft(text, " \t\r\n"), ensembleFailureNoticePrefix)
 }
 
 // prepareEnsembleSubCallBody rewrites the client body for one member call.
@@ -1159,6 +1399,99 @@ func buildEnsembleAggregatorBody(body []byte, proposals []ensembleProposal) ([]b
 	return sjson.SetBytes(body, "messages.-1", message)
 }
 
+// ensembleToolCallAccumulator merges streamed tool-call fragments back into
+// whole calls. On the wire one call is split across many deltas, and the
+// fragments are correlated by choices.0.delta.tool_calls[].index rather than by
+// array position: a later frame may carry only an arguments fragment and
+// identify its call solely by that index.
+//
+// The subtlety is a provider that omits index. Reading it as gjson.Int() turns
+// "absent" into 0, so every index-less fragment landed in the same slot — and
+// because names and arguments are concatenated, two distinct calls merged into
+// one entry named e.g. "BashRead" with two argument objects glued together, a
+// call no client can execute.
+//
+// With no correlation key the shape of the fragment is the only signal left, and
+// the wire format makes it a reliable one: a call is opened by a frame carrying
+// its id and function.name, and continued by frames carrying only an arguments
+// fragment. So an index-less frame that names a call opens a new one, and an
+// arguments-only frame continues the call opened most recently.
+type ensembleToolCallAccumulator struct {
+	slots   []map[string]any
+	byIndex map[int]map[string]any
+}
+
+// slot returns the entry a fragment belongs to, creating one when the fragment
+// starts a new call.
+func (a *ensembleToolCallAccumulator) slot(call gjson.Result) map[string]any {
+	if index, indexed := ensembleToolCallIndex(call); indexed {
+		if current, exists := a.byIndex[index]; exists {
+			return current
+		}
+		return a.open(index, true)
+	}
+	if !ensembleToolCallOpensCall(call) && len(a.slots) > 0 {
+		return a.slots[len(a.slots)-1]
+	}
+	return a.open(0, false)
+}
+
+func (a *ensembleToolCallAccumulator) open(index int, indexed bool) map[string]any {
+	current := map[string]any{"type": "function", "function": map[string]any{}}
+	a.slots = append(a.slots, current)
+	if indexed {
+		if a.byIndex == nil {
+			a.byIndex = make(map[int]map[string]any)
+		}
+		a.byIndex[index] = current
+	}
+	return current
+}
+
+// ensembleToolCallOpensCall reports whether a fragment identifies a call rather
+// than merely extending one. Only the opening frame of a call carries an id or a
+// function name.
+func ensembleToolCallOpensCall(call gjson.Result) bool {
+	if id := call.Get("id"); id.Type == gjson.String && strings.TrimSpace(id.String()) != "" {
+		return true
+	}
+	name := call.Get("function.name")
+	return name.Type == gjson.String && strings.TrimSpace(name.String()) != ""
+}
+
+// list returns the merged calls in arrival order, renumbered 0..n-1. Arrival
+// order is the only order defined for index-less fragments, and it agrees with
+// index order on a conformant stream, which opens each call in turn. The index is
+// rewritten rather than forwarded because the emitted array is accumulated by
+// index on the client side, and a sparse upstream numbering would leave holes
+// there that some SDKs fill with empty, unexecutable calls.
+func (a *ensembleToolCallAccumulator) list() []map[string]any {
+	for position, call := range a.slots {
+		call["index"] = position
+	}
+	return a.slots
+}
+
+// ensembleToolCallIndex reads the fragment correlation key and reports whether
+// one was present at all. Numbers and numeric strings both count; anything else
+// counts as absent, because gjson renders it as 0 and would merge unrelated
+// calls.
+func ensembleToolCallIndex(call gjson.Result) (int, bool) {
+	index := call.Get("index")
+	switch index.Type {
+	case gjson.Number:
+		return int(index.Int()), true
+	case gjson.String:
+		parsed, err := strconv.Atoi(strings.TrimSpace(index.String()))
+		if err != nil {
+			return 0, false
+		}
+		return parsed, true
+	default:
+		return 0, false
+	}
+}
+
 // normalizeEnsembleChatPayload converts an internally streamed Chat
 // Completions response into the same JSON shape used by a non-stream response.
 // The downstream gateway has already normalized all provider-specific streams
@@ -1176,7 +1509,7 @@ func normalizeEnsembleChatPayload(payload []byte) []byte {
 	}
 
 	var content strings.Builder
-	toolCalls := make(map[int]map[string]any)
+	var toolCalls ensembleToolCallAccumulator
 	finishReason := "stop"
 	var usage json.RawMessage
 	responseID := ""
@@ -1215,12 +1548,7 @@ func normalizeEnsembleChatPayload(payload []byte) []byte {
 			}
 			if calls := delta.Get("tool_calls"); calls.IsArray() {
 				calls.ForEach(func(_, call gjson.Result) bool {
-					index := int(call.Get("index").Int())
-					current, exists := toolCalls[index]
-					if !exists {
-						current = map[string]any{"index": index, "type": "function", "function": map[string]any{}}
-						toolCalls[index] = current
-					}
+					current := toolCalls.slot(call)
 					if id := call.Get("id"); id.Exists() && id.Type == gjson.String {
 						current["id"] = id.String()
 					}
@@ -1249,15 +1577,7 @@ func normalizeEnsembleChatPayload(payload []byte) []byte {
 		return payload
 	}
 
-	callList := make([]map[string]any, 0, len(toolCalls))
-	indexes := make([]int, 0, len(toolCalls))
-	for index := range toolCalls {
-		indexes = append(indexes, index)
-	}
-	sort.Ints(indexes)
-	for _, index := range indexes {
-		callList = append(callList, toolCalls[index])
-	}
+	callList := toolCalls.list()
 	message := map[string]any{"role": "assistant"}
 	if content.Len() > 0 {
 		message["content"] = content.String()
@@ -1319,7 +1639,59 @@ func extractEnsembleToolCalls(payload []byte) []map[string]any {
 	if err := json.Unmarshal([]byte(raw.Raw), &calls); err != nil {
 		return nil
 	}
-	return calls
+	return repairEnsembleToolCallIdentity(calls)
+}
+
+// repairEnsembleToolCallIdentity guarantees every forwarded tool call carries the
+// id and name a client needs to pair a result with the call that asked for it.
+//
+// This is the only place both emit paths pass through, so it is where the
+// guarantee belongs: buildEnsembleChatResponse and ensembleStreamWriter.finish
+// both forward whatever they are handed.
+//
+// id is what the caller stores and sends back as the tool message's
+// tool_call_id. A member that streams tool_calls without one used to be forwarded
+// verbatim, so the caller stored an empty id and its own SDK rejected the next
+// request before it ever left the machine — "Tool model messages require
+// toolCallId and toolName". By then the unusable call is conversation history, so
+// every later turn re-serializes it and fails the same validation: one malformed
+// member answer ends the session rather than the turn that produced it.
+//
+// An existing id is never rewritten, however odd it looks. A model that emits its
+// tool call as harmony text yields ids like "functions.Bash:3", which is ugly but
+// unique and already stored by the caller; replacing it would break the pairing
+// this function exists to protect.
+//
+// A call with no function name is dropped rather than repaired. An id can be
+// invented, but the name the caller is meant to execute cannot, and a nameless
+// call is unusable to it. Dropping the last call leaves the member reporting an
+// empty completion, which is the existing retry path.
+func repairEnsembleToolCallIdentity(calls []map[string]any) []map[string]any {
+	repaired := make([]map[string]any, 0, len(calls))
+	for _, call := range calls {
+		fn, _ := call["function"].(map[string]any)
+		if name, _ := fn["name"].(string); strings.TrimSpace(name) == "" {
+			continue
+		}
+		if id, _ := call["id"].(string); strings.TrimSpace(id) == "" {
+			call["id"] = "call_ens_" + strings.ReplaceAll(uuid.NewString(), "-", "")
+		}
+		repaired = append(repaired, call)
+	}
+	if len(repaired) == 0 {
+		return nil
+	}
+	// Dropping a nameless call leaves a hole in the numbering, and the stream path
+	// emits this array as one delta that clients accumulate by index. Close the
+	// holes so no client materializes an empty slot. Calls that never carried an
+	// index (a plain non-stream provider response) are left as they are rather
+	// than gaining a field they did not have.
+	for position, call := range repaired {
+		if _, ok := call["index"]; ok {
+			call["index"] = position
+		}
+	}
+	return repaired
 }
 
 // extractEnsembleReportedCost only forwards a cost explicitly present in the

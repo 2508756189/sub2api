@@ -126,9 +126,12 @@ func TestEnsembleStripsEchoedFailureNotice(t *testing.T) {
 	require.NotContains(t, capture.bodies[0], "minimum 2 required",
 		"our own failure text must never become member context")
 	require.NotContains(t, capture.bodies[0], ensembleFailureNoticePrefix)
-	// The surrounding real conversation has to survive intact.
-	require.Contains(t, capture.bodies[0], `"content":"first"`)
-	require.Contains(t, capture.bodies[0], `"content":"retry"`)
+	// Both real turns survive. They arrive as one user turn rather than two,
+	// because dropping the notice made them adjacent; see
+	// TestStripEnsembleReasoningMergesTurnsAdjacentAfterDrop.
+	require.Contains(t, capture.bodies[0], "first")
+	require.Contains(t, capture.bodies[0], "retry")
+	require.Equal(t, 1, int(gjson.Get(capture.bodies[0], "messages.#").Int()))
 }
 
 // Anthropic-shaped clients store thinking as a content block, not as a sibling
@@ -178,11 +181,134 @@ func TestStripEnsembleReasoningDropsTurnLeftEmpty(t *testing.T) {
 
 	out, err := stripEnsembleReasoningFields([]byte(body))
 	require.NoError(t, err)
+	require.NotContains(t, string(out), "only thinking")
 	messages := gjson.GetBytes(out, "messages")
-	require.Equal(t, 2, int(messages.Get("#").Int()),
-		"a turn with nothing left but thinking must be dropped, not sent hollow")
+	require.Equal(t, 1, int(messages.Get("#").Int()),
+		"the hollow turn is dropped and the user turns it separated are rejoined")
 	require.Equal(t, "user", messages.Get("0.role").String())
-	require.Equal(t, "user", messages.Get("1.role").String())
+	require.Equal(t, "hi\n\nnext", messages.Get("0.content").String())
+}
+
+// Dropping a turn is not a local edit: it makes the turns around it adjacent.
+// Two consecutive user messages are rejected outright by Anthropic, so an
+// ensemble failure on one turn used to break the next turn for a reason that had
+// nothing to do with what the client sent.
+func TestStripEnsembleReasoningMergesTurnsAdjacentAfterDrop(t *testing.T) {
+	body := `{"model":"ensemble","messages":[` +
+		`{"role":"user","content":"first"},` +
+		`{"role":"assistant","content":"` + ensembleFailureNoticePrefix + `it broke"},` +
+		`{"role":"user","content":"retry"}]}`
+
+	out, err := stripEnsembleReasoningFields([]byte(body))
+	require.NoError(t, err)
+	messages := gjson.GetBytes(out, "messages")
+	require.Equal(t, 1, int(messages.Get("#").Int()),
+		"the notice is dropped and the user turns it separated must not stay adjacent")
+	require.Equal(t, "user", messages.Get("0.role").String())
+	require.Equal(t, "first\n\nretry", messages.Get("0.content").String())
+}
+
+// A merge across shapes must not lose either side: joining a string turn with a
+// block turn promotes the string to a text block rather than dropping the blocks.
+func TestStripEnsembleReasoningMergesMixedContentShapes(t *testing.T) {
+	body := `{"model":"ensemble","messages":[` +
+		`{"role":"user","content":"look at this"},` +
+		`{"role":"assistant","content":"` + ensembleFailureNoticePrefix + `it broke"},` +
+		`{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,AAA"}},` +
+		`{"type":"text","text":"what is it"}]}]}`
+
+	out, err := stripEnsembleReasoningFields([]byte(body))
+	require.NoError(t, err)
+	messages := gjson.GetBytes(out, "messages")
+	require.Equal(t, 1, int(messages.Get("#").Int()))
+	content := messages.Get("0.content")
+	require.True(t, content.IsArray())
+	require.Equal(t, 3, int(content.Get("#").Int()),
+		"the string turn becomes a text block ahead of the blocks it was merged with")
+	require.Equal(t, "look at this", content.Get("0.text").String())
+	require.Equal(t, "image_url", content.Get("1.type").String())
+	require.Equal(t, "what is it", content.Get("2.text").String())
+}
+
+// A pair that cannot be merged without losing a field is left adjacent. Losing a
+// tool_call_id would break the pairing the agent loop depends on, so adjacency is
+// the safer failure.
+func TestStripEnsembleReasoningLeavesUnmergeablePairAdjacent(t *testing.T) {
+	body := `{"model":"ensemble","messages":[` +
+		`{"role":"user","content":"hi"},` +
+		`{"role":"assistant","content":"` + ensembleFailureNoticePrefix + `it broke"},` +
+		`{"role":"user","content":"retry","name":"alice"}]}`
+
+	out, err := stripEnsembleReasoningFields([]byte(body))
+	require.NoError(t, err)
+	require.NotContains(t, string(out), "it broke")
+	messages := gjson.GetBytes(out, "messages")
+	require.Equal(t, 2, int(messages.Get("#").Int()))
+	require.Equal(t, "alice", messages.Get("1.name").String(),
+		"a field a merge would drop must keep the pair unmerged instead")
+}
+
+// The notice was matched against content block zero, so a client that stores
+// thinking alongside it put that block first and the notice sailed through —
+// feeding "Only 0 proposers succeeded…" back to every member.
+func TestStripEnsembleReasoningStripsNoticeBehindThinkingBlock(t *testing.T) {
+	body := `{"model":"ensemble","messages":[` +
+		`{"role":"user","content":"hi"},` +
+		`{"role":"assistant","content":[` +
+		`{"type":"thinking","thinking":"[0.0s] 并行调用 2 个模型"},` +
+		`{"type":"text","text":"` + ensembleFailureNoticePrefix + `Only 0 proposers succeeded, minimum 2 required"}]},` +
+		`{"role":"user","content":"retry"}]}`
+
+	out, err := stripEnsembleReasoningFields([]byte(body))
+	require.NoError(t, err)
+	require.NotContains(t, string(out), ensembleFailureNoticePrefix,
+		"a notice stored behind a thinking block must still be recognized")
+	require.NotContains(t, string(out), "minimum 2 required")
+	require.NotContains(t, string(out), "并行调用")
+	require.Equal(t, "hi\n\nretry", gjson.GetBytes(out, "messages.0.content").String())
+}
+
+// Leading whitespace is introduced by clients that re-serialize a stored turn,
+// and a prefix probe that does not tolerate it silently stops recognizing the
+// notice.
+func TestStripEnsembleReasoningStripsNoticeWithLeadingWhitespace(t *testing.T) {
+	body := `{"model":"ensemble","messages":[` +
+		`{"role":"user","content":"hi"},` +
+		`{"role":"assistant","content":"\n  ` + ensembleFailureNoticePrefix + `it broke"},` +
+		`{"role":"user","content":"retry"}]}`
+
+	out, err := stripEnsembleReasoningFields([]byte(body))
+	require.NoError(t, err)
+	require.NotContains(t, string(out), "it broke")
+	require.Equal(t, 1, int(gjson.GetBytes(out, "messages.#").Int()))
+}
+
+// tool_use is the /v1/messages spelling of tool_calls. A turn carrying one
+// continues an agent loop, so dropping it would strand the tool_result that
+// follows even though the text beside it looks like a notice.
+func TestStripEnsembleReasoningKeepsAnthropicToolUseTurns(t *testing.T) {
+	body := `{"model":"ensemble","messages":[` +
+		`{"role":"user","content":"hi"},` +
+		`{"role":"assistant","content":[` +
+		`{"type":"text","text":"` + ensembleFailureNoticePrefix + `looks like a notice"},` +
+		`{"type":"tool_use","id":"toolu_1","name":"f","input":{}}]},` +
+		`{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"}]}]}`
+
+	out, err := stripEnsembleReasoningFields([]byte(body))
+	require.NoError(t, err)
+	require.Contains(t, string(out), "toolu_1", "a tool_use turn must never be dropped")
+	require.Equal(t, 3, int(gjson.GetBytes(out, "messages.#").Int()))
+}
+
+// A conversation that is nothing but this handler's own echoed output has no
+// turn left to send a member. Handing an upstream messages: [] earns a confusing
+// rejection; the caller is told what actually happened instead.
+func TestStripEnsembleReasoningRejectsConversationOfOnlyNotices(t *testing.T) {
+	body := `{"model":"ensemble","messages":[` +
+		`{"role":"assistant","content":"` + ensembleFailureNoticePrefix + `it broke"}]}`
+
+	_, err := stripEnsembleReasoningFields([]byte(body))
+	require.ErrorIs(t, err, errEnsembleNoConversationLeft)
 }
 
 // Tool calls are the agent loop's continuation boundary. A turn carrying them is
@@ -217,11 +343,14 @@ func TestStripEnsembleReasoningHandlesMixedShapes(t *testing.T) {
 	require.NotContains(t, string(out), "trace one")
 	require.NotContains(t, string(out), "trace two")
 	require.NotContains(t, string(out), "it broke")
-	// Every real turn survives; only the failure notice is dropped.
-	require.Equal(t, 6, int(gjson.GetBytes(out, "messages.#").Int()))
+	// Every real turn survives. Only the notice is dropped, and the two user turns
+	// it separated are rejoined rather than left adjacent, so seven messages in
+	// become five out.
+	require.Equal(t, 5, int(gjson.GetBytes(out, "messages.#").Int()))
 	for _, want := range []string{"q1", "a1", "q2", "q3", "a3", "q4"} {
 		require.Contains(t, string(out), want)
 	}
+	require.Equal(t, "q2\n\nq3", gjson.GetBytes(out, "messages.2.content").String())
 }
 
 // The cheap-reject probe must not fire on a clean conversation, and a clean body

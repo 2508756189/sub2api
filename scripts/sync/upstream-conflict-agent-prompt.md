@@ -74,15 +74,24 @@ git -C "{{REPO_PATH}}" switch {{SYNC_BRANCH}} || git -C "{{REPO_PATH}}" switch -
 git -C "{{REPO_PATH}}" merge --no-edit {{UPSTREAM_REF}}
 ```
 
-合并会报冲突——注意 rerere 可能已自动解决并暂存了一部分（输出里有 `Staged '...' using previous resolution`），这些不要再动。若 `merge --ff-only` 失败说明本地产品分支与 origin 分叉，停止并报告。
+合并会报冲突——注意 rerere 可能已自动解决并暂存了一部分（输出里有 `Staged '...' using previous resolution`），这些不要再动。若 `merge --ff-only` 失败，先审查两侧独有提交，在隔离分支整合，不得仅因分叉停止。
 
-**4. 先跑确定性解决器**（`{{TOKEN_PLATFORM_PATH}}` 存在时；Windows 用 `powershell`，Linux/macOS 用 `pwsh`）：
+**4. 先跑确定性机械规则**（每次都以 `{{POLICY_PATH}}` 的当前内容为准）：
 
-```bash
-powershell -NoProfile -ExecutionPolicy Bypass -File "{{TOKEN_PLATFORM_PATH}}/scripts/resolve_tokenport_sync_conflicts.ps1" -Sub2ApiPath "{{REPO_PATH}}"
+- 按 policy 的 `keep-fork` / `replay-fork-delta` / `theirs-then-regenerate` / `regenerate-from-source` 逐项执行并检查 `requiredMarkers` 与生成结果。
+- `resolve_tokenport_sync_conflicts.ps1` 当前不存在：先用 `Test-Path` 核实；不存在时不调用、不伪造输出，也不要因此停止。
+- 只有当**全部**剩余未合并文件都属于以下集合且该集合非空时，才允许运行 i18n resolver（先完整阅读该脚本再使用；Windows 用 `powershell`，Linux/macOS 用 `pwsh`）：
+
+```text
+frontend/src/i18n/locales/en/admin/accounts.ts
+frontend/src/i18n/locales/zh/admin/accounts.ts
 ```
 
-退出码含义：0 = 全部解决；2 = 机械类已处理、剩余为语义冲突（正常，继续第 5 步）；其他 = 脚本故障（读它的输出定位）。没有该脚本时，按 `{{POLICY_PATH}}` 里 `keep-fork` / `replay-fork-delta` / `theirs-then-regenerate` 三类规则手工执行等价操作。
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File "{{TOKEN_PLATFORM_PATH}}/scripts/resolve_tokenport_i18n_conflicts.ps1" -Sub2ApiPath "{{REPO_PATH}}"
+```
+
+存在其他冲突文件时必须跳过该 resolver，不能让 `Unsupported merge conflicts` 成为停止理由。脚本退出 0 后仍需审查其 diff。
 
 **5. 剩余的语义冲突逐个文件处理**，原则：
 
@@ -112,9 +121,9 @@ powershell -ExecutionPolicy Bypass -File scripts/check-tokenport-overlay.ps1
 `frontend/` 目录下：
 
 ```bash
-corepack pnpm@10.28.2 install --frozen-lockfile
-corepack pnpm@10.28.2 lint:check && corepack pnpm@10.28.2 typecheck
-corepack pnpm@10.28.2 test:run && corepack pnpm@10.28.2 build
+corepack pnpm@9.15.9 install --frozen-lockfile
+corepack pnpm@9.15.9 lint:check && corepack pnpm@9.15.9 typecheck
+corepack pnpm@9.15.9 test:run && corepack pnpm@9.15.9 build
 ```
 
 后端单元测试（PowerShell/CMD 下按原样运行；Git Bash 下需加 `MSYS_NO_PATHCONV=1` 前缀避免路径改写；GitHub CI 还会另跑 integration 测试，本地门禁以单测为准）：

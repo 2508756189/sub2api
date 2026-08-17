@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "description": "Single source of truth for TokenPort upstream-sync conflict resolution. Consumed by token-platform/scripts/resolve_tokenport_sync_conflicts.ps1 and by any human or AI agent following scripts/sync/upstream-conflict-agent-prompt.md. Update this file (not the scripts) when the fork's conflict surface changes.",
+  "version": 2,
+  "description": "Single source of truth for TokenPort upstream-sync conflict resolution. Consumed by token-platform/prompts/codex-upstream-sync-autonomy.md (end-to-end autonomy), token-platform/scripts/resolve_tokenport_i18n_conflicts.ps1 (i18n subset only), and any agent following scripts/sync/upstream-conflict-agent-prompt.md. Update this file (not the scripts) when the fork conflict surface changes.",
   "productBranch": "tokenport/main",
   "upstream": {
     "remote": "upstream",
@@ -8,7 +8,7 @@
     "branch": "main"
   },
   "gitConfig": {
-    "note": "Documentation of the repo-local settings the pipeline requires. They are applied idempotently by token-platform/scripts/sync_upstream_and_deploy.ps1 and by .github/workflows/tokenport-upstream-sync.yml; agents following the prompt template set them in step 2. Keep all four places in agreement.",
+    "note": "Documentation of the repo-local settings the merge requires. The autonomy prompt, token-platform/scripts/sync_upstream_and_deploy.ps1, and .github/workflows/tokenport-upstream-sync.yml apply them idempotently. Keep all consumers in agreement.",
     "settings": {
       "rerere.enabled": "true",
       "rerere.autoupdate": "true",
@@ -62,31 +62,64 @@
       "entries": [
         {
           "file": "frontend/pnpm-lock.yaml",
-          "command": "corepack pnpm@10.28.2 install --lockfile-only",
+          "command": "corepack pnpm@9.15.9 install --lockfile-only",
           "cwd": "frontend"
         }
       ]
     },
     {
+      "strategy": "regenerate-from-source",
+      "reason": "frontend/public/skill-market/ is a generated mirror of ../state-of-art-skills. Never hand-merge its JSON, zip, or markdown files. Rebuild the source registry, validate checksums, then run scripts/sync-skill-market.ps1 and stage the generated paths. If the source repo itself is dirty or cannot produce a compatible archive, escalate to semantic resolution.",
+      "files": [
+        "frontend/public/skill-market/index.json",
+        "frontend/public/skill-market/details/*",
+        "frontend/public/skill-market/dist/skills/*",
+        "frontend/public/skill-market/dist/teleagent/*"
+      ],
+      "sourceRepo": "../state-of-art-skills",
+      "commands": [
+        "python scripts/test_build_market.py (run in ../state-of-art-skills)",
+        "python scripts/build_market.py (run in ../state-of-art-skills)",
+        "powershell -ExecutionPolicy Bypass -File scripts/sync-skill-market.ps1 -SkillRepoPath <workspace>/state-of-art-skills (run in the fork root)"
+      ]
+    },
+    {
       "strategy": "escalate",
-      "reason": "Every other conflict is semantic (upstream and fork changed the same logic). Never auto-resolve. The pipeline aborts the merge, writes a report plus an agent brief under token-platform/output/sync-reports/, and sends an alert. A human or an AI coding agent resolves it once following scripts/sync/upstream-conflict-agent-prompt.md; git rerere records the resolution so the next pipeline run replays it automatically."
+      "reason": "Every other conflict is semantic (upstream and fork changed the same logic). The autonomy prompt continues with a full three-way semantic merge; the CI-generated conflict brief may stop and report. Never resolve semantic conflicts by whole-file ours/theirs, deleting tests, or editing this policy to bypass the merge."
     }
   ],
   "validationGates": {
     "worktree": "git diff --check && git diff --cached --check",
     "overlay": "powershell -ExecutionPolicy Bypass -File scripts/check-tokenport-overlay.ps1 (run from the fork root)",
-    "frontend": "corepack pnpm@10.28.2 install --frozen-lockfile && corepack pnpm@10.28.2 lint:check && corepack pnpm@10.28.2 typecheck && corepack pnpm@10.28.2 test:run && corepack pnpm@10.28.2 build (run in frontend/)",
+    "frontend": "corepack pnpm@9.15.9 install --frozen-lockfile && corepack pnpm@9.15.9 lint:check && corepack pnpm@9.15.9 typecheck && corepack pnpm@9.15.9 test:run && corepack pnpm@9.15.9 build (run in frontend/). CI pins the pnpm 9 major; deploy/Dockerfile pins 9.15.9, which is the reproducible local version.",
     "backend": "docker run --rm -v <fork>/backend:/src -w /src golang:1.26.5-alpine go test -tags=unit ./... (token-platform/scripts/check_tokenport_ci_parity.ps1 adds golangci-lint and pnpm-audit parity; GitHub CI additionally runs integration-tagged tests, which only run there)"
   },
   "invariants": [
     "Never force-push, rebase, or rewrite history on any branch.",
-    "Never commit directly to the product branch; all merges land on a sync/upstream-* branch and reach the product branch by fast-forward only.",
-    "Never delete either side's functionality to make a conflict disappear.",
+    "Never commit directly to the product branch; all merges land on a sync/upstream-* branch and reach tokenport/main by fast-forward only.",
+    "Never delete either side functionality to make a conflict disappear.",
     "Never edit this policy file, .gitattributes, or CI workflows as a way to bypass a conflict.",
-    "Pushing and CI gating are done by the pipeline or the human operator, not by the resolving agent."
+    "Pushing tokenport/main and the sync branch is allowed only by the end-to-end autonomy prompt, and only after local validation and exact-SHA GitHub CI/Security Scan gates pass. Standalone conflict-resolution agents must not push.",
+    "Never modify persistent git proxy, npm registry, or Windows proxy configuration during synchronization."
   ],
   "maintenance": {
     "markers": "requiredMarkers entries are brand/feature strings that must survive resolution. Update them here when TokenPort copy or the billing feature changes; scripts read them from this file.",
-    "extending": "To auto-resolve a new recurring conflict, add its file to replay-fork-delta (append-type) or theirs-then-regenerate (generated) after two consecutive manual resolutions prove the pattern is stable."
+    "extending": "To auto-resolve a new recurring conflict, add its file to replay-fork-delta (append-type), theirs-then-regenerate (generated), or regenerate-from-source (mirror of state-of-art-skills) after two consecutive manual resolutions prove the pattern is stable."
+  },
+  "resolvers": {
+    "i18n": {
+      "path": "token-platform/scripts/resolve_tokenport_i18n_conflicts.ps1",
+      "scope": [
+        "frontend/src/i18n/locales/en/admin/accounts.ts",
+        "frontend/src/i18n/locales/zh/admin/accounts.ts"
+      ],
+      "contract": "Run only when every remaining unmerged file is in scope and at least one scope file is unmerged. The script exits 0 after resolving those files; it throws for Unsupported merge conflicts. Any other outcome means skip it and continue semantic resolution.",
+      "verifyBeforeUse": "Test-Path the script, then read it in full before the first invocation. Verify its actual contract instead of trusting its filename."
+    },
+    "legacyGenericResolver": {
+      "path": "token-platform/scripts/resolve_tokenport_sync_conflicts.ps1",
+      "status": "does not exist",
+      "rule": "Never call it and never fabricate its output. If it appears later, read it in full and verify its contract before use."
+    }
   }
 }

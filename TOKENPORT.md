@@ -24,6 +24,8 @@
 
 官方更新先同步到 `main`，再通过 `.github/workflows/tokenport-upstream-sync.yml` 创建合并到 `tokenport/main` 的审查分支。不要在产品分支执行 `git pull origin main`。
 
+端到端自主同步（冲突三方合并、验证、推送、CI 门禁、部署）使用 `token-platform/prompts/codex-upstream-sync-autonomy.md`；机械冲突策略以 `scripts/sync/tokenport-sync-policy.json` 为准。
+
 ```powershell
 git switch tokenport/main
 git pull --ff-only

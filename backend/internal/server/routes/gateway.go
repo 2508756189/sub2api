@@ -34,11 +34,12 @@ func RegisterGatewayRoutes(
 	compositeResolver *service.CompositeRouteResolver,
 	cfg *config.Config,
 ) {
-	if cfg == nil {
-		cfg = &config.Config{}
+	gatewayConfig := config.GatewayConfig{}
+	if cfg != nil {
+		gatewayConfig = cfg.Gateway
 	}
-	bodyLimit := middleware.RequestBodyLimit(cfg.Gateway.MaxBodySize)
-	textBodyLimit := middleware.RequestBodyLimit(cfg.Gateway.TextMaxBodySize)
+	bodyLimit := middleware.RequestBodyLimit(gatewayConfig.MaxBodySize)
+	textBodyLimit := middleware.RequestBodyLimit(gatewayConfig.TextMaxBodySize)
 	clientRequestID := middleware.ClientRequestID()
 	opsErrorLogger := handler.OpsErrorLoggerMiddleware(opsService)
 	endpointNorm := handler.InboundEndpointMiddleware()
@@ -85,10 +86,8 @@ func RegisterGatewayRoutes(
 	// platform dispatcher as a direct call.
 	internalExecutionEnabled := false
 	internalExecutionToken := ""
-	if cfg != nil {
-		internalExecutionEnabled = cfg.Gateway.InternalExecution.Enabled
-		internalExecutionToken = strings.TrimSpace(cfg.Gateway.InternalExecution.Token)
-	}
+	internalExecutionEnabled = gatewayConfig.InternalExecution.Enabled
+	internalExecutionToken = strings.TrimSpace(gatewayConfig.InternalExecution.Token)
 	if !internalExecutionEnabled {
 		enabled := strings.TrimSpace(os.Getenv("GATEWAY_INTERNAL_EXECUTION_ENABLED"))
 		internalExecutionEnabled = strings.EqualFold(enabled, "true") || enabled == "1"

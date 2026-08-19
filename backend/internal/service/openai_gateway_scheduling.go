@@ -1313,7 +1313,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64, platform string) ([]Account, error) {
 	platform = NormalizeOpenAICompatiblePlatform(platform)
 	if poolGroupIDs := AccountPoolGroupIDsFromContext(ctx); len(poolGroupIDs) > 0 {
-		// Ensemble member sub-calls draw their pool from the union of the
+		// Delegated sub-calls draw their pool from the union of the
 		// caller's group and the configured source groups. Accounts are merged
 		// across the groups and deduplicated; the rest of the scheduler
 		// (load balance, failover, capacity slots) is unchanged, so members are

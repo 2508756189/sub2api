@@ -586,7 +586,7 @@ func openAIStickyAccountMatchesGroup(account *Account, groupID *int64) bool {
 }
 
 // openAIStickyAccountMatchesPoolGroupIDs is the multi-group variant used by
-// ensemble member sub-calls: an account is eligible when it belongs to any of
+// delegated sub-calls: an account is eligible when it belongs to any of
 // the pool groups (the caller's group plus the configured source groups).
 func openAIStickyAccountMatchesPoolGroupIDs(account *Account, poolGroupIDs []int64) bool {
 	if account == nil || len(poolGroupIDs) == 0 {

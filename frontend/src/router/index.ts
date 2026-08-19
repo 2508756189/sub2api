@@ -499,18 +499,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/admin/ensemble',
-    name: 'AdminEnsemble',
-    component: () => import('@/views/admin/EnsembleConfigView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Ensemble Configuration',
-      titleKey: 'admin.ensemble.title',
-      descriptionKey: 'admin.ensemble.description'
-    }
-  },
-  {
     path: '/monitor',
     name: 'ChannelStatus',
     component: () => import('@/views/user/ChannelStatusView.vue'),

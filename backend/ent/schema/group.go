@@ -289,12 +289,6 @@ func (Group) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
 			Default(0).
 			Comment("安全缓冲，小数；与 margin 相加后从下游倍率中扣除，默认 0"),
-
-		// Ensemble 分组配置 (added by migration 196；仅 platform=ensemble 时有意义)
-		field.JSON("ensemble_config", domain.EnsembleConfig{}).
-			Default(domain.EnsembleConfig{}).
-			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
-			Comment("Ensemble 分组配置：聚合开关、最少成功候选数、超时、最大 token 等"),
 	}
 }
 

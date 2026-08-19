@@ -426,7 +426,7 @@ func IsForwardableOpenAIResponsesRequestPath(c *gin.Context) bool {
 // The distinction is not cosmetic: a bare POST /v1/responses is a new request to
 // answer, while a subpath call (retrieve, cancel) names one existing upstream
 // response by id. Both arrive at the same handler, so anything that acts on "a
-// new request" — Ensemble fan-out in particular — has to tell them apart. Note
+// new request" has to tell them apart. Note
 // that endpoint normalization cannot: /v1/responses/{id} normalizes to
 // EndpointResponses just like the bare path does.
 func IsBareOpenAIResponsesRequestPath(c *gin.Context) bool {

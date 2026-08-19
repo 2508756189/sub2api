@@ -187,9 +187,9 @@ func isConcreteRequestPlatform(platform string) bool {
 }
 
 // WithAccountPoolGroupIDs marks the request as drawing its account pool from a
-// set of groups instead of the caller's own group. Ensemble member sub-calls set
-// this to the union of the ensemble group and its source groups, so each member
-// model is scheduled exactly like a direct call to its source group: the normal
+// set of groups instead of the caller's own group. Delegated calls set this to
+// the union of their source groups, so each model is scheduled exactly like a
+// direct call to its source group: the normal
 // load balancing, failover and capacity logic all apply, and the caller never
 // has to know which account actually serves the request.
 func WithAccountPoolGroupIDs(ctx context.Context, groupIDs []int64) context.Context {

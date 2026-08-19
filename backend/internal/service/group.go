@@ -14,7 +14,6 @@ import (
 type OpenAIMessagesDispatchModelConfig = domain.OpenAIMessagesDispatchModelConfig
 type GroupModelsListConfig = domain.GroupModelsListConfig
 type ReasoningEffortMapping = domain.ReasoningEffortMapping
-type EnsembleConfig = domain.EnsembleConfig
 
 type Group struct {
 	ID             int64
@@ -124,10 +123,6 @@ type Group struct {
 	ProfitControlEnabled bool
 	ProfitMinMargin      float64 // 最低毛利率，小数存储（0.30=30%）
 	ProfitSafetyBuffer   float64 // 安全缓冲，小数，与 margin 相加后从 D 中扣除
-
-	// EnsembleConfig holds group-level ensemble options; only meaningful when
-	// Platform == PlatformEnsemble.
-	EnsembleConfig EnsembleConfig
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

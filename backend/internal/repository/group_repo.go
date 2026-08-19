@@ -111,7 +111,6 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 		SetRpmLimit(groupIn.RPMLimit).
 		SetMaxReasoningEffort(groupIn.MaxReasoningEffort).
 		SetReasoningEffortMappings(groupIn.ReasoningEffortMappings).
-		SetEnsembleConfig(groupIn.EnsembleConfig).
 		SetPeakRateEnabled(groupIn.PeakRateEnabled).
 		SetPeakStart(groupIn.PeakStart).
 		SetPeakEnd(groupIn.PeakEnd).
@@ -288,7 +287,6 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetRpmLimit(groupIn.RPMLimit).
 		SetMaxReasoningEffort(groupIn.MaxReasoningEffort).
 		SetReasoningEffortMappings(groupIn.ReasoningEffortMappings).
-		SetEnsembleConfig(groupIn.EnsembleConfig).
 		SetPeakRateEnabled(groupIn.PeakRateEnabled).
 		SetPeakStart(groupIn.PeakStart).
 		SetPeakEnd(groupIn.PeakEnd).
@@ -884,25 +882,18 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 		return nil, err
 	}
 
-	// 4. Soft-delete Ensemble members owned by this group. The group itself is
-	// soft-deleted below, so the database FK cascade does not run; clean up the
-	// member rows explicitly to keep admin listings and runtime plans consistent.
-	if _, err := exec.ExecContext(ctx, "UPDATE ensemble_proposers SET deleted_at = NOW() WHERE group_id = $1 AND deleted_at IS NULL", id); err != nil {
-		return nil, err
-	}
-
-	// 5. Remove channel associations. channel_groups is a live join table and
+	// 4. Remove channel associations. channel_groups is a live join table and
 	// cannot rely on the group's soft delete to remove stale billing links.
 	if _, err := exec.ExecContext(ctx, "DELETE FROM channel_groups WHERE group_id = $1", id); err != nil {
 		return nil, err
 	}
 
-	// 6. Soft-delete composite model routes owned by this group.
+	// 5. Soft-delete composite model routes owned by this group.
 	if _, err := exec.ExecContext(ctx, "UPDATE composite_model_routes SET deleted_at = NOW() WHERE group_id = $1 AND deleted_at IS NULL", id); err != nil {
 		return nil, err
 	}
 
-	// 7. Soft-delete group itself.
+	// 6. Soft-delete group itself.
 	if _, err := txClient.Group.Delete().Where(group.IDEQ(id)).Exec(ctx); err != nil {
 		return nil, err
 	}

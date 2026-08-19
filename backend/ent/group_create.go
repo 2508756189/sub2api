@@ -850,20 +850,6 @@ func (_c *GroupCreate) SetNillableProfitSafetyBuffer(v *float64) *GroupCreate {
 	return _c
 }
 
-// SetEnsembleConfig sets the "ensemble_config" field.
-func (_c *GroupCreate) SetEnsembleConfig(v domain.EnsembleConfig) *GroupCreate {
-	_c.mutation.SetEnsembleConfig(v)
-	return _c
-}
-
-// SetNillableEnsembleConfig sets the "ensemble_config" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableEnsembleConfig(v *domain.EnsembleConfig) *GroupCreate {
-	if v != nil {
-		_c.SetEnsembleConfig(*v)
-	}
-	return _c
-}
-
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -1153,10 +1139,6 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultProfitSafetyBuffer
 		_c.mutation.SetProfitSafetyBuffer(v)
 	}
-	if _, ok := _c.mutation.EnsembleConfig(); !ok {
-		v := group.DefaultEnsembleConfig
-		_c.mutation.SetEnsembleConfig(v)
-	}
 	return nil
 }
 
@@ -1346,9 +1328,6 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ProfitSafetyBuffer(); !ok {
 		return &ValidationError{Name: "profit_safety_buffer", err: errors.New(`ent: missing required field "Group.profit_safety_buffer"`)}
-	}
-	if _, ok := _c.mutation.EnsembleConfig(); !ok {
-		return &ValidationError{Name: "ensemble_config", err: errors.New(`ent: missing required field "Group.ensemble_config"`)}
 	}
 	return nil
 }
@@ -1624,10 +1603,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ProfitSafetyBuffer(); ok {
 		_spec.SetField(group.FieldProfitSafetyBuffer, field.TypeFloat64, value)
 		_node.ProfitSafetyBuffer = value
-	}
-	if value, ok := _c.mutation.EnsembleConfig(); ok {
-		_spec.SetField(group.FieldEnsembleConfig, field.TypeJSON, value)
-		_node.EnsembleConfig = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -2790,18 +2765,6 @@ func (u *GroupUpsert) UpdateProfitSafetyBuffer() *GroupUpsert {
 // AddProfitSafetyBuffer adds v to the "profit_safety_buffer" field.
 func (u *GroupUpsert) AddProfitSafetyBuffer(v float64) *GroupUpsert {
 	u.Add(group.FieldProfitSafetyBuffer, v)
-	return u
-}
-
-// SetEnsembleConfig sets the "ensemble_config" field.
-func (u *GroupUpsert) SetEnsembleConfig(v domain.EnsembleConfig) *GroupUpsert {
-	u.Set(group.FieldEnsembleConfig, v)
-	return u
-}
-
-// UpdateEnsembleConfig sets the "ensemble_config" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateEnsembleConfig() *GroupUpsert {
-	u.SetExcluded(group.FieldEnsembleConfig)
 	return u
 }
 
@@ -4026,20 +3989,6 @@ func (u *GroupUpsertOne) AddProfitSafetyBuffer(v float64) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateProfitSafetyBuffer() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateProfitSafetyBuffer()
-	})
-}
-
-// SetEnsembleConfig sets the "ensemble_config" field.
-func (u *GroupUpsertOne) SetEnsembleConfig(v domain.EnsembleConfig) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetEnsembleConfig(v)
-	})
-}
-
-// UpdateEnsembleConfig sets the "ensemble_config" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateEnsembleConfig() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateEnsembleConfig()
 	})
 }
 
@@ -5430,20 +5379,6 @@ func (u *GroupUpsertBulk) AddProfitSafetyBuffer(v float64) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateProfitSafetyBuffer() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateProfitSafetyBuffer()
-	})
-}
-
-// SetEnsembleConfig sets the "ensemble_config" field.
-func (u *GroupUpsertBulk) SetEnsembleConfig(v domain.EnsembleConfig) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetEnsembleConfig(v)
-	})
-}
-
-// UpdateEnsembleConfig sets the "ensemble_config" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateEnsembleConfig() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateEnsembleConfig()
 	})
 }
 

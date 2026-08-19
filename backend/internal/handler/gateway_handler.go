@@ -1122,13 +1122,6 @@ func (h *GatewayHandler) Models(c *gin.Context) {
 		writeModelsList(c, platform, availableModels)
 		return
 	}
-	if platform == service.PlatformEnsemble {
-		// An Ensemble group exposes one virtual public model. Its proposer and
-		// aggregator models are internal members and must not be selected by the
-		// client as direct upstream models.
-		writeModelsList(c, platform, defaultModelIDsForPlatform(platform))
-		return
-	}
 
 	// Fallback to default models
 	if platform == service.PlatformOpenAI {
@@ -1386,8 +1379,6 @@ func defaultModelIDsForPlatform(platform string) []string {
 		return mergeModelIDs(ids, nil)
 	case service.PlatformGrok:
 		return xai.DefaultModelIDs()
-	case service.PlatformEnsemble:
-		return []string{"ensemble"}
 	case service.PlatformComposite:
 		ids := make([]string, 0)
 		seen := make(map[string]struct{})

@@ -140,8 +140,6 @@ const (
 	FieldProfitMinMargin = "profit_min_margin"
 	// FieldProfitSafetyBuffer holds the string denoting the profit_safety_buffer field in the database.
 	FieldProfitSafetyBuffer = "profit_safety_buffer"
-	// FieldEnsembleConfig holds the string denoting the ensemble_config field in the database.
-	FieldEnsembleConfig = "ensemble_config"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -279,7 +277,6 @@ var Columns = []string{
 	FieldProfitControlEnabled,
 	FieldProfitMinMargin,
 	FieldProfitSafetyBuffer,
-	FieldEnsembleConfig,
 }
 
 var (
@@ -415,8 +412,6 @@ var (
 	DefaultProfitMinMargin float64
 	// DefaultProfitSafetyBuffer holds the default value on creation for the "profit_safety_buffer" field.
 	DefaultProfitSafetyBuffer float64
-	// DefaultEnsembleConfig holds the default value on creation for the "ensemble_config" field.
-	DefaultEnsembleConfig domain.EnsembleConfig
 )
 
 // OrderOption defines the ordering options for the Group queries.

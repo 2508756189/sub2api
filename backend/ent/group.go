@@ -97,7 +97,7 @@ type Group struct {
 	AudioTtsPricePerMillionChars *float64 `json:"audio_tts_price_per_million_chars,omitempty"`
 	// STT 每小时价格（USD）
 	AudioSttPricePerHour *float64 `json:"audio_stt_price_per_hour,omitempty"`
-	// 是否按上下文长度应用模型阶梯价格
+	// 是否按上下文长度应用模型阶梯价格；默认开启以保持官方/渠道长上下文价
 	LongContextPricingEnabled bool `json:"long_context_pricing_enabled,omitempty"`
 	// 分组逐模型定价；优先级高于渠道和内置定价
 	ModelPricing json.RawMessage `json:"model_pricing,omitempty"`
@@ -143,8 +143,6 @@ type Group struct {
 	ProfitMinMargin float64 `json:"profit_min_margin,omitempty"`
 	// 安全缓冲，小数；与 margin 相加后从下游倍率中扣除，默认 0
 	ProfitSafetyBuffer float64 `json:"profit_safety_buffer,omitempty"`
-	// Ensemble 分组配置：聚合开关、最少成功候选数、超时、最大 token 等
-	EnsembleConfig domain.EnsembleConfig `json:"ensemble_config,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -251,7 +249,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldVideoModelPrices, group.FieldModelPricing, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig, group.FieldReasoningEffortMappings, group.FieldEnsembleConfig:
+		case group.FieldVideoModelPrices, group.FieldModelPricing, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig, group.FieldReasoningEffortMappings:
 			values[i] = new([]byte)
 		case group.FieldPeakRateEnabled, group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldAllowBatchImageGeneration, group.FieldImageRateIndependent, group.FieldVideoRateIndependent, group.FieldLongContextPricingEnabled, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldAllowLive, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldProfitControlEnabled:
 			values[i] = new(sql.NullBool)
@@ -689,14 +687,6 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ProfitSafetyBuffer = value.Float64
 			}
-		case group.FieldEnsembleConfig:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field ensemble_config", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.EnsembleConfig); err != nil {
-					return fmt.Errorf("unmarshal field ensemble_config: %w", err)
-				}
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -996,9 +986,6 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("profit_safety_buffer=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ProfitSafetyBuffer))
-	builder.WriteString(", ")
-	builder.WriteString("ensemble_config=")
-	builder.WriteString(fmt.Sprintf("%v", _m.EnsembleConfig))
 	builder.WriteByte(')')
 	return builder.String()
 }

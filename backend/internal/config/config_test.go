@@ -1790,6 +1790,11 @@ func TestValidateConfigErrors(t *testing.T) {
 			wantErr: "gateway.max_body_size",
 		},
 		{
+			name:    "gateway internal execution requires token",
+			mutate:  func(c *Config) { c.Gateway.InternalExecution.Enabled = true; c.Gateway.InternalExecution.Token = "" },
+			wantErr: "gateway.internal_execution.token",
+		},
+		{
 			name:    "gateway text body exceeds media body",
 			mutate:  func(c *Config) { c.Gateway.TextMaxBodySize = c.Gateway.MaxBodySize + 1 },
 			wantErr: "gateway.text_max_body_size",

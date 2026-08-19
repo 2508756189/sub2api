@@ -1034,6 +1034,17 @@ type GatewayConfig struct {
 	// CNProviders: 国产 OpenAI 兼容供应商（kimi/zhipu/deepseek）的余额检测配置。
 	// 仅作用于 payg（按量付费）账号：周期探测余额，低于阈值则临时停调。
 	CNProviders GatewayCNProvidersConfig `mapstructure:"cn_providers"`
+
+	// InternalExecution exposes the opt-in direct execution seam used by DSH.
+	// It is disabled unless both Enabled and Token are configured.
+	InternalExecution GatewayInternalExecutionConfig `mapstructure:"internal_execution"`
+}
+
+// GatewayInternalExecutionConfig protects the DSH-to-TokenPort direct execution API.
+// The service token is intentionally separate from user API keys: both are required.
+type GatewayInternalExecutionConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Token   string `mapstructure:"token"`
 }
 
 // GatewayGrokConfig holds Grok-specific gateway scheduling knobs.
@@ -2285,6 +2296,8 @@ func setDefaults() {
 	viper.SetDefault("idempotency.cleanup_batch_size", 500)
 
 	// Gateway
+	viper.SetDefault("gateway.internal_execution.enabled", false)
+	viper.SetDefault("gateway.internal_execution.token", "")
 	viper.SetDefault("gateway.response_header_timeout", 600) // 600秒(10分钟)等待上游响应头，LLM高负载时可能排队较久
 	viper.SetDefault("gateway.openai_response_header_timeout", 0)
 	viper.SetDefault("gateway.openai_first_output_timeout_seconds", 0)
@@ -3232,6 +3245,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Gateway.ImageConcurrency.MaxWaitingRequests < 0 {
 		return fmt.Errorf("gateway.image_concurrency.max_waiting_requests must be non-negative")
+	}
+	if c.Gateway.InternalExecution.Enabled && strings.TrimSpace(c.Gateway.InternalExecution.Token) == "" {
+		return fmt.Errorf("gateway.internal_execution.token is required when internal_execution.enabled=true")
 	}
 	if c.Gateway.MaxIdleConns <= 0 {
 		return fmt.Errorf("gateway.max_idle_conns must be positive")

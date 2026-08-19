@@ -257,12 +257,7 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 			SubscriptionType:      SubscriptionTypeStandard,
 			RateMultiplier:        1,
 			AllowMessagesDispatch: true,
-			EnsembleConfig: EnsembleConfig{
-				AggregatorEnabled: true,
-				MinProposers:      2,
-				TimeoutSeconds:    45,
-			},
-			DefaultMappedModel: "gpt-5.4",
+			DefaultMappedModel:    "gpt-5.4",
 			MessagesDispatchModelConfig: OpenAIMessagesDispatchModelConfig{
 				OpusMappedModel:   "gpt-5.4-nano",
 				SonnetMappedModel: "gpt-5.3-codex",
@@ -281,7 +276,6 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 	require.Equal(t, apiKey.Name, roundTrip.Name)
 	require.NotNil(t, roundTrip.Group)
 	require.Equal(t, apiKey.Group.MessagesDispatchModelConfig, roundTrip.Group.MessagesDispatchModelConfig)
-	require.Equal(t, apiKey.Group.EnsembleConfig, roundTrip.Group.EnsembleConfig)
 }
 
 func TestAPIKeyService_SnapshotRoundTrip_PreservesReasoningEffortPolicy(t *testing.T) {

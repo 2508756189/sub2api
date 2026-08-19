@@ -53,13 +53,6 @@ type AdminService interface {
 	UpdateCompositeRoute(ctx context.Context, groupID, routeID int64, input CompositeRouteInput) (*CompositeModelRoute, error)
 	DeleteCompositeRoute(ctx context.Context, groupID, routeID int64) error
 	PreviewCompositeRoute(ctx context.Context, groupID int64, input CompositeRoutePreviewRequest) (*CompositeRouteDecision, error)
-	// Ensemble group members + config (in-group aggregation only).
-	ListEnsembleProposers(ctx context.Context, groupID int64) ([]EnsembleProposer, error)
-	CreateEnsembleProposer(ctx context.Context, groupID int64, input EnsembleProposerInput) (*EnsembleProposer, error)
-	UpdateEnsembleProposer(ctx context.Context, groupID, proposerID int64, input EnsembleProposerInput) (*EnsembleProposer, error)
-	DeleteEnsembleProposer(ctx context.Context, groupID, proposerID int64) error
-	GetEnsembleConfig(ctx context.Context, groupID int64) (EnsembleConfig, error)
-	UpdateEnsembleConfig(ctx context.Context, groupID int64, config EnsembleConfig) (EnsembleConfig, error)
 	GetGroupAPIKeys(ctx context.Context, groupID int64, page, pageSize int) ([]APIKey, int64, error)
 	GetGroupRateMultipliers(ctx context.Context, groupID int64) ([]UserGroupRateEntry, error)
 	ClearGroupRateMultipliers(ctx context.Context, groupID int64) error
@@ -673,7 +666,6 @@ type adminServiceImpl struct {
 	affiliateService     adminRechargeAffiliateAccruer
 	compositeRouteRepo   CompositeModelRouteRepository
 	compositeResolver    *CompositeRouteResolver
-	ensembleProposerRepo EnsembleProposerRepository
 	// 分组平台变更后用来失效渠道缓存；可为 nil（缓存会在 TTL 到期后自然重建）
 	channelCacheInvalidator ChannelCacheInvalidator
 }
@@ -715,7 +707,6 @@ func NewAdminService(
 	affiliateService *AffiliateService,
 	compositeRouteRepo CompositeModelRouteRepository,
 	compositeResolver *CompositeRouteResolver,
-	ensembleProposerRepo EnsembleProposerRepository,
 	channelCacheInvalidator ChannelCacheInvalidator,
 ) AdminService {
 	return &adminServiceImpl{
@@ -743,7 +734,6 @@ func NewAdminService(
 		affiliateService:     affiliateService,
 		compositeRouteRepo:   compositeRouteRepo,
 		compositeResolver:    compositeResolver,
-		ensembleProposerRepo: ensembleProposerRepo,
 
 		channelCacheInvalidator: channelCacheInvalidator,
 	}

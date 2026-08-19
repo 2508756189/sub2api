@@ -27,13 +27,6 @@ const (
 	PlatformZhipu       = "zhipu"    // 智谱 GLM (bigmodel)
 	PlatformDeepseek    = "deepseek" // DeepSeek
 	PlatformComposite   = "composite"
-	PlatformEnsemble    = "ensemble"
-)
-
-// Ensemble proposer role constants
-const (
-	EnsembleRoleProposer   = "proposer"
-	EnsembleRoleAggregator = "aggregator"
 )
 
 // Account mode constants 区分国产供应商的「按量付费（余额）」与「Coding Plan」两种接入方式。

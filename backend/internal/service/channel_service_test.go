@@ -2039,13 +2039,6 @@ func TestIsPlatformPricingMatch(t *testing.T) {
 		{"gemini does NOT match anthropic", PlatformGemini, PlatformAnthropic, false},
 		{"composite matches openai pricing", PlatformComposite, PlatformOpenAI, true},
 		{"composite matches gemini pricing", PlatformComposite, PlatformGemini, true},
-		{"ensemble matches openai pricing", PlatformEnsemble, PlatformOpenAI, true},
-		{"ensemble matches anthropic pricing", PlatformEnsemble, PlatformAnthropic, true},
-		{"ensemble matches gemini pricing", PlatformEnsemble, PlatformGemini, true},
-		{"ensemble matches antigravity pricing", PlatformEnsemble, PlatformAntigravity, true},
-		{"ensemble matches grok pricing", PlatformEnsemble, PlatformGrok, true},
-		{"ensemble does not match composite pricing", PlatformEnsemble, PlatformComposite, false},
-		{"ensemble does not match ensemble pricing", PlatformEnsemble, PlatformEnsemble, false},
 		{"empty string matches nothing", "", PlatformAnthropic, false},
 		{"empty string matches empty", "", "", true},
 	}
@@ -2072,7 +2065,6 @@ func TestMatchingPlatforms(t *testing.T) {
 		{"gemini returns itself", PlatformGemini, []string{PlatformGemini}},
 		{"openai returns itself", PlatformOpenAI, []string{PlatformOpenAI}},
 		{"composite returns concrete platforms", PlatformComposite, []string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok}},
-		{"ensemble returns concrete platforms", PlatformEnsemble, []string{PlatformAnthropic, PlatformGemini, PlatformOpenAI, PlatformAntigravity, PlatformGrok}},
 	}
 
 	for _, tt := range tests {
@@ -2118,68 +2110,6 @@ func TestCompositeChannelLookupUsesResolvedTargetPlatform(t *testing.T) {
 	anthropicResult := svc.ResolveChannelMapping(anthropicCtx, 99, "claude-3-5-sonnet")
 	require.True(t, anthropicResult.Mapped)
 	require.Equal(t, "claude-sonnet-4-5", anthropicResult.MappedModel)
-}
-
-func TestEnsembleChannelLookupUsesResolvedTargetPlatform(t *testing.T) {
-	channel := Channel{
-		ID:       2,
-		Status:   StatusActive,
-		GroupIDs: []int64{199},
-		ModelPricing: []ChannelModelPricing{
-			{Platform: PlatformOpenAI, Models: []string{"gpt-*"}},
-			{Platform: PlatformAnthropic, Models: []string{"claude-*"}},
-		},
-		ModelMapping: map[string]map[string]string{
-			PlatformOpenAI: {
-				"gpt-5": "gpt-5-mini",
-			},
-			PlatformAnthropic: {
-				"claude-*": "claude-sonnet-4-5",
-			},
-		},
-	}
-	cache := populateChannelCache([]Channel{channel}, map[int64]string{199: PlatformEnsemble})
-	svc := &ChannelService{}
-	svc.cache.Store(cache)
-
-	openAICtx := WithResolvedTargetPlatform(context.Background(), PlatformOpenAI)
-	require.NotNil(t, svc.GetChannelModelPricing(openAICtx, 199, "gpt-5"))
-	require.Nil(t, svc.GetChannelModelPricing(openAICtx, 199, "claude-sonnet-4-5"))
-	openAIResult := svc.ResolveChannelMapping(openAICtx, 199, "gpt-5")
-	require.True(t, openAIResult.Mapped)
-	require.Equal(t, "gpt-5-mini", openAIResult.MappedModel)
-
-	anthropicCtx := WithResolvedTargetPlatform(context.Background(), PlatformAnthropic)
-	require.NotNil(t, svc.GetChannelModelPricing(anthropicCtx, 199, "claude-sonnet-4-5"))
-	require.Nil(t, svc.GetChannelModelPricing(anthropicCtx, 199, "gpt-5"))
-	anthropicResult := svc.ResolveChannelMapping(anthropicCtx, 199, "claude-3-5-sonnet")
-	require.True(t, anthropicResult.Mapped)
-	require.Equal(t, "claude-sonnet-4-5", anthropicResult.MappedModel)
-}
-
-func TestEnsembleChannelLookupDoesNotCrossGroup(t *testing.T) {
-	ensembleChannel := Channel{
-		ID:       3,
-		Status:   StatusActive,
-		GroupIDs: []int64{199},
-		ModelPricing: []ChannelModelPricing{
-			{Platform: PlatformOpenAI, Models: []string{"gpt-5"}},
-		},
-	}
-	otherChannel := Channel{
-		ID:       4,
-		Status:   StatusActive,
-		GroupIDs: []int64{200},
-	}
-	cache := populateChannelCache([]Channel{ensembleChannel, otherChannel}, map[int64]string{
-		199: PlatformEnsemble,
-		200: PlatformOpenAI,
-	})
-	svc := &ChannelService{}
-	svc.cache.Store(cache)
-
-	require.NotNil(t, svc.GetChannelModelPricing(WithResolvedTargetPlatform(context.Background(), PlatformOpenAI), 199, "gpt-5"))
-	require.Nil(t, svc.GetChannelModelPricing(context.Background(), 200, "gpt-5"))
 }
 
 // ===========================================================================

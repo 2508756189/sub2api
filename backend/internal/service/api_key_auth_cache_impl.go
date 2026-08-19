@@ -14,7 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 20 // v20: include Ensemble and search/audio/video pricing group fields
+const apiKeyAuthSnapshotVersion = 20 // v20: include current group pricing fields
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -428,7 +428,6 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			ProfitControlEnabled:            apiKey.Group.ProfitControlEnabled,
 			ProfitMinMargin:                 apiKey.Group.ProfitMinMargin,
 			ProfitSafetyBuffer:              apiKey.Group.ProfitSafetyBuffer,
-			EnsembleConfig:                  apiKey.Group.EnsembleConfig,
 		}
 	}
 	return snapshot
@@ -524,7 +523,6 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			ProfitControlEnabled:            snapshot.Group.ProfitControlEnabled,
 			ProfitMinMargin:                 snapshot.Group.ProfitMinMargin,
 			ProfitSafetyBuffer:              snapshot.Group.ProfitSafetyBuffer,
-			EnsembleConfig:                  snapshot.Group.EnsembleConfig,
 		}
 	}
 	s.compileAPIKeyIPRules(apiKey)

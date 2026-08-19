@@ -191,7 +191,7 @@ func newResponsesSuffixTestContext(t *testing.T, path string) *gin.Context {
 //
 // 端点归一化区分不了这件事——/v1/responses/{id} 和 /v1/responses 都会归一化成
 // EndpointResponses，而两者语义完全不同：前者按 id 操作一条已存在的上游响应，
-// 后者才是一次要作答的新请求。Ensemble 扇出只能发生在后者上，否则一次
+// 后者才是一次要作答的新请求。Delegated calls 只能发生在后者上，否则一次
 // retrieve/cancel 会被扇成 N 个成员调用，既烧配额又拿不到目标响应。
 func TestIsBareOpenAIResponsesRequestPath(t *testing.T) {
 	gin.SetMode(gin.TestMode)

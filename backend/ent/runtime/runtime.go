@@ -20,7 +20,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
 	"github.com/Wei-Shaw/sub2api/ent/compositemodelroute"
-	"github.com/Wei-Shaw/sub2api/ent/ensembleproposer"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -936,63 +935,6 @@ func init() {
 	compositemodelrouteDescEnabled := compositemodelrouteFields[7].Descriptor()
 	// compositemodelroute.DefaultEnabled holds the default value on creation for the enabled field.
 	compositemodelroute.DefaultEnabled = compositemodelrouteDescEnabled.Default.(bool)
-	ensembleproposerMixin := schema.EnsembleProposer{}.Mixin()
-	ensembleproposerMixinHooks1 := ensembleproposerMixin[1].Hooks()
-	ensembleproposer.Hooks[0] = ensembleproposerMixinHooks1[0]
-	ensembleproposerMixinInters1 := ensembleproposerMixin[1].Interceptors()
-	ensembleproposer.Interceptors[0] = ensembleproposerMixinInters1[0]
-	ensembleproposerMixinFields0 := ensembleproposerMixin[0].Fields()
-	_ = ensembleproposerMixinFields0
-	ensembleproposerFields := schema.EnsembleProposer{}.Fields()
-	_ = ensembleproposerFields
-	// ensembleproposerDescCreatedAt is the schema descriptor for created_at field.
-	ensembleproposerDescCreatedAt := ensembleproposerMixinFields0[0].Descriptor()
-	// ensembleproposer.DefaultCreatedAt holds the default value on creation for the created_at field.
-	ensembleproposer.DefaultCreatedAt = ensembleproposerDescCreatedAt.Default.(func() time.Time)
-	// ensembleproposerDescUpdatedAt is the schema descriptor for updated_at field.
-	ensembleproposerDescUpdatedAt := ensembleproposerMixinFields0[1].Descriptor()
-	// ensembleproposer.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	ensembleproposer.DefaultUpdatedAt = ensembleproposerDescUpdatedAt.Default.(func() time.Time)
-	// ensembleproposer.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	ensembleproposer.UpdateDefaultUpdatedAt = ensembleproposerDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// ensembleproposerDescRole is the schema descriptor for role field.
-	ensembleproposerDescRole := ensembleproposerFields[1].Descriptor()
-	// ensembleproposer.DefaultRole holds the default value on creation for the role field.
-	ensembleproposer.DefaultRole = ensembleproposerDescRole.Default.(string)
-	// ensembleproposer.RoleValidator is a validator for the "role" field. It is called by the builders before save.
-	ensembleproposer.RoleValidator = ensembleproposerDescRole.Validators[0].(func(string) error)
-	// ensembleproposerDescModel is the schema descriptor for model field.
-	ensembleproposerDescModel := ensembleproposerFields[2].Descriptor()
-	// ensembleproposer.ModelValidator is a validator for the "model" field. It is called by the builders before save.
-	ensembleproposer.ModelValidator = func() func(string) error {
-		validators := ensembleproposerDescModel.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(model string) error {
-			for _, fn := range fns {
-				if err := fn(model); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// ensembleproposerDescPlatform is the schema descriptor for platform field.
-	ensembleproposerDescPlatform := ensembleproposerFields[3].Descriptor()
-	// ensembleproposer.DefaultPlatform holds the default value on creation for the platform field.
-	ensembleproposer.DefaultPlatform = ensembleproposerDescPlatform.Default.(string)
-	// ensembleproposer.PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
-	ensembleproposer.PlatformValidator = ensembleproposerDescPlatform.Validators[0].(func(string) error)
-	// ensembleproposerDescPriority is the schema descriptor for priority field.
-	ensembleproposerDescPriority := ensembleproposerFields[4].Descriptor()
-	// ensembleproposer.DefaultPriority holds the default value on creation for the priority field.
-	ensembleproposer.DefaultPriority = ensembleproposerDescPriority.Default.(int)
-	// ensembleproposerDescEnabled is the schema descriptor for enabled field.
-	ensembleproposerDescEnabled := ensembleproposerFields[5].Descriptor()
-	// ensembleproposer.DefaultEnabled holds the default value on creation for the enabled field.
-	ensembleproposer.DefaultEnabled = ensembleproposerDescEnabled.Default.(bool)
 	errorpassthroughruleMixin := schema.ErrorPassthroughRule{}.Mixin()
 	errorpassthroughruleMixinFields0 := errorpassthroughruleMixin[0].Fields()
 	_ = errorpassthroughruleMixinFields0
@@ -1271,10 +1213,6 @@ func init() {
 	groupDescProfitSafetyBuffer := groupFields[58].Descriptor()
 	// group.DefaultProfitSafetyBuffer holds the default value on creation for the profit_safety_buffer field.
 	group.DefaultProfitSafetyBuffer = groupDescProfitSafetyBuffer.Default.(float64)
-	// groupDescEnsembleConfig is the schema descriptor for ensemble_config field.
-	groupDescEnsembleConfig := groupFields[59].Descriptor()
-	// group.DefaultEnsembleConfig holds the default value on creation for the ensemble_config field.
-	group.DefaultEnsembleConfig = groupDescEnsembleConfig.Default.(domain.EnsembleConfig)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
 	idempotencyrecordMixinFields0 := idempotencyrecordMixin[0].Fields()
 	_ = idempotencyrecordMixinFields0

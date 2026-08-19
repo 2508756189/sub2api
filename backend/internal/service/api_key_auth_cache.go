@@ -130,10 +130,6 @@ type APIKeyAuthGroupSnapshot struct {
 	ProfitControlEnabled bool    `json:"profit_control_enabled"`
 	ProfitMinMargin      float64 `json:"profit_min_margin"`
 	ProfitSafetyBuffer   float64 `json:"profit_safety_buffer"`
-
-	// EnsembleConfig controls the proposer/aggregator plan read from the
-	// authenticated group on the gateway hot path.
-	EnsembleConfig EnsembleConfig `json:"ensemble_config"`
 }
 
 // APIKeyAuthCacheEntry 缓存条目，支持负缓存

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import enAdminAccounts from '../locales/en/admin/accounts'
 import enAdminAudit from '../locales/en/admin/audit'
 import enAdminChannels from '../locales/en/admin/channels'
-import enAdminEnsemble from '../locales/en/admin/ensemble'
 import enAdminOps from '../locales/en/admin/ops'
 import enAdminOverview from '../locales/en/admin/overview'
 import enAdminPromptAudit from '../locales/en/admin/promptAudit'
@@ -17,7 +16,6 @@ import enMisc from '../locales/en/misc'
 import zhAdminAccounts from '../locales/zh/admin/accounts'
 import zhAdminAudit from '../locales/zh/admin/audit'
 import zhAdminChannels from '../locales/zh/admin/channels'
-import zhAdminEnsemble from '../locales/zh/admin/ensemble'
 import zhAdminOps from '../locales/zh/admin/ops'
 import zhAdminOverview from '../locales/zh/admin/overview'
 import zhAdminPromptAudit from '../locales/zh/admin/promptAudit'
@@ -77,8 +75,7 @@ const admins: Record<string, Modules> = {
     ops: zhAdminOps,
     settings: zhAdminSettings,
     audit: zhAdminAudit,
-    promptAudit: zhAdminPromptAudit,
-    ensemble: zhAdminEnsemble
+    promptAudit: zhAdminPromptAudit
   },
   en: {
     overview: enAdminOverview,
@@ -88,8 +85,7 @@ const admins: Record<string, Modules> = {
     ops: enAdminOps,
     settings: enAdminSettings,
     audit: enAdminAudit,
-    promptAudit: enAdminPromptAudit,
-    ensemble: enAdminEnsemble
+    promptAudit: enAdminPromptAudit
   }
 }
 

@@ -40,11 +40,6 @@ func profitAuthTestAPIKey() *APIKey {
 			ProfitControlEnabled: true,
 			ProfitMinMargin:      0.2,
 			ProfitSafetyBuffer:   0.05,
-			EnsembleConfig: EnsembleConfig{
-				AggregatorEnabled: true,
-				MinProposers:      2,
-				TimeoutSeconds:    37,
-			},
 		},
 	}
 }
@@ -58,7 +53,7 @@ func TestAPIKeyAuthSnapshotProfitControlRoundtrip(t *testing.T) {
 	snapshot := svc.snapshotFromAPIKey(context.Background(), apiKey)
 	require.NotNil(t, snapshot)
 	require.Equal(t, apiKeyAuthSnapshotVersion, snapshot.Version)
-	require.Equal(t, 20, snapshot.Version, "v20 carries Ensemble and search/audio/video pricing fields")
+	require.Equal(t, 20, snapshot.Version, "v20 carries current search/audio/video pricing fields")
 
 	// 模拟 L2 缓存的完整 JSON 往返（与 apiKeyCache.SetAuthCache/GetAuthCache 同构）。
 	payload, err := json.Marshal(&APIKeyAuthCacheEntry{Snapshot: snapshot})
@@ -75,9 +70,6 @@ func TestAPIKeyAuthSnapshotProfitControlRoundtrip(t *testing.T) {
 	require.InDelta(t, 0.2, materialized.Group.ProfitMinMargin, 1e-12)
 	require.InDelta(t, 0.05, materialized.Group.ProfitSafetyBuffer, 1e-12)
 	require.InDelta(t, 0.06, materialized.Group.RateMultiplier, 1e-12)
-	require.True(t, materialized.Group.EnsembleConfig.AggregatorEnabled)
-	require.Equal(t, 2, materialized.Group.EnsembleConfig.MinProposers)
-	require.Equal(t, 37, materialized.Group.EnsembleConfig.TimeoutSeconds)
 
 	// 中间件语义：materialized.Group 进请求 ctx → 门必须按快照配置装上。
 	ctx := context.WithValue(context.Background(), ctxkey.Group, materialized.Group)

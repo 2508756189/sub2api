@@ -24,6 +24,7 @@
             <Icon :name="isDark ? 'sun' : 'moon'" size="sm" :stroke-width="1.8" />
           </button>
           <div class="desktop-actions">
+            <router-link v-if="showModelPlazaEntry" to="/model-plaza" class="nav-login">Model Plaza</router-link>
             <router-link :to="entryPath" class="nav-login">登录控制台</router-link>
             <router-link :to="entryPath" class="tp-button primary small">预约演示</router-link>
           </div>
@@ -45,6 +46,7 @@
           <a href="#cost" @click="closeMenu">Token 经营</a>
           <a href="#skill-market" @click="closeMenu">Skill Market</a>
           <a href="#deploy" @click="closeMenu">部署交付</a>
+          <router-link v-if="showModelPlazaEntry" to="/model-plaza" @click="closeMenu">Model Plaza</router-link>
           <router-link :to="entryPath" class="mobile-outline" @click="closeMenu">登录控制台</router-link>
           <router-link :to="entryPath" class="tp-button primary" @click="closeMenu">预约演示</router-link>
         </nav>
@@ -323,6 +325,7 @@ import {
   getSkillCategoryName,
 } from '@/api/skillMarket'
 import type { SkillMarketEntry, SkillMarketRegistry } from '@/api/skillMarket'
+import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 
 type TokenRange = '7D' | '30D' | '90D'
 type HomeCapability = {
@@ -359,6 +362,9 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const entryPath = computed(() => isAuthenticated.value
   ? (authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
   : '/login')
+const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
+const modelPlazaRequiresAuth = computed(() => appStore.cachedPublicSettings?.model_plaza_require_auth === true)
+const showModelPlazaEntry = computed(() => modelPlazaEnabled.value && (isAuthenticated.value || !modelPlazaRequiresAuth.value))
 const currentYear = new Date().getFullYear()
 
 const tools = ['Codex', 'Claude Code', 'OpenCode', 'ChatGPT', 'Gemini CLI', 'OpenAI 兼容', 'Anthropic 兼容', '自建模型']

@@ -2,7 +2,7 @@
 
 ## Source And Curation
 
-Source: https://github.com/mattpocock/skills/tree/84fdeffd12f2ee307994d1eb6feb48173b6e0502/skills/engineering/diagnosing-bugs
+Source: https://github.com/mattpocock/skills/tree/068b6e0c62393147daf03530149cdce209c93da8/skills/engineering/diagnosing-bugs
 
 This market entry preserves the upstream diagnostic techniques but treats the phases as a checklist. Skip or reorder a phase when the evidence, scope, or runtime makes that more reliable.
 
@@ -128,7 +128,7 @@ If a correct seam exists:
 4. Watch it pass.
 5. Re-run the Phase 1 feedback loop against the original (un-minimised) scenario.
 
-## Phase 6 — Cleanup + post-mortem
+## Phase 6 — Cleanup
 
 Before declaring done, check the items relevant to the current task:
 
@@ -137,5 +137,3 @@ Before declaring done, check the items relevant to the current task:
 - [ ] All `[DEBUG-...]` instrumentation removed (`grep` the prefix)
 - [ ] Throwaway prototypes deleted (or moved to a clearly-marked debug location)
 - [ ] The hypothesis that turned out correct is stated in the commit / PR message — so the next debugger learns
-
-**Then ask: what would have prevented this bug?** If the answer involves architectural change (no good test seam, tangled callers, hidden coupling) hand off to the `/improve-codebase-architecture` skill with the specifics. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.

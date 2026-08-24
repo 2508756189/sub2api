@@ -369,6 +369,7 @@ func (s *OpenAIGatewayService) streamRawChatCompletions(
 			}
 		}
 		line = applyOllamaCloudRawChatCompletionsSSELine(account, line)
+		line = stripEmptyChatToolCallIdentityFromSSELine(line)
 
 		writeLine(line)
 		if line == "" {
@@ -420,6 +421,7 @@ func (s *OpenAIGatewayService) streamRawChatCompletions(
 		UpstreamModel:                 upstreamModel,
 		UpstreamResponseModel:         observedUpstreamResponseModel(c),
 		UpstreamResponseModelConflict: observedUpstreamResponseModelConflict(c),
+		UpstreamResponseServiceTier:   observedUpstreamResponseServiceTier(c),
 		ReasoningEffort:               reasoningEffort,
 		ServiceTier:                   serviceTier,
 		Stream:                        true,
@@ -521,6 +523,7 @@ func (s *OpenAIGatewayService) bufferRawChatCompletions(
 		UpstreamModel:                 upstreamModel,
 		UpstreamResponseModel:         observedUpstreamResponseModel(c),
 		UpstreamResponseModelConflict: observedUpstreamResponseModelConflict(c),
+		UpstreamResponseServiceTier:   observedUpstreamResponseServiceTier(c),
 		ReasoningEffort:               reasoningEffort,
 		ServiceTier:                   serviceTier,
 		Stream:                        false,

@@ -35,30 +35,6 @@ var openaiCCRawAllowedHeaders = map[string]bool{
 	"user-agent":      true,
 }
 
-// openAIChatCompletionsClientOnlyFields contains client extensions that are
-// useful to a richer gateway but are not part of the Chat Completions request
-// contract. Raw third-party Chat Completions providers commonly reject these
-// fields instead of ignoring them.
-var openAIChatCompletionsClientOnlyFields = []string{
-	"tool_stream",
-}
-
-func stripOpenAIChatCompletionsClientOnlyFields(body []byte) ([]byte, []string, error) {
-	stripped := make([]string, 0, len(openAIChatCompletionsClientOnlyFields))
-	for _, field := range openAIChatCompletionsClientOnlyFields {
-		if !gjson.GetBytes(body, field).Exists() {
-			continue
-		}
-		updated, err := sjson.DeleteBytes(body, field)
-		if err != nil {
-			return nil, nil, fmt.Errorf("delete unsupported Chat Completions field %q: %w", field, err)
-		}
-		body = updated
-		stripped = append(stripped, field)
-	}
-	return body, stripped, nil
-}
-
 // forwardAsRawChatCompletions 直转客户端的 Chat Completions 请求到上游
 // `{base_url}/v1/chat/completions`，**不**做 CC↔Responses 协议转换。
 //
@@ -128,15 +104,6 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 		return nil, policyErr
 	}
 	upstreamBody = updatedBody
-	if normalizedBody, strippedFields, stripErr := stripOpenAIChatCompletionsClientOnlyFields(upstreamBody); stripErr != nil {
-		return nil, stripErr
-	} else if len(strippedFields) > 0 {
-		upstreamBody = normalizedBody
-		logger.L().Debug("openai chat completions raw: stripped client-only fields",
-			zap.Int64("account_id", account.ID),
-			zap.Strings("fields", strippedFields),
-		)
-	}
 	// Keep the final outbound tier separate from the observed response tier so
 	// usage recording can apply the selected credential's response contract.
 	serviceTier := extractOpenAIServiceTierFromBody(upstreamBody)

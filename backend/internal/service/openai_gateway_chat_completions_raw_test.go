@@ -123,34 +123,6 @@ func TestForwardAsRawChatCompletions_ForcesStreamUsageUpstreamAndPassesUsageDown
 	require.Contains(t, rec.Body.String(), "data: [DONE]")
 }
 
-func TestForwardAsRawChatCompletions_StripsClientOnlyToolStream(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	body := []byte(`{"model":"glm-5.2","messages":[{"role":"user","content":"hello"}],"tool_stream":true,"stream":false}`)
-	rec := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(rec)
-	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
-	c.Request.Header.Set("Content-Type", "application/json")
-
-	upstream := &httpUpstreamRecorder{resp: &http.Response{
-		StatusCode: http.StatusOK,
-		Header:     http.Header{"Content-Type": []string{"application/json"}},
-		Body: io.NopCloser(strings.NewReader(
-			`{"id":"chatcmpl_tool_stream","object":"chat.completion","model":"glm-5.2","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`,
-		)),
-	}}
-	svc := &OpenAIGatewayService{
-		cfg:          rawChatCompletionsTestConfig(),
-		httpUpstream: upstream,
-	}
-
-	result, err := svc.forwardAsRawChatCompletions(context.Background(), c, rawChatCompletionsTestAccount(), body, "")
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	require.False(t, gjson.GetBytes(upstream.lastBody, "tool_stream").Exists())
-	require.Equal(t, "glm-5.2", gjson.GetBytes(upstream.lastBody, "model").String())
-}
-
 func TestForwardAsChatCompletions_OpenAICompatibleGrokRawMissingUsageFailsBeforeWrite(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

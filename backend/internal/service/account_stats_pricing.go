@@ -100,7 +100,6 @@ func tryModelFilePricing(billingService *BillingService, model string, tokens Us
 	if err != nil || breakdown == nil || breakdown.TotalCost <= 0 {
 		return nil
 	}
-	applyCostBreakdownMultiplier(breakdown, maxReasoningEffortBillingMultiplier(model, reasoningEffort, nil))
 	// 复用统一定价管线后，仍返回原始 USD 成本；调用方会在平台结算币种边界转换。
 	return &breakdown.SourceTotalCostUSD
 }

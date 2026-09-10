@@ -210,7 +210,8 @@ const upstreamSyncPlatforms = new Set([
   'grok',
   'kimi',
   'zhipu',
-  'deepseek'
+  'deepseek',
+  'minimax'
 ])
 const supportsUpstreamSync = (platform: string, accountType?: string) => {
   const normalizedPlatform = platform.trim().toLowerCase()

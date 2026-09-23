@@ -464,6 +464,23 @@ const showDatePicker = ref(false)
 const resultData = ref<any>(null)
 const now = ref(new Date())
 let resetTimer: ReturnType<typeof setInterval> | null = null
+let ringAnimTimer: ReturnType<typeof setTimeout> | null = null
+let ringAnimRaf: number | null = null
+
+function safeRaf(cb: (time: number) => void): number {
+  if (typeof requestAnimationFrame !== 'undefined') {
+    return requestAnimationFrame(cb)
+  }
+  return setTimeout(() => cb(performance.now()), 16) as unknown as number
+}
+
+function safeCaf(id: number) {
+  if (typeof cancelAnimationFrame !== 'undefined') {
+    cancelAnimationFrame(id)
+  } else {
+    clearTimeout(id as unknown as ReturnType<typeof setTimeout>)
+  }
+}
 
 // ==================== Date Range State ====================
 
@@ -561,9 +578,18 @@ function triggerRingAnimation(items: RingItem[]) {
   ringAnimated.value = false
   displayPcts.value = items.map(() => 0)
 
+  if (ringAnimTimer) {
+    clearTimeout(ringAnimTimer)
+    ringAnimTimer = null
+  }
+  if (ringAnimRaf !== null) {
+    safeCaf(ringAnimRaf)
+    ringAnimRaf = null
+  }
+
   nextTick(() => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
+    safeRaf(() => {
+      ringAnimTimer = setTimeout(() => {
         ringAnimated.value = true
 
         // Animate percentage numbers
@@ -576,9 +602,11 @@ function triggerRingAnimation(items: RingItem[]) {
           const p = Math.min(elapsed / duration, 1)
           const ease = 1 - Math.pow(1 - p, 3)
           displayPcts.value = targets.map(target => Math.round(ease * target))
-          if (p < 1) requestAnimationFrame(tick)
+          if (p < 1) {
+            ringAnimRaf = safeRaf(tick)
+          }
         }
-        requestAnimationFrame(tick)
+        ringAnimRaf = safeRaf(tick)
       }, 50)
     })
   })
@@ -942,6 +970,14 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (resetTimer) clearInterval(resetTimer)
+  if (ringAnimTimer) {
+    clearTimeout(ringAnimTimer)
+    ringAnimTimer = null
+  }
+  if (ringAnimRaf !== null) {
+    safeCaf(ringAnimRaf)
+    ringAnimRaf = null
+  }
 })
 </script>
 

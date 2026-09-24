@@ -169,6 +169,7 @@ describe('KeyUsageView daily detail', () => {
   })
 
   afterEach(() => {
+    vi.clearAllTimers()
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
@@ -267,6 +268,7 @@ describe('KeyUsageView subscription feature flag', () => {
   })
 
   afterEach(() => {
+    vi.clearAllTimers()
     appStoreState.cachedPublicSettings = null
     vi.unstubAllGlobals()
   })

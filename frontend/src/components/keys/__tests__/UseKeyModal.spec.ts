@@ -137,4 +137,25 @@ describe('UseKeyModal', () => {
     expect(wrapper.find('[data-test="skill-market"]').exists()).toBe(true)
     expect(wrapper.text()).not.toContain('grok-4.5')
   })
+
+  it('shows only Claude Code for Claude Code-only groups', async () => {
+    const wrapper = mount(UseKeyModal, {
+      props: {
+        show: true,
+        apiKey: 'sk-anthropic-test',
+        baseUrl: 'https://example.com/v1',
+        platform: 'anthropic',
+        claudeCodeOnly: true,
+      },
+      global,
+    })
+    expect(wrapper.text()).toContain('Claude Code')
+    expect(wrapper.findAll('button').some((b) => b.text() === 'Codex')).toBe(false)
+    expect(wrapper.findAll('button').some((b) => b.text() === 'TeleAgent')).toBe(false)
+    expect(wrapper.findAll('button').some((b) => b.text() === 'OpenCode')).toBe(false)
+
+    await wrapper.setProps({ platform: 'openai' })
+    expect(wrapper.text()).toContain('Claude Code')
+    expect(wrapper.findAll('button').some((b) => b.text() === 'Codex')).toBe(false)
+  })
 })

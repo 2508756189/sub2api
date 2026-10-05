@@ -12,6 +12,7 @@ defineProps<{
   baseUrl: string
   platform: GroupPlatform | null
   groupId?: number | null
+  claudeCodeOnly?: boolean
   allowMessagesDispatch?: boolean
   initialMode?: 'direct' | 'ccs'
   keyName?: string

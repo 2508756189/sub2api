@@ -137,12 +137,14 @@ const props = withDefaults(defineProps<{
   baseUrl: string
   platform: GroupPlatform | null
   groupId?: number | null
+  claudeCodeOnly?: boolean
   allowMessagesDispatch?: boolean
   initialMode?: DeliveryMode
   keyName?: string
 }>(), {
   initialMode: 'direct',
   groupId: null,
+  claudeCodeOnly: false,
   allowMessagesDispatch: false,
   keyName: '',
 })
@@ -182,6 +184,7 @@ const codexTransports: Array<{ id: 'responses' | 'websocket'; label: string }> =
 ]
 
 const defaultClient = computed(() => {
+  if (props.claudeCodeOnly) return 'claude'
   if (props.platform === 'openai') return 'codex'
   if (props.platform === 'grok') return 'codex'
   if (props.platform === 'gemini') return 'gemini'
@@ -189,6 +192,7 @@ const defaultClient = computed(() => {
 })
 
 const clientTabs = computed(() => {
+  if (props.claudeCodeOnly) return [{ id: 'claude', label: 'Claude Code' }]
   if (props.platform === 'openai') {
     const tabs = [
       { id: 'codex', label: 'Codex' },
@@ -262,6 +266,10 @@ const skillInstallScript = computed(() => skillInstallFile.value?.content || '')
 const ccsRequiresModel = computed(() => activeClientTab.value === 'codex' || activeClientTab.value === 'grok')
 const ccsImportReady = computed(() => !ccsRequiresModel.value || Boolean(normalizeConnectorOptions(connectorOptions.value).codex.model.trim()))
 const ccsImportHint = computed(() => ccsImportReady.value ? '' : 'Codex 和 Grok Build 的 CCS 配置必须指定一个已验证可用的模型。')
+
+watch(() => [props.platform, props.claudeCodeOnly], () => {
+  activeClientTab.value = defaultClient.value
+})
 
 watch(() => props.show, (visible) => {
   if (!visible) return

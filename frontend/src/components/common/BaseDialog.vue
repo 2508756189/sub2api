@@ -124,7 +124,7 @@ useFocusTrap(dialogRef, () => props.show)
 const handleKeydown = (event: KeyboardEvent) => {
   if (!props.show) return
 
-  if (event.key === 'Escape' && props.closeOnEscape) {
+  if (event.key === 'Escape' && props.closeOnEscape && [...openDialogs].pop() === dialogId) {
     emit('close')
   }
 }

@@ -155,6 +155,8 @@ import { useClipboard } from '@/composables/useClipboard'
 import ModelIcon from '@/components/common/ModelIcon.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { allModels, getModelsByPlatform } from '@/composables/useModelWhitelist'
+import { supportsUpstreamModelSync } from '@/constants/platformCatalog'
+import { extractApiErrorMessage } from '@/utils/apiError'
 
 const { t } = useI18n()
 
@@ -203,33 +205,22 @@ const normalizedPlatforms = computed(() => {
   )
 })
 
-const upstreamSyncPlatforms = new Set([
-  'anthropic',
-  'openai',
-  'gemini',
-  'antigravity',
-  'grok',
-  'kimi',
-  'zhipu',
-  'deepseek',
-  'minimax',
-  'opencode_go'
-])
-const supportsUpstreamSync = (platform: string, accountType?: string) => {
+const supportsTokenPortUpstreamSync = (platform: string, accountType?: string) => {
   const normalizedPlatform = platform.trim().toLowerCase()
-  if (!upstreamSyncPlatforms.has(normalizedPlatform)) return false
+  if (!supportsUpstreamModelSync(normalizedPlatform)) return false
   if (normalizedPlatform === 'grok') {
     return accountType?.trim().toLowerCase() === 'apikey'
   }
   return true
 }
+
 const canSyncUpstream = computed(() => {
   if (props.accountId) {
     if (normalizedPlatforms.value.length === 0) return true
-    return normalizedPlatforms.value.some(platform => supportsUpstreamSync(platform, props.accountType))
+    return normalizedPlatforms.value.some(platform => supportsTokenPortUpstreamSync(platform, props.accountType))
   }
   if (props.syncCredentials) {
-    return supportsUpstreamSync(props.syncCredentials.platform, props.syncCredentials.type)
+    return supportsTokenPortUpstreamSync(props.syncCredentials.platform, props.syncCredentials.type)
   }
   return false
 })
@@ -311,8 +302,7 @@ const fillRelated = () => {
 }
 
 const syncUpstreamModels = async () => {
-  if (isSyncingUpstream.value) return
-  if (!props.accountId && !props.syncCredentials) return
+  if (isSyncingUpstream.value || !canSyncUpstream.value) return
 
   isSyncingUpstream.value = true
   try {
@@ -365,7 +355,7 @@ const syncUpstreamModels = async () => {
       appStore.showWarning(t('admin.accounts.syncUpstreamModelsMetadataPartial'))
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : t('admin.accounts.syncUpstreamModelsFailed')
+    const message = extractApiErrorMessage(error, t('admin.accounts.syncUpstreamModelsFailed'))
     appStore.showError(t('admin.accounts.syncUpstreamModelsError', { message }))
   } finally {
     isSyncingUpstream.value = false

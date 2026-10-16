@@ -55,7 +55,8 @@ git rebase origin/main
 .\scripts\sync-skill-market.ps1
 docker build --build-arg GOLANG_IMAGE=golang:alpine -t sub2api-fork:dev .
 
-Set-Location E:\token-platform
+# 切换到本地 token-platform 仓库（2508756189/token-platform）的克隆目录
+Set-Location ..\token-platform
 docker compose -f docker-compose.local.yml up -d --force-recreate sub2api
 curl.exe -s http://127.0.0.1:8080/health
 curl.exe -s http://127.0.0.1:8080/skill-market/index.json

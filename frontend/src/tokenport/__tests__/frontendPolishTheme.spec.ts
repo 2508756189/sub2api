@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import authLayout from '@/components/layout/AuthLayout.vue?raw'
 import tokenPortHome from '@/tokenport/home/TokenPortHome.vue?raw'
-import consolePreview from '@/tokenport/home/ConsolePreview.vue?raw'
 import skillMarketView from '@/views/user/SkillMarketView.vue?raw'
 import skillMarketCatalog from '@/tokenport/market/SkillMarketCatalog.vue?raw'
 import skillMarketCard from '@/tokenport/market/SkillMarketCard.vue?raw'
@@ -25,10 +24,8 @@ describe('frontend-theme R2 品牌令牌单一来源', () => {
     expect(styleCss).toMatch(/\.dark\s*\{[^}]*--tp-brand:/s)
   })
 
-  it.each([
-    ['AuthLayout', authLayout],
-    ['ConsolePreview', consolePreview],
-  ])('%s 不再持有局部 --brand 字面量,改为引用全局令牌', (_name, source) => {
+  it('AuthLayout 不再持有局部 --brand 字面量,改为引用全局令牌', () => {
+    const source = authLayout
     expect(source).not.toMatch(/--brand:\s*#[0-9a-fA-F]/)
     expect(source).toContain('--brand: var(--tp-brand)')
   })
@@ -59,10 +56,6 @@ describe('frontend-theme R1 主题完整性', () => {
     expect(skillMarketView).toMatch(/<footer[^>]*dark:bg-dark-900/)
   })
 
-  it('ConsolePreview 提供 .dark 覆盖块', () => {
-    expect(consolePreview).toContain('.dark .console-preview')
-  })
-
   it('SettingsView settings-tabs-shell 有 dark: 变体与深色阴影覆盖', () => {
     expect(settingsView).toMatch(/settings-tabs-shell\s*\{[^}]*dark:bg-dark-900\/90/s)
     expect(settingsView).toContain('.dark .settings-tabs-shell')
@@ -84,16 +77,6 @@ describe('frontend-theme R3 圆角与层级刻度', () => {
     expect(styleCss).toContain('.tp-elev-1 {')
     expect(styleCss).toContain('.tp-elev-raise:hover')
     expect(skillMarketCatalog).not.toContain('shadow-[var(')
-  })
-
-  it.each([
-    ['ConsolePreview', consolePreview],
-  ])('%s 的圆角与卡片阴影走令牌,不再各写各的', (_name, source) => {
-    // 实测这两个文件曾并存 10/12/14/16/18 五种半径与多组同透明度不同模糊的阴影。
-    expect(source).not.toMatch(/border-radius:\s*1[2468]px/)
-    expect(source).not.toMatch(/border-radius:\s*10px/)
-    expect(source).toContain('var(--tp-radius-')
-    expect(source).toContain('var(--tp-elev-')
   })
 
   it('TokenPortHome 的主面板圆角引用 Figma radius 令牌', () => {

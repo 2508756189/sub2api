@@ -1890,3 +1890,66 @@ func TestGatewayModels_CompositeCodexRouteLookupErrorKeepsFallback(t *testing.T)
 		})
 	}
 }
+
+// An OpenAI OAuth group whose only mapped model is retired (GPT-5.5) has an
+// intentionally empty catalog: Codex must not resurrect the default list,
+// matching /v1/models.
+func TestGatewayCodexModelIDs_RetiredOnlyOAuthCatalogStaysEmpty(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	groupID := int64(731)
+	h := newGatewayModelsHandlerForTest(&gatewayModelsAccountRepoStub{
+		byGroup: map[int64][]service.Account{
+			groupID: {{
+				ID:          1,
+				Platform:    service.PlatformOpenAI,
+				Type:        service.AccountTypeOAuth,
+				Status:      service.StatusActive,
+				Schedulable: true,
+				Credentials: map[string]any{
+					"access_token":  "oauth-test",
+					"model_mapping": map[string]any{"gpt-5.5": "gpt-5.5"},
+				},
+			}},
+		},
+	})
+	group := &service.Group{ID: groupID, Platform: service.PlatformOpenAI}
+
+	available := h.gatewayService.GetAvailableModels(context.Background(), &groupID, service.PlatformOpenAI)
+	require.NotNil(t, available, "retired-only catalog must be non-nil (authoritative)")
+	require.Empty(t, available)
+
+	got := h.codexModelIDsForGroup(context.Background(), group, "")
+	require.Empty(t, got)
+	for _, model := range openai.DefaultModelIDs() {
+		require.NotContains(t, got, model)
+	}
+
+	// /v1/models stays consistent with the Codex catalog.
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{Group: group})
+	h.Models(c)
+	require.Equal(t, http.StatusOK, rec.Code)
+	var listed struct {
+		Data []struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &listed))
+	require.Empty(t, listed.Data)
+}
+
+// A genuinely unconfigured OpenAI group (no schedulable accounts, so
+// GetAvailableModels returns nil) still falls back to the default catalog.
+func TestGatewayCodexModelIDs_UnconfiguredOpenAIGroupFallsBackToDefaults(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	groupID := int64(732)
+	h := newGatewayModelsHandlerForTest(&gatewayModelsAccountRepoStub{
+		byGroup: map[int64][]service.Account{},
+	})
+	group := &service.Group{ID: groupID, Platform: service.PlatformOpenAI}
+
+	require.Nil(t, h.gatewayService.GetAvailableModels(context.Background(), &groupID, service.PlatformOpenAI))
+	require.Equal(t, defaultCodexModelIDsForPlatform(service.PlatformOpenAI), h.codexModelIDsForGroup(context.Background(), group, ""))
+}

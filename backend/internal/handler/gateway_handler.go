@@ -1297,7 +1297,11 @@ func (h *GatewayHandler) codexModelIDsForGroup(ctx context.Context, group *servi
 	if group.ModelAllowlistEnabled() {
 		return group.ModelAllowlist.FilterForListing(modelListingSource(platform, availableModels, fallbackModels))
 	}
-	if len(availableModels) > 0 {
+	// Mirror /v1/models: GetAvailableModels returns nil for "unconfigured, use
+	// defaults", while a non-nil empty OpenAI catalog means every mapped model
+	// was filtered (e.g. GPT-5.5 retired on ChatGPT OAuth) and must stay empty
+	// instead of advertising defaults those accounts cannot serve.
+	if len(availableModels) > 0 || (platform == service.PlatformOpenAI && availableModels != nil) {
 		return availableModels
 	}
 	return fallbackModels

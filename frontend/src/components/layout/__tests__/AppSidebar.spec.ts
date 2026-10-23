@@ -6,8 +6,6 @@ import { describe, expect, it } from 'vitest'
 
 const componentPath = resolve(dirname(fileURLToPath(import.meta.url)), '../AppSidebar.vue')
 const componentSource = readFileSync(componentPath, 'utf8')
-const stylePath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../style.css')
-const styleSource = readFileSync(stylePath, 'utf8')
 
 describe('AppSidebar custom SVG styles', () => {
   it('does not override uploaded SVG fill or stroke colors', () => {

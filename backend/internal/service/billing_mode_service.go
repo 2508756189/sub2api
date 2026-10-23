@@ -202,6 +202,8 @@ func (s *BillingModeService) Update(ctx context.Context, currency string, usdToC
 	if err := s.repo.SaveBillingMode(ctx, target, usdToCNYRate); err != nil {
 		return BillingModeConversionResult{}, infraerrors.InternalServer("BILLING_MODE_SAVE_FAILED", "billing mode settings could not be saved").WithCause(err)
 	}
-	s.current = s.withCurrency(target, usdToCNYRate)
+	// A rate-only update must preserve amounts already expressed in the current
+	// settlement currency, including a reserve converted by a prior mode change.
+	s.current = billingConfigAfterConversion(current, target, usdToCNYRate, 1)
 	return BillingModeConversionResult{}, nil
 }

@@ -25,6 +25,7 @@ type UpdateSettingsRequest struct {
 	// 注册设置
 	RegistrationEnabled                 bool                         `json:"registration_enabled"`
 	EmailVerifyEnabled                  bool                         `json:"email_verify_enabled"`
+	RegistrationMode                    string                       `json:"registration_mode"`
 	RegistrationEmailSuffixWhitelist    []string                     `json:"registration_email_suffix_whitelist"`
 	RegistrationEmailDomainQuotaEnabled *bool                        `json:"registration_email_domain_quota_enabled"` // 非白名单域名限量注册开关（省略=保持现值）
 	PromoCodeEnabled                    bool                         `json:"promo_code_enabled"`
@@ -1530,6 +1531,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 
 		RegistrationEnabled:                 req.RegistrationEnabled,
 		EmailVerifyEnabled:                  req.EmailVerifyEnabled,
+		RegistrationMode:                    service.NormalizeRegistrationMode(req.RegistrationMode),
 		RegistrationEmailSuffixWhitelist:    req.RegistrationEmailSuffixWhitelist,
 		RegistrationEmailDomainQuotaEnabled: registrationEmailDomainQuotaEnabled,
 		PromoCodeEnabled:                    req.PromoCodeEnabled,
@@ -2208,6 +2210,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	payload := dto.SystemSettings{
 		RegistrationEnabled:                                    updatedSettings.RegistrationEnabled,
 		EmailVerifyEnabled:                                     updatedSettings.EmailVerifyEnabled,
+		RegistrationMode:                                       updatedSettings.RegistrationMode,
 		RegistrationEmailSuffixWhitelist:                       updatedSettings.RegistrationEmailSuffixWhitelist,
 		RegistrationEmailDomainQuotaEnabled:                    updatedSettings.RegistrationEmailDomainQuotaEnabled,
 		PromoCodeEnabled:                                       updatedSettings.PromoCodeEnabled,

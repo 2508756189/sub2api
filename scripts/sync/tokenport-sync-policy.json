@@ -100,7 +100,8 @@
     "Never delete either side functionality to make a conflict disappear.",
     "Never edit this policy file, .gitattributes, or CI workflows as a way to bypass a conflict.",
     "Pushing tokenport/main and the sync branch is allowed only by the end-to-end autonomy prompt, and only after local validation and exact-SHA GitHub CI/Security Scan gates pass. Standalone conflict-resolution agents must not push.",
-    "Never modify persistent git proxy, npm registry, or Windows proxy configuration during synchronization."
+    "Never modify persistent git proxy, npm registry, or Windows proxy configuration during synchronization.",
+    "Preserve TokenPort CNY display overlay for the 192.168.1.50 test server: billing symbol via getBillingCurrencySymbol()/formatScaled (no hardcoded $), runtime CNY+rate=1 without FX conversion. Checklist: ../token-platform/docs/operations/rmb-billing-deployment.md"
   ],
   "maintenance": {
     "markers": "requiredMarkers entries are brand/feature strings that must survive resolution. Update them here when TokenPort copy or the billing feature changes; scripts read them from this file.",

@@ -159,6 +159,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyRegistrationEnabled,
 		SettingKeyEmailVerifyEnabled,
 		SettingKeyForceEmailOnThirdPartySignup,
+		SettingKeyRegistrationMode,
 		SettingKeyRegistrationEmailSuffixWhitelist,
 		SettingKeyRegistrationEmailDomainQuotaEnabled,
 		SettingKeyPromoCodeEnabled,
@@ -309,6 +310,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		RegistrationEnabled:                 settings[SettingKeyRegistrationEnabled] == "true",
 		EmailVerifyEnabled:                  emailVerifyEnabled,
 		ForceEmailOnThirdPartySignup:        settings[SettingKeyForceEmailOnThirdPartySignup] == "true",
+		RegistrationMode:                    NormalizeRegistrationMode(settings[SettingKeyRegistrationMode]),
 		RegistrationEmailSuffixWhitelist:    registrationEmailSuffixWhitelist,
 		RegistrationEmailDomainQuotaEnabled: settings[SettingKeyRegistrationEmailDomainQuotaEnabled] == "true",
 		PromoCodeEnabled:                    settings[SettingKeyPromoCodeEnabled] != "false", // 默认启用
@@ -570,6 +572,7 @@ func (s *SettingService) IsUserErrorViewAllowed(ctx context.Context) bool {
 type PublicSettingsInjectionPayload struct {
 	RegistrationEnabled                 bool                     `json:"registration_enabled"`
 	EmailVerifyEnabled                  bool                     `json:"email_verify_enabled"`
+	RegistrationMode                    string                   `json:"registration_mode"`
 	RegistrationEmailSuffixWhitelist    []string                 `json:"registration_email_suffix_whitelist"`
 	RegistrationEmailDomainQuotaEnabled bool                     `json:"registration_email_domain_quota_enabled"`
 	PromoCodeEnabled                    bool                     `json:"promo_code_enabled"`
@@ -666,6 +669,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 	return &PublicSettingsInjectionPayload{
 		RegistrationEnabled:                 settings.RegistrationEnabled,
 		EmailVerifyEnabled:                  settings.EmailVerifyEnabled,
+		RegistrationMode:                    NormalizeRegistrationMode(settings.RegistrationMode),
 		RegistrationEmailSuffixWhitelist:    settings.RegistrationEmailSuffixWhitelist,
 		RegistrationEmailDomainQuotaEnabled: settings.RegistrationEmailDomainQuotaEnabled,
 		PromoCodeEnabled:                    settings.PromoCodeEnabled,

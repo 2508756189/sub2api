@@ -57,6 +57,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 	defaults := map[string]string{
 		SettingKeyRegistrationEnabled:                       "true",
 		SettingKeyEmailVerifyEnabled:                        "false",
+		SettingKeyRegistrationMode:                          RegistrationModeStandard,
 		SettingKeyRegistrationEmailSuffixWhitelist:          "[]",
 		SettingKeyRegistrationEmailDomainQuotaEnabled:       "false",
 		SettingKeyPromoCodeEnabled:                          "true", // 默认启用优惠码功能
@@ -322,6 +323,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result := &SystemSettings{
 		RegistrationEnabled:                    settings[SettingKeyRegistrationEnabled] == "true",
 		EmailVerifyEnabled:                     emailVerifyEnabled,
+		RegistrationMode:                       NormalizeRegistrationMode(settings[SettingKeyRegistrationMode]),
 		RegistrationEmailSuffixWhitelist:       ParseRegistrationEmailSuffixWhitelist(settings[SettingKeyRegistrationEmailSuffixWhitelist]),
 		RegistrationEmailDomainQuotaEnabled:    settings[SettingKeyRegistrationEmailDomainQuotaEnabled] == "true",
 		PromoCodeEnabled:                       settings[SettingKeyPromoCodeEnabled] != "false", // 默认启用

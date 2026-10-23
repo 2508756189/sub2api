@@ -153,6 +153,11 @@ export default {
         description: '控制用户注册和验证',
         enableRegistration: '开放注册',
         enableRegistrationHint: '允许新用户注册',
+        registrationMode: '注册模式',
+        registrationModeHint:
+          '普通注册不要求真实姓名；“需填写真实姓名”模式下注册页会强制填写姓名并写入账户显示名',
+        modeStandard: '普通注册（不强制姓名）',
+        modeRequireRealName: '需填写真实姓名',
         emailVerification: '邮箱验证',
         emailVerificationHint: '新用户注册时需要验证邮箱',
         emailSuffixWhitelist: '邮箱域名白名单',

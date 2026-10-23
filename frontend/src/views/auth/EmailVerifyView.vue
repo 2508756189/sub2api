@@ -1,21 +1,22 @@
 <template>
   <AuthLayout>
-    <div class="space-y-6">
+    <div class="tp-verify space-y-6">
       <!-- Title -->
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+        <p class="tp-verify-eyebrow">TOKENPORT · EMAIL VERIFY</p>
+        <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
           {{ t('auth.verifyYourEmail') }}
         </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+        <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-dark-400">
           {{ t('auth.sendCodeDesc') }}
-          <span class="font-medium text-gray-700 dark:text-gray-300">{{ email }}</span>
+          <span class="font-semibold text-teal-700 dark:text-teal-300">{{ email }}</span>
         </p>
       </div>
 
       <!-- No Data Warning -->
       <div
         v-if="!hasRegisterData"
-        class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/20"
+        class="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50/60 p-4 dark:border-amber-800/50 dark:from-amber-900/20 dark:to-amber-950/10"
       >
         <div class="flex items-start gap-3">
           <div class="flex-shrink-0">
@@ -31,7 +32,7 @@
       <!-- Verification Form -->
       <form v-else @submit.prevent="handleVerify" class="space-y-5">
         <!-- Verification Code Input -->
-        <div>
+        <div class="tp-verify-code-card">
           <label for="code" class="input-label text-center">
             {{ t('auth.verificationCode') }}
           </label>
@@ -44,7 +45,7 @@
             inputmode="numeric"
             maxlength="6"
             :disabled="isLoading"
-            class="input py-3 text-center font-mono text-xl tracking-[0.5em]"
+            class="input tp-verify-code-input py-3.5 text-center font-mono text-2xl tracking-[0.55em]"
             :class="{ 'input-error': errors.code }"
             placeholder="000000"
           />
@@ -54,13 +55,13 @@
         <!-- Code Status -->
         <div
           v-if="codeSent"
-          class="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800/50 dark:bg-green-900/20"
+          class="rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50 to-cyan-50/70 p-4 dark:border-teal-800/40 dark:from-teal-900/20 dark:to-cyan-950/10"
         >
           <div class="flex items-start gap-3">
             <div class="flex-shrink-0">
-              <Icon name="checkCircle" size="md" class="text-green-500" />
+              <Icon name="checkCircle" size="md" class="text-teal-600 dark:text-teal-400" />
             </div>
-            <p class="text-sm text-green-700 dark:text-green-400">
+            <p class="text-sm text-teal-800 dark:text-teal-300">
               {{ t('auth.codeSentSuccess') }}
             </p>
           </div>
@@ -248,6 +249,7 @@ const email = ref<string>('')
 const password = ref<string>('')
 const initialTurnstileToken = ref<string>('')
 const initialTencentCaptchaRandstr = ref<string>('')
+const username = ref<string>('')
 const promoCode = ref<string>('')
 const invitationCode = ref<string>('')
 const affCode = ref<string>('')
@@ -334,6 +336,7 @@ onMounted(async () => {
       const registerData = JSON.parse(registerDataStr)
       email.value = registerData.email || ''
       password.value = registerData.password || ''
+      username.value = typeof registerData.username === 'string' ? registerData.username.trim() : ''
       initialTurnstileToken.value =
         registerData.tencent_captcha_ticket || registerData.turnstile_token || ''
       initialTencentCaptchaRandstr.value = registerData.tencent_captcha_randstr || ''
@@ -723,6 +726,7 @@ async function handleVerify(): Promise<void> {
       await authStore.register({
         email: email.value,
         password: password.value,
+        ...(username.value ? { username: username.value } : {}),
         verify_code: verifyCode.value.trim(),
         turnstile_token:
           turnstileEnabled.value || aliyunCaptchaEnabled.value
@@ -792,6 +796,39 @@ function buildRegistrationErrorMessage(error: unknown, fallback: string): string
 </script>
 
 <style scoped>
+.tp-verify-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #0f9f8f;
+}
+
+.tp-verify-code-card {
+  border: 1px solid rgb(15 159 143 / 18%);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgb(240 253 250 / 90%) 0%, rgb(255 255 255 / 96%) 48%, rgb(248 250 252 / 96%) 100%);
+  padding: 18px 16px 14px;
+  box-shadow: 0 10px 28px rgb(15 159 143 / 8%);
+}
+
+:global(.dark) .tp-verify-code-card {
+  border-color: rgb(45 212 191 / 18%);
+  background: linear-gradient(180deg, rgb(19 78 74 / 35%) 0%, rgb(15 23 42 / 88%) 100%);
+  box-shadow: none;
+}
+
+.tp-verify-code-input {
+  border-radius: 14px !important;
+  border-color: rgb(15 159 143 / 28%) !important;
+  letter-spacing: 0.55em;
+}
+
+.tp-verify-code-input:focus {
+  border-color: #0f9f8f !important;
+  box-shadow: 0 0 0 3px rgb(15 159 143 / 18%) !important;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.3s ease;

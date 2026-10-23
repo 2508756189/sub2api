@@ -1,6 +1,24 @@
 <template>
   <form class="space-y-3" @submit.prevent="handleSubmit">
+    <!-- OAuth 已带回邮箱时只展示，不再要求用户手填 -->
+    <div
+      v-if="emailLocked"
+      class="rounded-xl border border-teal-200/70 bg-teal-50/80 px-3 py-2.5 dark:border-teal-900/40 dark:bg-teal-950/30"
+      :data-testid="`${testIdPrefix}-create-account-email-readonly`"
+    >
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-teal-700/80 dark:text-teal-300/80">
+        {{ t('auth.emailLabel') }}
+      </p>
+      <p class="mt-1 truncate text-sm font-medium text-teal-900 dark:text-teal-100">{{ email }}</p>
+      <p class="mt-1 text-xs text-teal-700/70 dark:text-teal-200/70">已从授权方读取，无需再输入</p>
+      <input
+        :value="email"
+        :data-testid="`${testIdPrefix}-create-account-email`"
+        type="hidden"
+      />
+    </div>
     <input
+      v-else
       v-model="email"
       :data-testid="`${testIdPrefix}-create-account-email`"
       type="email"
@@ -132,6 +150,7 @@ const email = ref('')
 const password = ref('')
 const verifyCode = ref('')
 const invitationCode = ref('')
+const emailLocked = computed(() => Boolean(props.initialEmail?.trim()))
 const isSendingCode = ref(false)
 const sendCodeError = ref('')
 const sendCodeSuccess = ref(false)

@@ -26,6 +26,7 @@ const {
 const publicSettings = {
   registration_enabled: true,
   email_verify_enabled: false,
+  registration_mode: 'standard',
   promo_code_enabled: false,
   invitation_code_enabled: false,
   affiliate_enabled: true,
@@ -148,6 +149,7 @@ describe('RegisterView', () => {
     })
     const wrapper = mountRegister()
     await flushPromises()
+    expect(wrapper.find('#username').exists()).toBe(false)
     await wrapper.get('#email').setValue('user@example.com')
     await wrapper.get('#password').setValue('secret-123')
     await wrapper.get('#confirmPassword').setValue(confirmation)
@@ -324,5 +326,39 @@ describe('RegisterView', () => {
       expect.objectContaining({ email: 'user@allowed.com' })
     )
     expect(showErrorMock).not.toHaveBeenCalled()
+  })
+
+  it('requires a real name when registration_mode is require_real_name', async () => {
+    getPublicSettingsMock.mockResolvedValueOnce({
+      ...publicSettings,
+      turnstile_enabled: false,
+      registration_mode: 'require_real_name'
+    })
+
+    const wrapper = mountRegister()
+    await flushPromises()
+
+    expect(wrapper.find('#username').exists()).toBe(true)
+
+    await wrapper.get('#email').setValue('staff@example.com')
+    await wrapper.get('#password').setValue('secret-123')
+    await wrapper.get('#confirmPassword').setValue('secret-123')
+    await wrapper.get('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(showErrorMock).toHaveBeenCalledWith('auth.realNameRequired')
+    expect(registerMock).not.toHaveBeenCalled()
+
+    await wrapper.get('#username').setValue('张三')
+    await wrapper.get('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(registerMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'staff@example.com',
+        password: 'secret-123',
+        username: '张三'
+      })
+    )
   })
 })

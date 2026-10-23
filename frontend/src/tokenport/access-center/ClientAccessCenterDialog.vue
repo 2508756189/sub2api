@@ -1,13 +1,23 @@
 <template>
   <BaseDialog :show="show" title="TokenPort 接入配置中心" width="full" panel-class="tokenport-access-dialog" @close="emit('close')">
     <div class="flex min-h-0 flex-col gap-4">
-      <header class="flex flex-col gap-3 border-b border-gray-200 pb-4 dark:border-dark-700 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ keyName || '当前 API Key' }}</p>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ platformDescription }}</p>
+      <header class="flex flex-col gap-3 border-b border-gray-200 pb-4 dark:border-dark-700 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 space-y-2">
+          <p class="text-sm leading-6 text-gray-600 dark:text-gray-300">{{ platformDescription }}</p>
+          <div v-if="keyName" class="inline-flex max-w-full items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-600 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300">
+            <span class="shrink-0 text-gray-400">当前密钥</span>
+            <span class="truncate font-medium text-gray-800 dark:text-gray-100" :title="keyName">{{ keyName }}</span>
+          </div>
         </div>
-          <div class="inline-flex w-fit rounded-lg bg-gray-100 p-1 dark:bg-dark-800">
-          <button v-for="mode in availableDeliveryModes" :key="mode.id" type="button" class="rounded-md px-4 py-2 text-sm font-medium transition-colors" :class="deliveryMode === mode.id ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-700 dark:text-primary-300' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'" @click="deliveryMode = mode.id">
+        <div class="inline-flex w-fit shrink-0 rounded-lg bg-gray-100 p-1 dark:bg-dark-800">
+          <button
+            v-for="mode in availableDeliveryModes"
+            :key="mode.id"
+            type="button"
+            class="rounded-md px-4 py-2 text-sm font-medium transition-colors"
+            :class="deliveryMode === mode.id ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-700 dark:text-primary-300' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'"
+            @click="deliveryMode = mode.id"
+          >
             {{ mode.label }}
           </button>
         </div>
@@ -17,21 +27,48 @@
         当前密钥尚未关联分组，无法判断客户端协议。请先设置可用分组。
       </div>
 
-      <div v-else class="grid min-h-0 gap-4 lg:grid-cols-12">
-        <section class="space-y-4 lg:col-span-5 lg:max-h-[66vh] lg:overflow-y-auto lg:pr-2">
-          <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800">
-            <p class="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">目标客户端</p>
+      <div v-else class="grid min-h-0 gap-4 lg:grid-cols-12 lg:items-start">
+        <section class="space-y-3 lg:col-span-5 lg:max-h-[70vh] lg:overflow-y-auto lg:pr-1">
+          <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">目标客户端</p>
             <div class="flex flex-wrap gap-2">
-              <button v-for="tab in clientTabs" :key="tab.id" type="button" class="rounded-lg border px-3 py-2 text-sm transition-colors" :class="activeClientTab === tab.id ? 'border-primary-400 bg-primary-50 text-primary-700 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-300' : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'" @click="activeClientTab = tab.id">
+              <button
+                v-for="tab in clientTabs"
+                :key="tab.id"
+                type="button"
+                class="rounded-lg border px-3 py-2 text-sm transition-colors"
+                :class="activeClientTab === tab.id ? 'border-primary-400 bg-primary-50 text-primary-700 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-300' : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'"
+                @click="activeClientTab = tab.id"
+              >
                 {{ tab.label }}
               </button>
             </div>
-            <div v-if="activeClientTab === 'codex'" class="mt-3 rounded-md bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-500 dark:bg-dark-900/60 dark:text-gray-400">
+
+            <div v-if="activeClientTab === 'codex'" class="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-500 dark:bg-dark-900/60 dark:text-gray-400">
               Codex 配置层可用于 ChatGPT 桌面端、Codex CLI 和 IDE 扩展；本页生成的是 API Key 接入配置，ChatGPT 账号登录属于独立认证方式。
             </div>
-            <div v-if="activeClientTab === 'teleagent'" class="mt-3 rounded-md bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-500 dark:bg-dark-900/60 dark:text-gray-400">
-              TeleAgent 使用 OpenAI Compatible 提供商字段。此处生成名称、接口地址、脱敏 Key、授权模型和 Skill 校验信息；不会写入 TeleAgent 安装目录。
+
+            <div v-if="activeClientTab === 'teleagent'" class="mt-3 space-y-2 rounded-lg border border-teal-100 bg-teal-50/70 px-3 py-3 text-xs leading-5 text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/30 dark:text-teal-100">
+              <p class="font-semibold">TeleAgent 导入步骤</p>
+              <ol class="list-decimal space-y-1 pl-4">
+                <li>打开 TeleAgent → 模型提供商 → 新增 <b>OpenAI Compatible</b></li>
+                <li>按右侧 <code class="rounded bg-white/70 px-1 dark:bg-dark-900/50">teleagent-provider-fields.json</code> 填写名称、接口地址、API Key、模型</li>
+                <li>保存后刷新模型列表；如需 Skill，勾选下方能力包并按清单导入 ZIP</li>
+              </ol>
+              <p class="text-teal-800/80 dark:text-teal-200/80">TokenPort 不会写入 TeleAgent 安装目录，也不支持 CCS 一键导入。</p>
             </div>
+
+            <div v-if="deliveryMode === 'ccs'" class="mt-3 space-y-2 rounded-lg border border-sky-100 bg-sky-50/80 px-3 py-3 text-xs leading-5 text-sky-900 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-100">
+              <p class="font-semibold">CCS 导入说明</p>
+              <ul class="list-disc space-y-1 pl-4">
+                <li><b>直接配置</b>：复制脚本/文件写入本机客户端配置</li>
+                <li><b>导入 CCS</b>：通过 <code class="rounded bg-white/70 px-1 dark:bg-dark-900/50">ccswitch://</code> 协议交给 CC Switch；需本机已安装并注册协议处理</li>
+                <li><b>启用方式看上游模式</b>：Responses（本页默认 <code class="rounded bg-white/70 px-1 dark:bg-dark-900/50">wire_api = "responses"</code>）可在 CCS「直连」使用；若上游是 <b>Chat Compatible</b>（/v1/chat/completions），要在 Codex 里用就必须到 CCS 切到「路由」并点「开始路由」</li>
+                <li><b>name 命名</b>：默认 <code class="rounded bg-white/70 px-1 dark:bg-dark-900/50">name = "custom"</code>（CCS 导入显示名同为 custom）。请勿改成 OpenAI，否则会与官方供应商显示名冲突，会话列表容易串台或看起来像“丢对话”</li>
+                <li>Codex / Grok 建议先选定真实模型；Claude / Gemini / OpenCode 可直接导入</li>
+              </ul>
+            </div>
+
             <div v-if="showCodexTransport" class="mt-3">
               <div class="mb-2 flex items-center justify-between gap-2">
                 <span class="text-xs font-medium text-gray-600 dark:text-gray-300">连接方式</span>
@@ -50,8 +87,18 @@
                 </button>
               </div>
             </div>
+
             <div v-if="showShellTabs" class="mt-4 flex flex-wrap gap-2">
-              <button v-for="tab in shellTabs" :key="tab.id" type="button" class="rounded-md px-3 py-1.5 text-xs font-medium" :class="activeShell === tab.id ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900' : 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'" @click="activeShell = tab.id">{{ tab.label }}</button>
+              <button
+                v-for="tab in shellTabs"
+                :key="tab.id"
+                type="button"
+                class="rounded-md px-3 py-1.5 text-xs font-medium"
+                :class="activeShell === tab.id ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900' : 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'"
+                @click="activeShell = tab.id"
+              >
+                {{ tab.label }}
+              </button>
             </div>
           </div>
 
@@ -59,28 +106,61 @@
           <SkillMarketSelector v-if="supportsSkills" v-model="selectedSkills" :runtime="activeClientTab === 'teleagent' ? 'teleagent' : undefined" />
         </section>
 
-        <section class="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-950 lg:col-span-7 lg:max-h-[66vh] dark:border-dark-700">
+        <section class="flex min-h-[480px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-gray-950 lg:col-span-7 lg:max-h-[70vh] dark:border-dark-700">
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 bg-gray-900 px-4 py-3">
             <div class="flex min-w-0 flex-wrap gap-2">
-              <button v-for="(file, index) in currentFiles" :key="`${file.path}-${index}`" type="button" class="max-w-[220px] truncate rounded-md px-3 py-1.5 text-xs font-medium" :class="activeFileIndex === index ? 'bg-primary-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'" @click="activeFileIndex = index">{{ file.path }}</button>
+              <button
+                v-for="(file, index) in currentFiles"
+                :key="`${file.path}-${index}`"
+                type="button"
+                class="max-w-[220px] truncate rounded-md px-3 py-1.5 text-xs font-medium"
+                :class="activeFileIndex === index ? 'bg-primary-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'"
+                @click="activeFileIndex = index"
+              >
+                {{ file.path }}
+              </button>
             </div>
             <div class="flex items-center gap-2">
-              <button type="button" class="rounded-md bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700" @click="revealSecrets = !revealSecrets">{{ revealSecrets ? '隐藏密钥' : '显示密钥' }}</button>
-              <button type="button" class="rounded-md bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700" @click="advancedEditing = !advancedEditing">{{ advancedEditing ? '普通预览' : '高级编辑' }}</button>
+              <button type="button" class="rounded-md bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700" @click="revealSecrets = !revealSecrets">
+                {{ revealSecrets ? '隐藏密钥' : '显示密钥' }}
+              </button>
+              <button type="button" class="rounded-md bg-gray-800 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-700" @click="advancedEditing = !advancedEditing">
+                {{ advancedEditing ? '普通预览' : '高级编辑' }}
+              </button>
             </div>
           </div>
 
+          <p v-if="activeFile?.hint" class="border-b border-gray-800 bg-gray-900/80 px-4 py-2 text-xs leading-5 text-gray-400">
+            {{ activeFile.hint }}
+          </p>
+
           <div class="min-h-0 flex-1 overflow-auto p-4">
-            <textarea v-if="advancedEditing && activeFile" v-model="editableFiles[activeFileIndex]" class="h-full min-h-[430px] w-full resize-none border-0 bg-transparent font-mono text-sm leading-6 text-gray-100 outline-none" spellcheck="false" />
-            <pre v-else class="min-h-[430px] whitespace-pre-wrap break-words font-mono text-sm leading-6 text-gray-100"><code>{{ activePreviewContent }}</code></pre>
+            <textarea
+              v-if="advancedEditing && activeFile"
+              v-model="editableFiles[activeFileIndex]"
+              class="h-full min-h-[380px] w-full resize-none border-0 bg-transparent font-mono text-sm leading-6 text-gray-100 outline-none"
+              spellcheck="false"
+            />
+            <pre v-else class="min-h-[380px] whitespace-pre-wrap break-words font-mono text-sm leading-6 text-gray-100"><code>{{ activePreviewContent }}</code></pre>
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-800 bg-gray-900 px-4 py-3">
-            <p class="text-xs text-gray-400">{{ deliveryMode === 'ccs' ? 'CCS 只导入客户端配置，Skill 仍通过独立脚本安装。' : '配置写入前会备份原文件，并保留已有项目设置。' }}</p>
+            <p class="text-xs text-gray-400">
+              {{ deliveryMode === 'ccs' ? 'CCS 只导入客户端配置，Skill 仍通过独立脚本安装。' : '配置写入前会备份原文件，并保留已有项目设置。' }}
+            </p>
             <div class="flex flex-wrap gap-2">
               <button type="button" class="btn btn-secondary" :disabled="!activeFile" @click="downloadActiveFile">下载当前文件</button>
               <button type="button" class="btn btn-secondary" :disabled="!activeFile" @click="copyActiveFile">复制当前文件</button>
-              <button v-if="deliveryMode === 'ccs'" type="button" class="btn btn-primary" :disabled="!ccsImportReady" :title="ccsImportHint" @click="importToCcs">{{ ccsImportReady ? '导入 CCS' : '请先选择模型' }}</button>
+              <button
+                v-if="deliveryMode === 'ccs'"
+                type="button"
+                class="btn btn-primary"
+                :disabled="!ccsImportReady"
+                :title="ccsImportHint"
+                @click="importToCcs"
+              >
+                {{ ccsImportReady ? '导入 CCS' : '请先选择模型' }}
+              </button>
             </div>
           </div>
         </section>
@@ -90,8 +170,12 @@
     <template #footer>
       <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-wrap gap-2">
-          <button v-if="deliveryMode === 'direct' && clientInstallScript" type="button" class="btn btn-primary" @click="copyClientInstallScript">{{ scriptCopied ? '一键配置脚本已复制' : '复制一键配置脚本' }}</button>
-          <button v-if="deliveryMode === 'direct' && skillInstallScript" type="button" class="btn btn-secondary" @click="copySkillInstallScript">复制 Skill 安装脚本</button>
+          <button v-if="deliveryMode === 'direct' && clientInstallScript" type="button" class="btn btn-primary" @click="copyClientInstallScript">
+            {{ scriptCopied ? '一键配置脚本已复制' : '复制一键配置脚本' }}
+          </button>
+          <button v-if="skillInstallScript" type="button" class="btn btn-secondary" @click="copySkillInstallScript">
+            复制 Skill 安装脚本
+          </button>
         </div>
         <button type="button" class="btn btn-secondary" @click="emit('close')">关闭</button>
       </div>
@@ -105,6 +189,7 @@ import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConnectorOptions from '@/components/keys/ConnectorOptions.vue'
 import SkillMarketSelector from '@/components/keys/SkillMarketSelector.vue'
 import { useClipboard } from '@/composables/useClipboard'
+import { useAppStore } from '@/stores'
 import type { GroupPlatform } from '@/types'
 import userChannelsAPI from '@/api/channels'
 import type { SkillInstallSelection } from '@/api/skillMarket'
@@ -151,6 +236,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ (event: 'close'): void }>()
 const { copyToClipboard } = useClipboard()
+const appStore = useAppStore()
 const deliveryMode = ref<DeliveryMode>(props.initialMode)
 const activeClientTab = ref('claude')
 const activeShell = ref<ConnectorShell>('unix')
@@ -218,8 +304,14 @@ const clientTabs = computed(() => {
 
 const platformDescription = computed(() => {
   if (!props.platform) return '请先为 API Key 配置可用分组。'
-  const labels: Record<string, string> = { openai: 'OpenAI 兼容协议', anthropic: 'Anthropic 兼容协议', gemini: 'Gemini 兼容协议', antigravity: 'Gemini / Anthropic 双协议', grok: 'Grok · Responses / Messages 双协议' }
-  return `${labels[props.platform] || props.platform} · 选择客户端、模型与能力后生成可检查的配置`
+  const labels: Record<string, string> = {
+    openai: 'OpenAI 兼容协议',
+    anthropic: 'Anthropic 兼容协议',
+    gemini: 'Gemini 兼容协议',
+    antigravity: 'Gemini / Anthropic 双协议',
+    grok: 'Grok · Responses / Messages 双协议',
+  }
+  return `${labels[props.platform] || props.platform}，选择客户端、模型与能力后生成可检查的配置`
 })
 
 const showShellTabs = computed(() => activeClientTab.value !== 'opencode' && activeClientTab.value !== 'teleagent')
@@ -357,22 +449,36 @@ function ccsConfig(): { config?: string; configFormat?: 'json' | 'toml' } {
 
 function importToCcs() {
   if (!ccsImportReady.value) return
-  const normalized = normalizeConnectorOptions(connectorOptions.value)
-  const payload = ccsConfig()
-  const clientType = ccsClientType()
-  const usageScript = buildCcsUsageScript()
-  const deeplink = buildCcSwitchImportDeeplink({
-    baseUrl: props.baseUrl || window.location.origin,
-    platform: props.platform,
-    clientType,
-    providerName: 'TokenPort',
-    apiKey: props.apiKey,
-    usageScript,
-    model: clientType === 'codex' ? normalized.codex.model || undefined : undefined,
-    claudeModelTiers: normalized.claude.modelTiers,
-    ...payload,
-  })
-  window.location.href = deeplink
+  try {
+    const normalized = normalizeConnectorOptions(connectorOptions.value)
+    const payload = ccsConfig()
+    const clientType = ccsClientType()
+    const usageScript = buildCcsUsageScript()
+    const deeplink = buildCcSwitchImportDeeplink({
+      baseUrl: props.baseUrl || window.location.origin,
+      platform: props.platform,
+      clientType,
+      // CCS 导入显示名 / config.toml 的 name 字段默认 custom，避免与官方 OpenAI 显示名冲突
+      providerName: 'custom',
+      apiKey: props.apiKey,
+      usageScript,
+      model: clientType === 'codex' || clientType === 'grokbuild'
+        ? normalized.codex.model || undefined
+        : undefined,
+      claudeModelTiers: clientType === 'claude' ? normalized.claude.modelTiers : undefined,
+      ...payload,
+    })
+    const hadFocus = document.hasFocus()
+    window.open(deeplink, '_self')
+    window.setTimeout(() => {
+      if (hadFocus && document.hasFocus()) {
+        appStore.showError('未检测到 CC Switch。请确认已安装并注册协议处理，或改用「直接配置」。')
+      }
+    }, 120)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'CCS 导入失败'
+    appStore.showError(message.includes('JSON') ? '~/.codex/auth.json 不是合法 JSON，请先修复高级编辑内容' : message)
+  }
 }
 </script>
 

@@ -168,12 +168,7 @@
             @start="handleOAuthStart"
           />
 
-          <LinuxDoOAuthSection
-            v-if="linuxdoOAuthEnabled"
-            :disabled="authActionDisabled"
-            :show-divider="false"
-            @start="handleOAuthStart"
-          />
+          <!-- TokenPort: LinuxDo Connect 登录入口已移除 -->
           <DingTalkOAuthSection
             v-if="dingtalkOAuthEnabled"
             :disabled="authActionDisabled"
@@ -227,7 +222,6 @@ import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { AuthLayout } from '@/components/layout'
-import LinuxDoOAuthSection from '@/components/auth/LinuxDoOAuthSection.vue'
 import DingTalkOAuthSection from '@/components/auth/DingTalkOAuthSection.vue'
 import OidcOAuthSection from '@/components/auth/OidcOAuthSection.vue'
 import WechatOAuthSection from '@/components/auth/WechatOAuthSection.vue'
@@ -241,7 +235,6 @@ import {
   buildOAuthLoginStartURL,
   getPublicSettings,
   isTotp2FARequired,
-  isWeChatWebOAuthEnabled,
   startOAuthLogin,
   type OAuthLoginStart
 } from '@/api/auth'
@@ -393,13 +386,14 @@ onMounted(async () => {
     aliyunCaptchaSceneId.value = settings.aliyun_captcha_scene_id || ''
     aliyunCaptchaPrefix.value = settings.aliyun_captcha_prefix || ''
     aliyunCaptchaRegion.value = settings.aliyun_captcha_region || 'cn'
-    linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled
-    dingtalkOAuthEnabled.value = settings.dingtalk_oauth_enabled ?? false
-    wechatOAuthEnabled.value = isWeChatWebOAuthEnabled(settings)
+    // TokenPort: 暂时下线第三方登录入口（LinuxDo / 钉钉 / OIDC / 微信）
+    linuxdoOAuthEnabled.value = false
+    githubOAuthEnabled.value = false
+    dingtalkOAuthEnabled.value = false
+    wechatOAuthEnabled.value = false
     backendModeEnabled.value = settings.backend_mode_enabled
-    oidcOAuthEnabled.value = settings.oidc_oauth_enabled
+    oidcOAuthEnabled.value = false
     oidcOAuthProviderName.value = settings.oidc_oauth_provider_name || 'OIDC'
-    githubOAuthEnabled.value = settings.github_oauth_enabled
     googleOAuthEnabled.value = settings.google_oauth_enabled
     backendModeEnabled.value = settings.backend_mode_enabled
     passwordResetEnabled.value = settings.password_reset_enabled

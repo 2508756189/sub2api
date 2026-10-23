@@ -4307,6 +4307,7 @@ import GroupCapacityBadge from "@/components/common/GroupCapacityBadge.vue";
 import ReasoningEffortPolicyFields from "@/components/admin/group/ReasoningEffortPolicyFields.vue";
 import CodexManifestAccountsField from "@/components/admin/group/CodexManifestAccountsField.vue";
 import PricingEntryCard from "@/components/admin/channel/PricingEntryCard.vue";
+import { getBillingCurrencySymbol } from "@/tokenport/billing/currency";
 import type { PricingFormEntry } from "@/components/admin/channel/types";
 import {
   apiIntervalsToForm,
@@ -4455,6 +4456,7 @@ const { t } = useI18n();
 const appStore = useAppStore();
 const authStore = useAuthStore();
 const onboardingStore = useOnboardingStore();
+const billingSymbol = getBillingCurrencySymbol();
 
 const ALWAYS_VISIBLE_COLUMNS = new Set(["name", "actions"]);
 // Default hidden columns (hidden on first load / after schema bumps).
@@ -5447,7 +5449,7 @@ const formatImagePricePreview = (value: number | string | null | undefined) => {
   if (!Number.isFinite(price) || price < 0) {
     return t("admin.groups.imagePricing.notConfigured");
   }
-  return `$${price.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
+  return `${billingSymbol}${price.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
 };
 
 const formatVideoPricePreview = (value: number | string | null | undefined) => {
@@ -5458,7 +5460,7 @@ const formatVideoPricePreview = (value: number | string | null | undefined) => {
   if (!Number.isFinite(price) || price < 0) {
     return t("admin.groups.videoPricing.notConfigured");
   }
-  return `$${price.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
+  return `${billingSymbol}${price.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
 };
 
 const buildImageFinalPricePreview = (form: ImagePricingFormState) => {
@@ -5656,7 +5658,7 @@ const formatCost = (cost: number): string => {
 };
 
 const formatUsd = (cost: number | null | undefined): string =>
-  `$${formatCost(cost ?? 0)}`;
+  `${billingSymbol}${formatCost(cost ?? 0)}`;
 
 const getQuotaUsageClass = (
   used: number,

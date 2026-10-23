@@ -149,6 +149,11 @@ export default {
       flipPage: '翻页',
       exit: '退出'
     },
+    demoValues: {
+      groupName: '测试分组',
+      accountName: '测试账号',
+      keyName: '测试密钥'
+    },
     // Admin tour steps
     admin: {
       welcome: {
@@ -171,7 +176,7 @@ export default {
       groupName: {
         title: '✏️ 1. 分组名称',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">为您的分组起一个易于识别的名称。</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 命名建议：</b><ul style="margin: 8px 0 0 16px;"><li>"测试分组" - 用于测试</li><li>"VIP专线" - 高质量服务</li><li>"免费试用" - 体验版</li></ul></div><p style="font-size: 13px; color: #6b7280;">填写完成后点击"下一步"继续</p></div>',
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">为您的分组起一个易于识别的名称。<b>名称必填</b>，未填写时引导会自动填入「测试分组」，可直接改成你想要的名字。</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 命名建议：</b><ul style="margin: 8px 0 0 16px;"><li>"测试分组" - 用于测试</li><li>"VIP专线" - 高质量服务</li><li>"免费试用" - 体验版</li></ul></div><p style="font-size: 13px; color: #6b7280;">确认名称后点击"下一步"继续</p></div>',
         nextBtn: '下一步'
       },
       groupPlatform: {
@@ -195,7 +200,7 @@ export default {
       groupSubmit: {
         title: '✅ 保存分组',
         description:
-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">确认信息无误后，点击创建按钮保存分组。</p><p style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 注意：</b>分组创建后，平台类型不可修改，其他信息可以随时编辑</p><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>📌 下一步：</b>创建成功后，我们将添加上游账号到这个分组</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 点击"创建"按钮</p></div>'
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">确认信息无误后，点击创建按钮保存分组。若分组名称为空，引导会自动填入「测试分组」再提交，避免卡在此步。</p><p style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 注意：</b>分组创建后，平台类型不可修改，其他信息可以随时编辑</p><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>📌 下一步：</b>创建成功后，我们将添加上游账号到这个分组</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 点击「创建」按钮继续</p></div>'
       },
       accountManage: {
         title: '🔗 第二步：添加账号',
@@ -268,6 +273,18 @@ export default {
         title: '🎉 生成并复制',
         description:
           '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">点击创建后，系统会生成完整的 API Key。</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 重要提醒：</b><ul style="margin: 8px 0 0 16px;"><li>密钥只显示一次，请立即复制</li><li>丢失后需要重新生成</li><li>妥善保管，不要泄露给他人</li></ul></div><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>🚀 下一步：</b><ul style="margin: 8px 0 0 16px;"><li>复制生成的 sk-xxx 密钥</li><li>在支持 OpenAI 接口的客户端中使用</li><li>开始体验 AI 服务！</li></ul></div><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 点击"创建"按钮</p></div>'
+      },
+      useKey: {
+        title: '⚙️ 接入配置中心',
+        description:
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">密钥创建后，点「使用」打开接入配置中心。</p><ul style="margin-left: 18px; margin-bottom: 12px; font-size: 13px;"><li>选择 Codex / Claude / TeleAgent / OpenCode 等客户端</li><li>可「直接配置」复制脚本，或「导入 CCS」交给 CC Switch</li><li>按需勾选 Skill Market 能力包</li></ul><p style="color: #0f9f8f; font-weight: 600;">创建密钥后，再点一次「使用」即可</p></div>'
+      },
+      done: {
+        title: '✅ 引导完成',
+        description:
+          '<div class="tokenport-tour-intro"><p>首次配置链路已经走完：分组 → 账号 → API Key → 接入配置。</p><p><b>之后可以继续：</b></p><ul><li>在用量页核对 Token 与成本</li><li>在 Skill Market 同步能力包</li><li>在右上角头像菜单随时「重新查看新手引导」</li></ul><p class="tokenport-tour-emphasis">可以退出引导，开始正式使用 →</p></div>',
+        nextBtn: '完成并退出',
+        prevBtn: '上一步'
       }
     },
     // User tour steps
@@ -305,6 +322,23 @@ export default {
         title: '🎉 完成创建',
         description:
           '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">点击确认创建您的 API 密钥。</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ 重要：</b><ul style="margin: 8px 0 0 16px;"><li>创建后请立即复制密钥（sk-xxx）</li><li>密钥只显示一次，丢失需重新生成</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 如何使用：</b><br/>将密钥配置到支持 OpenAI 接口的任何客户端（如 ChatBox、OpenCat 等），即可开始使用！</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 点击"创建"按钮</p></div>'
+      },
+      useKey: {
+        title: '⚙️ 打开接入配置',
+        description:
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">点「使用」进入接入配置中心，按客户端生成 Codex / Claude / TeleAgent 等配置。</p><p style="padding: 8px 12px; background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;">支持直接复制脚本，或导入 CCS（需本机安装 CC Switch）。</p></div>'
+      },
+      usage: {
+        title: '📊 查看用量',
+        description:
+          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">用量页可查看 Token、费用和各密钥消耗，便于对账与预算。</p><p style="color: #0f9f8f; font-weight: 600;">可稍后从左侧菜单进入</p></div>'
+      },
+      done: {
+        title: '✅ 可以开始使用了',
+        description:
+          '<div class="tokenport-tour-intro"><p>您已完成密钥创建与接入入口说明。</p><p><b>建议接下来：</b></p><ul><li>用接入配置中心导入常用客户端</li><li>按需安装 Skill</li><li>在用量页核对调用结果</li></ul><p class="tokenport-tour-emphasis">点击完成退出引导 →</p></div>',
+        nextBtn: '完成并退出',
+        prevBtn: '上一步'
       }
     }
   },

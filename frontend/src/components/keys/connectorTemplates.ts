@@ -262,6 +262,9 @@ function codexConfigDir(shell: ConnectorShell): string {
   return shell === 'windows' || shell === 'powershell' ? '%userprofile%\\.codex' : '~/.codex'
 }
 
+/** Display name written into [model_providers.*] name=... (CCS import name also defaults here). */
+export const CODEX_GATEWAY_PROVIDER_NAME = 'custom'
+
 function buildCodexConfig(input: BuildConnectorFilesInput, webSocket: boolean): string {
   const options = normalizeConnectorOptions(input.options)
   const model = options.codex.model.trim()
@@ -275,7 +278,7 @@ function buildCodexConfig(input: BuildConnectorFilesInput, webSocket: boolean): 
     'windows_wsl_setup_acknowledged = true',
     '',
     '[model_providers.OpenAI]',
-    'name = "OpenAI"',
+    `name = "${CODEX_GATEWAY_PROVIDER_NAME}"`,
     `base_url = "${baseUrl}"`,
     'wire_api = "responses"',
   ]

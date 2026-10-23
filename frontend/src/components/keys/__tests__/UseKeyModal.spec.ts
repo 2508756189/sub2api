@@ -10,6 +10,10 @@ vi.mock('@/composables/useClipboard', () => ({
   useClipboard: () => ({ copyToClipboard: vi.fn().mockResolvedValue(true) }),
 }))
 
+vi.mock('@/stores', () => ({
+  useAppStore: () => ({ showError: vi.fn(), showSuccess: vi.fn() }),
+}))
+
 import UseKeyModal from '../UseKeyModal.vue'
 
 const global = {
@@ -41,6 +45,8 @@ describe('UseKeyModal', () => {
     const wrapper = mountModal()
     expect(wrapper.text()).toContain('直接配置')
     expect(wrapper.text()).toContain('model_provider = "OpenAI"')
+    expect(wrapper.text()).toContain('[model_providers.OpenAI]')
+    expect(wrapper.text()).toContain('name = "custom"')
     expect(wrapper.text()).not.toContain('REPLACE_WITH_AVAILABLE_MODEL')
     expect(wrapper.text()).not.toMatch(/^model\s*=/m)
   })
@@ -76,7 +82,8 @@ describe('UseKeyModal', () => {
     await tab!.trigger('click')
     await nextTick()
 
-    expect(wrapper.text()).toContain('TeleAgent 使用 OpenAI Compatible 提供商字段')
+    expect(wrapper.text()).toContain('TeleAgent 导入步骤')
+    expect(wrapper.text()).toContain('OpenAI Compatible')
     expect(wrapper.text()).toContain('teleagent-provider-fields.json')
     expect(wrapper.text()).toContain('"protocol": "OpenAI Compatible"')
     expect(wrapper.text()).toContain('https://example.com/v1')
@@ -106,6 +113,7 @@ describe('UseKeyModal', () => {
     expect(wrapper.text()).toContain('Grok CLI')
     expect(wrapper.text()).toContain('TeleAgent')
     expect(wrapper.text()).toContain('model_provider = "OpenAI"')
+    expect(wrapper.text()).toContain('name = "custom"')
     expect(wrapper.text()).toContain('~/.codex/config.toml')
     expect(wrapper.text()).not.toContain('grok-4.5')
 

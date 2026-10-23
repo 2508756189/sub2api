@@ -153,6 +153,11 @@ export default {
         description: 'Control user registration and verification',
         enableRegistration: 'Enable Registration',
         enableRegistrationHint: 'Allow new users to register',
+        registrationMode: 'Registration Mode',
+        registrationModeHint:
+          'Standard signup does not require a real name. “Require real name” shows a required name field and stores it as the account display name.',
+        modeStandard: 'Standard (name optional)',
+        modeRequireRealName: 'Require real name',
         emailVerification: 'Email Verification',
         emailVerificationHint: 'Require email verification for new registrations',
         emailSuffixWhitelist: 'Email Domain Whitelist',

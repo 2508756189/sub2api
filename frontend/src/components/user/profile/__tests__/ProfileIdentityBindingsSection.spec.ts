@@ -821,4 +821,33 @@ describe('ProfileIdentityBindingsSection', () => {
     expect(wrapper.find('[data-testid="profile-binding-linuxdo-action"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="profile-binding-oidc-action"]').exists()).toBe(false)
   })
+
+  it('hides unbound third-party providers when they are disabled', () => {
+    const wrapper = mount(ProfileIdentityBindingsSection, {
+      global: {
+        plugins: [pinia],
+      },
+      props: {
+        user: createUser({
+          auth_bindings: {
+            email: { bound: true },
+            linuxdo: { bound: false, can_bind: true },
+            dingtalk: { bound: false, can_bind: true },
+            oidc: { bound: false, can_bind: true },
+            wechat: { bound: false, can_bind: true },
+          },
+        }),
+        linuxdoEnabled: false,
+        dingtalkEnabled: false,
+        oidcEnabled: false,
+        wechatEnabled: false,
+      },
+    })
+
+    expect(wrapper.find('[data-testid="profile-binding-email-status"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="profile-binding-linuxdo-status"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="profile-binding-dingtalk-status"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="profile-binding-oidc-status"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="profile-binding-wechat-status"]').exists()).toBe(false)
+  })
 })

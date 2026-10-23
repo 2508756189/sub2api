@@ -17,8 +17,15 @@
 - `frontend/src/tokenport/home/`: 商业首页。
 - `frontend/src/tokenport/market/`: Skill Market 页面与详情。
 - `frontend/src/tokenport/access-center/`: 统一接入配置中心。
+- `frontend/src/tokenport/billing/`: 结算币种符号（CNY→`¥`）；展示层改标识，不做外汇换算。
 - `tokenport-overlay.json`: 上游挂载点清单。
 - `scripts/check-tokenport-overlay.ps1`: 挂载点完整性检查。
+
+## 测试服 CNY（192.168.1.50）
+
+`.50` 结算约定为 **CNY + rate=1**：UI 美元符号改为 `¥`，价格按人民币原值维护，**不做** USD→CNY 金额换算。上游合入后必须核验并保留相关 fork 改动；细则与文件清单见：
+
+`../token-platform/docs/operations/rmb-billing-deployment.md`
 
 ## 上游同步
 

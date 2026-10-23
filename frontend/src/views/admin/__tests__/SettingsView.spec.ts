@@ -367,6 +367,7 @@ const ImageUploadStub = defineComponent({
 
 const baseSettingsResponse = {
   registration_enabled: true,
+  registration_mode: 'standard',
   email_verify_enabled: false,
   registration_email_suffix_whitelist: [],
   promo_code_enabled: true,

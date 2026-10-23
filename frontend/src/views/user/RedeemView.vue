@@ -1,26 +1,31 @@
 <template>
   <AppLayout>
-    <div class="mx-auto max-w-2xl space-y-6">
-      <!-- Current Balance Card -->
-      <div class="card overflow-hidden">
-        <div class="bg-gradient-to-br from-primary-500 to-primary-600 px-6 py-8 text-center">
+    <div class="tp-redeem mx-auto max-w-2xl space-y-6">
+      <div class="tp-redeem-hero overflow-hidden rounded-2xl border border-teal-200/60 dark:border-teal-900/40">
+        <div class="relative px-6 py-8 text-center">
+          <div class="tp-redeem-glow" aria-hidden="true" />
           <div
-            class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm"
+            class="relative mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm"
           >
-            <Icon name="creditCard" size="xl" class="text-white" />
+            <Icon name="gift" size="xl" class="text-white" />
           </div>
-          <p class="text-sm font-medium text-primary-100">{{ t('redeem.currentBalance') }}</p>
-          <p class="mt-2 text-4xl font-bold text-white">
+          <p class="relative text-[11px] font-bold tracking-[0.18em] text-teal-100/90">TOKENPORT · REDEEM</p>
+          <p class="relative mt-2 text-sm font-medium text-teal-50/90">{{ t('redeem.currentBalance') }}</p>
+          <p class="relative mt-2 text-4xl font-extrabold tracking-tight text-white">
             {{ billingSymbol }}{{ user?.balance?.toFixed(2) || '0.00' }}
           </p>
-          <p class="mt-2 text-sm text-primary-100">
+          <p class="relative mt-2 text-sm text-teal-50/80">
             {{ t('redeem.concurrency') }}: {{ user?.concurrency || 0 }} {{ t('redeem.requests') }}
           </p>
         </div>
       </div>
 
       <!-- Redeem Form -->
-      <div class="card">
+      <div class="card tp-redeem-panel">
+        <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('redeem.title') }}</h1>
+          <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">{{ t('redeem.description') }}</p>
+        </div>
         <div class="p-6">
           <form @submit.prevent="handleRedeem" class="space-y-5">
             <div>
@@ -29,7 +34,7 @@
               </label>
               <div class="relative mt-1">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                  <Icon name="gift" size="md" class="text-gray-400 dark:text-dark-500" />
+                  <Icon name="gift" size="md" class="text-teal-600/70 dark:text-teal-400/70" />
                 </div>
                 <input
                   id="code"
@@ -38,7 +43,7 @@
                   required
                   :placeholder="t('redeem.redeemCodePlaceholder')"
                   :disabled="submitting"
-                  class="input py-3 pl-12 text-lg"
+                  class="input py-3 pl-12 font-mono text-lg tracking-wide"
                 />
               </div>
               <p class="input-hint">
@@ -535,6 +540,27 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.tp-redeem-hero {
+  background:
+    radial-gradient(circle at 18% 20%, rgb(94 234 212 / 35%), transparent 42%),
+    linear-gradient(135deg, #0b6e6a 0%, #0f9f8f 48%, #1f93aa 100%);
+  box-shadow: 0 18px 40px rgb(15 159 143 / 18%);
+}
+
+.tp-redeem-glow {
+  position: absolute;
+  inset: auto -10% -40% auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 18%);
+  filter: blur(18px);
+}
+
+.tp-redeem-panel {
+  border-radius: 18px;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.3s ease;

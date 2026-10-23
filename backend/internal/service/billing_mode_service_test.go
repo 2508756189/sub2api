@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"math"
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -99,5 +100,24 @@ func TestBillingModeConversionFlushesInjectedCache(t *testing.T) {
 	}
 	if flushes != 1 {
 		t.Fatalf("cache flushes=%d, want 1", flushes)
+	}
+}
+
+func TestBillingModeRateUpdatePreservesConvertedReserve(t *testing.T) {
+	repo := &billingModeRepoStub{}
+	svc := NewBillingModeService(repo, &config.Config{Billing: config.BillingConfig{
+		Currency: config.BillingCurrencyUSD, USDToCNYRate: 7.2, MinimumBalanceReserve: 0.5,
+	}}, nil)
+	if _, err := svc.Update(context.Background(), config.BillingCurrencyCNY, 7.2, true, BillingModeConfirmationCNY); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Update(context.Background(), config.BillingCurrencyCNY, 7.3, false, ""); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := svc.Current().MinimumBalanceReserve, 0.5*7.2; math.Abs(got-want) > 1e-12 {
+		t.Fatalf("rate-only update changed settlement reserve: got %v, want %v", got, want)
+	}
+	if len(repo.converted) != 1 {
+		t.Fatalf("rate-only update converted existing amounts: %+v", repo.converted)
 	}
 }

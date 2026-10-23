@@ -130,12 +130,38 @@ describe('PendingOAuthCreateAccountForm', () => {
     expect(turnstileReset).toHaveBeenCalledTimes(2)
   })
 
-  it('emits trimmed email, password, and verify code on submit', async () => {
+  it('locks the OAuth email and emits password plus verify code on submit', async () => {
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {
         providerName: 'LinuxDo',
         testIdPrefix: 'linuxdo',
         initialEmail: 'prefill@example.com',
+        isSubmitting: false
+      }
+    })
+
+    expect(wrapper.find('[data-testid="linuxdo-create-account-email-readonly"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="linuxdo-create-account-email"]').attributes('type')).toBe('hidden')
+    await wrapper.get('[data-testid="linuxdo-create-account-password"]').setValue('secret-123')
+    await wrapper.get('[data-testid="linuxdo-create-account-verify-code"]').setValue(' 246810 ')
+    await wrapper.get('form').trigger('submit.prevent')
+
+    expect(wrapper.emitted('submit')).toEqual([
+      [
+        {
+          email: 'prefill@example.com',
+          password: 'secret-123',
+          verifyCode: '246810'
+        }
+      ]
+    ])
+  })
+
+  it('still allows typing an email when OAuth did not provide one', async () => {
+    const wrapper = mount(PendingOAuthCreateAccountForm, {
+      props: {
+        testIdPrefix: 'linuxdo',
+        initialEmail: '',
         isSubmitting: false
       }
     })

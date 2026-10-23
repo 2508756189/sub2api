@@ -50,6 +50,7 @@ func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userSe
 type RegisterRequest struct {
 	Email                 string `json:"email" binding:"required,email"`
 	Password              string `json:"password" binding:"required,min=6"`
+	Username              string `json:"username"` // 真实姓名（注册必填，写入 users.username）
 	VerifyCode            string `json:"verify_code"`
 	TurnstileToken        string `json:"turnstile_token"`
 	TencentCaptchaTicket  string `json:"tencent_captcha_ticket"`
@@ -198,6 +199,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		req.PromoCode,
 		req.InvitationCode,
 		req.AffCode,
+		req.Username,
 	)
 	if err != nil {
 		response.ErrorFrom(c, err)

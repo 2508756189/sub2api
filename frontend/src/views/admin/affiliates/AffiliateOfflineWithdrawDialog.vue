@@ -68,7 +68,7 @@
             class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
           ></span>
           <span v-else class="font-semibold text-gray-900 dark:text-white" data-test="withdraw-available-quota">
-            ${{ formatPreciseAmount(availableQuota) }}
+            {{ billingSymbol }}{{ formatPreciseAmount(availableQuota) }}
           </span>
         </div>
         <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">{{ t('admin.affiliates.withdraw.frozenHint') }}</p>
@@ -140,6 +140,7 @@ import BaseDialog from '@/components/common/BaseDialog.vue'
 import { useAppStore } from '@/stores/app'
 import { affiliatesAPI, type AffiliateWithdrawResult, type SimpleUser } from '@/api/admin/affiliates'
 import { extractApiErrorCode, extractI18nErrorMessage } from '@/utils/apiError'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import {
   completeAffiliateWithdrawOperation,
   prepareAffiliateWithdrawOperation,
@@ -159,6 +160,7 @@ const emit = defineEmits<{
 const LEDGER_SCALE = 1e8
 
 const { t } = useI18n()
+const billingSymbol = getBillingCurrencySymbol()
 const appStore = useAppStore()
 
 const userQuery = ref('')
@@ -323,8 +325,8 @@ async function submit() {
     pendingOperation.value = null
     appStore.showSuccess(
       t(replayed ? 'admin.affiliates.withdraw.replayed' : 'admin.affiliates.withdraw.success', {
-        amount: `$${formatPreciseAmount(result.amount)}`,
-        remaining: `$${formatPreciseAmount(result.available_quota_after)}`,
+        amount: `${billingSymbol}${formatPreciseAmount(result.amount)}`,
+        remaining: `${billingSymbol}${formatPreciseAmount(result.available_quota_after)}`,
       }),
     )
     emit('success', result)

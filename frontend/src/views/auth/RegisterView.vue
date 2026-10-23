@@ -1,12 +1,13 @@
 <template>
   <AuthLayout>
-    <div class="space-y-6">
+    <div class="tp-register space-y-6">
       <!-- Title -->
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+        <p class="tp-register-eyebrow">TOKENPORT · REGISTER</p>
+        <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
           {{ t('auth.createAccount') }}
         </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+        <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-dark-400">
           {{ t('auth.signUpToStart', { siteName }) }}
         </p>
       </div>
@@ -28,6 +29,34 @@
 
       <!-- Registration Form -->
       <form v-else @submit.prevent="handleRegister" class="space-y-5">
+        <!-- Real Name (when require_real_name mode) -->
+        <div v-if="requireRealName">
+          <label for="username" class="input-label">
+            {{ t('auth.realNameLabel') }}
+          </label>
+          <div class="relative">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+              <Icon name="user" size="md" class="text-gray-400 dark:text-dark-500" />
+            </div>
+            <input
+              id="username"
+              v-model="formData.username"
+              type="text"
+              required
+              autofocus
+              autocomplete="name"
+              maxlength="50"
+              :disabled="registrationActionDisabled"
+              class="input pl-11"
+              :class="{ 'input-error': errors.username }"
+              :placeholder="t('auth.realNamePlaceholder')"
+            />
+          </div>
+          <p class="input-hint">
+            {{ t('auth.realNameHint') }}
+          </p>
+        </div>
+
         <!-- Email Input -->
         <div>
           <label for="email" class="input-label">
@@ -42,7 +71,7 @@
               v-model="formData.email"
               type="email"
               required
-              autofocus
+              :autofocus="!requireRealName"
               autocomplete="email"
               :disabled="registrationActionDisabled"
               class="input pl-11"
@@ -317,20 +346,13 @@
           :disabled="registrationActionDisabled"
           :aff-code="formData.aff_code"
           :promo-code="formData.promo_code"
-          :github-enabled="githubOAuthEnabled"
+          :github-enabled="false"
           :google-enabled="googleOAuthEnabled"
           :show-divider="false"
           @start="handleOAuthStart"
         />
 
-        <LinuxDoOAuthSection
-          v-if="linuxdoOAuthEnabled"
-          :disabled="registrationActionDisabled"
-          :aff-code="formData.aff_code"
-          :promo-code="formData.promo_code"
-          :show-divider="false"
-          @start="handleOAuthStart"
-        />
+        <!-- TokenPort: LinuxDo / GitHub 登录入口已移除 -->
         <WechatOAuthSection
           v-if="wechatOAuthEnabled"
           :disabled="registrationActionDisabled"
@@ -370,7 +392,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { resolveTokenPortName } from '@/tokenport/brand/tokenPortBrand'
 import { AuthLayout } from '@/components/layout'
-import LinuxDoOAuthSection from '@/components/auth/LinuxDoOAuthSection.vue'
 import OidcOAuthSection from '@/components/auth/OidcOAuthSection.vue'
 import WechatOAuthSection from '@/components/auth/WechatOAuthSection.vue'
 import EmailOAuthButtons from '@/components/auth/EmailOAuthButtons.vue'
@@ -381,7 +402,6 @@ import { useAuthStore, useAppStore } from '@/stores'
 import {
   buildOAuthLoginStartURL,
   getPublicSettings,
-  isWeChatWebOAuthEnabled,
   startOAuthLogin,
   type OAuthLoginStart,
   validatePromoCode,
@@ -423,6 +443,14 @@ const confirmPassword = ref('')
 // Public settings
 const registrationEnabled = ref<boolean>(true)
 const emailVerifyEnabled = ref<boolean>(false)
+const registrationMode = ref<'standard' | 'require_real_name' | string>(
+  appStore.cachedPublicSettings?.registration_mode === 'require_real_name'
+    ? 'require_real_name'
+    : 'standard'
+)
+const requireRealName = computed(
+  () => registrationMode.value === 'require_real_name'
+)
 // Public settings are injected into the app store before Vue mounts. Use that
 // value for the first render so a disabled promo-code field never flashes
 // while the async settings request is still in flight. If injection is
@@ -502,6 +530,7 @@ let invitationValidateTimeout: ReturnType<typeof setTimeout> | null = null
 const formData = reactive({
   email: '',
   password: '',
+  username: '',
   promo_code: '',
   invitation_code: '',
   aff_code: ''
@@ -511,11 +540,13 @@ const errors = reactive({
   email: '',
   password: '',
   confirmPassword: '',
+  username: '',
   turnstile: '',
   invitation_code: ''
 })
 
 const validationToastMessage = computed(() =>
+  errors.username ||
   errors.email ||
   errors.password ||
   errors.confirmPassword ||
@@ -557,6 +588,22 @@ function syncAffiliateReferralCode(): string {
   return code
 }
 
+function buildRegisterPayload(affCode: string) {
+  const username = formData.username.trim()
+  return {
+    email: formData.email,
+    password: formData.password,
+    ...(requireRealName.value || username ? { username } : {}),
+    turnstile_token:
+      turnstileEnabled.value || aliyunCaptchaEnabled.value ? turnstileToken.value : undefined,
+    tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
+    tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined,
+    promo_code: formData.promo_code || undefined,
+    invitation_code: formData.invitation_code || undefined,
+    ...(affCode ? { aff_code: affCode } : {})
+  }
+}
+
 // ==================== Lifecycle ====================
 
 onMounted(async () => {
@@ -566,6 +613,12 @@ onMounted(async () => {
     const settings = await getPublicSettings()
     registrationEnabled.value = settings.registration_enabled
     emailVerifyEnabled.value = settings.email_verify_enabled
+    registrationMode.value =
+      settings.registration_mode === 'require_real_name' ? 'require_real_name' : 'standard'
+    if (!requireRealName.value) {
+      formData.username = ''
+      errors.username = ''
+    }
     promoCodeEnabled.value = settings.promo_code_enabled
     invitationCodeEnabled.value = settings.invitation_code_enabled
     affiliateEnabled.value = settings.affiliate_enabled
@@ -579,11 +632,12 @@ onMounted(async () => {
     aliyunCaptchaPrefix.value = settings.aliyun_captcha_prefix || ''
     aliyunCaptchaRegion.value = settings.aliyun_captcha_region || 'cn'
     siteName.value = resolveTokenPortName(settings.site_name)
-    linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled
-    wechatOAuthEnabled.value = isWeChatWebOAuthEnabled(settings)
-    oidcOAuthEnabled.value = settings.oidc_oauth_enabled
+    // TokenPort: 暂时下线第三方登录入口（LinuxDo / 微信 / OIDC）
+    linuxdoOAuthEnabled.value = false
+    wechatOAuthEnabled.value = false
+    oidcOAuthEnabled.value = false
     oidcOAuthProviderName.value = settings.oidc_oauth_provider_name || 'OIDC'
-    githubOAuthEnabled.value = settings.github_oauth_enabled
+    githubOAuthEnabled.value = false
     googleOAuthEnabled.value = settings.google_oauth_enabled
     registrationEmailSuffixWhitelist.value = normalizeRegistrationEmailSuffixWhitelist(
       settings.registration_email_suffix_whitelist || []
@@ -928,6 +982,7 @@ function validateForm(): boolean {
   errors.email = ''
   errors.password = ''
   errors.confirmPassword = ''
+  errors.username = ''
   errors.turnstile = ''
   errors.invitation_code = ''
 
@@ -939,6 +994,21 @@ function validateForm(): boolean {
       showAgreementModal.value = true
     }
     return false
+  }
+
+  // Real name is required only in require_real_name registration mode
+  if (requireRealName.value) {
+    const realName = formData.username.trim()
+    if (!realName) {
+      errors.username = t('auth.realNameRequired')
+      isValid = false
+    } else if ([...realName].length < 2) {
+      errors.username = t('auth.realNameMinLength')
+      isValid = false
+    } else if ([...realName].length > 50) {
+      errors.username = t('auth.realNameMaxLength')
+      isValid = false
+    }
   }
 
   // Email validation
@@ -1056,20 +1126,7 @@ async function handleRegister(): Promise<void> {
     // If email verification is enabled, redirect to verification page
     if (emailVerifyEnabled.value) {
       // Store registration data in sessionStorage
-      sessionStorage.setItem(
-        'register_data',
-        JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          turnstile_token:
-            turnstileEnabled.value || aliyunCaptchaEnabled.value ? turnstileToken.value : undefined,
-          tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
-          tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined,
-          promo_code: formData.promo_code || undefined,
-          invitation_code: formData.invitation_code || undefined,
-          ...(affCode ? { aff_code: affCode } : {})
-        })
-      )
+      sessionStorage.setItem('register_data', JSON.stringify(buildRegisterPayload(affCode)))
 
       // Navigate to email verification page
       await router.push('/email-verify')
@@ -1077,17 +1134,7 @@ async function handleRegister(): Promise<void> {
     }
 
     // Otherwise, directly register
-    await authStore.register({
-      email: formData.email,
-      password: formData.password,
-      turnstile_token:
-        turnstileEnabled.value || aliyunCaptchaEnabled.value ? turnstileToken.value : undefined,
-      tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
-      tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined,
-      promo_code: formData.promo_code || undefined,
-      invitation_code: formData.invitation_code || undefined,
-      ...(affCode ? { aff_code: affCode } : {})
-    })
+    await authStore.register(buildRegisterPayload(affCode))
     clearAffiliateReferralCode()
 
     // Show success toast
@@ -1118,6 +1165,13 @@ function buildRegistrationErrorMessage(error: unknown, fallback: string): string
 </script>
 
 <style scoped>
+.tp-register-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #0f9f8f;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.3s ease;

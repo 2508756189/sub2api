@@ -8,6 +8,10 @@ import zhCommon from "@/i18n/locales/zh/common";
 import zhSettings from "@/i18n/locales/zh/admin/settings";
 import SettingsView from "../SettingsView.vue";
 
+vi.mock("@/components/common/VersionBadge.vue", () => ({
+  default: { props: ["version"], template: "<span>{{ version }}</span>" },
+}));
+
 const {
   getSettings,
   updateSettings,
@@ -367,6 +371,7 @@ const ImageUploadStub = defineComponent({
 
 const baseSettingsResponse = {
   registration_enabled: true,
+  registration_mode: 'standard',
   email_verify_enabled: false,
   registration_email_suffix_whitelist: [],
   promo_code_enabled: true,
@@ -1882,7 +1887,7 @@ describe("admin SettingsView wechat connect controls", () => {
     ).toBe("/auth/wechat/callback");
   });
 
-  it("links GitHub OAuth Apps guide to GitHub developer settings", async () => {
+  it("keeps the retired GitHub OAuth setup hidden when it was previously enabled", async () => {
     getSettings.mockResolvedValueOnce({
       ...baseSettingsResponse,
       github_oauth_enabled: true,
@@ -1893,11 +1898,8 @@ describe("admin SettingsView wechat connect controls", () => {
     await flushPromises();
     await openSecurityTab(wrapper);
 
-    const link = wrapper.get('[data-testid="github-oauth-apps-guide-link"]');
-    expect(link.text()).toContain("OAuth Apps");
-    expect(link.attributes("href")).toBe("https://github.com/settings/developers");
-    expect(link.attributes("target")).toBe("_blank");
-    expect(link.attributes("rel")).toContain("noopener");
+    expect(wrapper.find('[data-testid="github-oauth-apps-guide-link"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain("Google");
   });
 
   it("saves WeChat Connect fields using the backend contract and clears the secret after save", async () => {

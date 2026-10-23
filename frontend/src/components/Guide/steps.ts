@@ -223,6 +223,28 @@ export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false):
       align: 'center',
       showButtons: ['close']
     }
+  },
+
+  // ========== 收尾：接入配置与退出 ==========
+  {
+    element: '[data-tour="keys-use-btn"]',
+    popover: {
+      title: t('onboarding.admin.useKey.title'),
+      description: t('onboarding.admin.useKey.description'),
+      side: 'left',
+      align: 'center',
+      showButtons: ['next', 'previous']
+    }
+  },
+  {
+    popover: {
+      title: t('onboarding.admin.done.title'),
+      description: t('onboarding.admin.done.description'),
+      align: 'center',
+      nextBtnText: t('onboarding.admin.done.nextBtn'),
+      prevBtnText: t('onboarding.admin.done.prevBtn'),
+      showButtons: ['next', 'previous', 'close']
+    }
   }
   ]
 
@@ -304,6 +326,36 @@ export const getUserSteps = (t: (key: string) => string): DriveStep[] => [
       side: 'left',
       align: 'center',
       showButtons: ['close']
+    }
+  },
+  {
+    element: '[data-tour="keys-use-btn"]',
+    popover: {
+      title: t('onboarding.user.useKey.title'),
+      description: t('onboarding.user.useKey.description'),
+      side: 'left',
+      align: 'center',
+      showButtons: ['next', 'previous']
+    }
+  },
+  {
+    element: '[data-tour="sidebar-usage"]',
+    popover: {
+      title: t('onboarding.user.usage.title'),
+      description: t('onboarding.user.usage.description'),
+      side: 'right',
+      align: 'center',
+      showButtons: ['next', 'previous']
+    }
+  },
+  {
+    popover: {
+      title: t('onboarding.user.done.title'),
+      description: t('onboarding.user.done.description'),
+      align: 'center',
+      nextBtnText: t('onboarding.user.done.nextBtn'),
+      prevBtnText: t('onboarding.user.done.prevBtn'),
+      showButtons: ['next', 'previous', 'close']
     }
   }
 ]

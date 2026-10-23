@@ -24,6 +24,31 @@ func (s *SettingService) IsRegistrationEnabled(ctx context.Context) bool {
 	return value == "true"
 }
 
+// GetRegistrationMode returns the active registration mode.
+// Missing/invalid values default to standard (no real-name requirement).
+func (s *SettingService) GetRegistrationMode(ctx context.Context) string {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyRegistrationMode)
+	if err != nil {
+		return RegistrationModeStandard
+	}
+	return NormalizeRegistrationMode(value)
+}
+
+// IsRegistrationRealNameRequired reports whether email registration must include a real name.
+func (s *SettingService) IsRegistrationRealNameRequired(ctx context.Context) bool {
+	return s.GetRegistrationMode(ctx) == RegistrationModeRequireRealName
+}
+
+// NormalizeRegistrationMode maps persisted / API values to a known registration mode.
+func NormalizeRegistrationMode(mode string) string {
+	switch strings.TrimSpace(strings.ToLower(mode)) {
+	case RegistrationModeRequireRealName, "employee", "staff", "require_name", "real_name":
+		return RegistrationModeRequireRealName
+	default:
+		return RegistrationModeStandard
+	}
+}
+
 // IsEmailVerifyEnabled 检查是否开启邮件验证
 func (s *SettingService) IsEmailVerifyEnabled(ctx context.Context) bool {
 	value, err := s.settingRepo.GetValue(ctx, SettingKeyEmailVerifyEnabled)

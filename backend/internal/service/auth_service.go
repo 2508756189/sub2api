@@ -46,6 +46,7 @@ var (
 	ErrServiceUnavailable      = infraerrors.ServiceUnavailable("SERVICE_UNAVAILABLE", "service temporarily unavailable")
 	ErrInvitationCodeRequired  = infraerrors.BadRequest("INVITATION_CODE_REQUIRED", "invitation code is required")
 	ErrInvitationCodeInvalid   = infraerrors.BadRequest("INVITATION_CODE_INVALID", "invalid or used invitation code")
+	ErrUsernameRequired        = infraerrors.BadRequest("USERNAME_REQUIRED", "real name is required")
 	ErrOAuthInvitationRequired = infraerrors.Forbidden("OAUTH_INVITATION_REQUIRED", "invitation code required to complete oauth registration")
 	ErrCaptchaProviderConflict = infraerrors.ServiceUnavailable("CAPTCHA_PROVIDER_CONFLICT", "multiple captcha providers are enabled")
 )
@@ -156,11 +157,11 @@ func (s *AuthService) SetAliyunCaptchaService(aliyunCaptchaService *AliyunCaptch
 
 // Register 用户注册，返回token和用户
 func (s *AuthService) Register(ctx context.Context, email, password string) (string, *User, error) {
-	return s.RegisterWithVerification(ctx, email, password, "", "", "", "")
+	return s.RegisterWithVerification(ctx, email, password, "", "", "", "", "")
 }
 
-// RegisterWithVerification 用户注册（支持邮件验证、优惠码、邀请码和邀请返利码），返回token和用户。
-func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode, affiliateCode string) (string, *User, error) {
+// RegisterWithVerification 用户注册（支持邮件验证、优惠码、邀请码、邀请返利码和真实姓名），返回token和用户。
+func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode, affiliateCode, username string) (string, *User, error) {
 	// 检查是否开放注册（默认关闭：settingService 未配置时不允许注册）
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return "", nil, ErrRegDisabled
@@ -234,10 +235,19 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		defaultRPMLimit = s.settingService.GetDefaultUserRPMLimit(ctx)
 	}
 
+	displayName := strings.TrimSpace(username)
+	if displayName == "" && s.settingService != nil && s.settingService.IsRegistrationRealNameRequired(ctx) {
+		return "", nil, ErrUsernameRequired
+	}
+	if len([]rune(displayName)) > 100 {
+		displayName = string([]rune(displayName)[:100])
+	}
+
 	// 创建用户
 	user := &User{
 		Email:        email,
 		PasswordHash: hashedPassword,
+		Username:     displayName,
 		Role:         RoleUser,
 		Balance:      grantPlan.Balance,
 		Concurrency:  grantPlan.Concurrency,

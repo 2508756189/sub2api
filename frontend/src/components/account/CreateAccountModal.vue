@@ -2347,9 +2347,9 @@
         />
       </div>
 
-      <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
+      <!-- 配额控制 (非 Anthropic apikey/bedrock，以及 Vertex service_account) -->
       <div
-        v-else-if="form.type === 'apikey' || form.type === 'bedrock'"
+        v-else-if="supportsAccountQuota(form.type)"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -2886,7 +2886,7 @@
             <div>
               <label class="input-label">{{ t('admin.accounts.quotaControl.windowCost.limit') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">{{ billingSymbol }}</span>
                 <input
                   v-model.number="windowCostLimit"
                   type="number"
@@ -2901,7 +2901,7 @@
             <div>
               <label class="input-label">{{ t('admin.accounts.quotaControl.windowCost.stickyReserve') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">{{ billingSymbol }}</span>
                 <input
                   v-model.number="windowCostStickyReserve"
                   type="number"
@@ -4165,6 +4165,7 @@ import Toggle from '@/components/common/Toggle.vue'
 import GrokBaseUrlPresets from '@/components/account/GrokBaseUrlPresets.vue'
 import CnBaseUrlPresets from '@/components/account/CnBaseUrlPresets.vue'
 import { applyExplicitCacheUpstreamCredentials, isOfficialGeminiBaseUrl } from '@/utils/geminiExplicitCache'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import OpenCodeGoProtocolRulesEditor from '@/components/account/OpenCodeGoProtocolRulesEditor.vue'
 import HeaderOverrideEditor from '@/components/account/HeaderOverrideEditor.vue'
 import { allSelectedGroupsEnableLongContextPricing } from '@/components/account/longContextBilling'
@@ -4203,6 +4204,7 @@ import {
   parseDateTimeLocalInput
 } from '@/utils/format'
 import { createStableObjectKeyResolver } from '@/utils/stableObjectKey'
+import { supportsAccountQuota } from '@/utils/accountQuota'
 import { getAccountExpiryTimestamp } from '@/components/account/accountExpiry'
 import { VERTEX_LOCATION_OPTIONS } from '@/constants/account'
 import {
@@ -4233,6 +4235,7 @@ interface OAuthFlowExposed {
 }
 
 const { t } = useI18n()
+const billingSymbol = getBillingCurrencySymbol()
 const browserTimeZone = getBrowserTimeZone()
 
 const oauthStepTitle = computed(() => {
@@ -6282,9 +6285,9 @@ const createAccountAndFinish = async (
   if (!applyTempUnschedConfig(credentials)) {
     return
   }
-  // Inject quota limits for apikey/bedrock accounts
+  // Inject quota limits for apikey/bedrock/service_account accounts
   let finalExtra = withUpstreamRequestIdHeader(extra)
-  if (type === 'apikey' || type === 'bedrock') {
+  if (supportsAccountQuota(type)) {
     const quotaExtra: Record<string, unknown> = { ...(finalExtra || {}) }
     if (editQuotaLimit.value != null && editQuotaLimit.value > 0) {
       quotaExtra.quota_limit = editQuotaLimit.value

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { getBillingCurrencySymbol } from '@/tokenport/billing/currency'
 import { extractConnectorModelOptions } from '../connectorModelOptions'
 import type { UserAvailableChannel } from '@/api/channels'
+
+const sym = getBillingCurrencySymbol()
 
 describe('connectorModelOptions', () => {
   it('extracts models with pricing for the selected platform and group', () => {
@@ -61,7 +64,7 @@ describe('connectorModelOptions', () => {
 
     expect(options).toHaveLength(1)
     expect(options[0].name).toBe('gpt-test')
-    expect(options[0].pricingSummary).toContain('输入 $1')
-    expect(options[0].pricingSummary).toContain('输出 $4')
+    expect(options[0].pricingSummary).toContain(`输入 ${sym}1`)
+    expect(options[0].pricingSummary).toContain(`输出 ${sym}4`)
   })
 })

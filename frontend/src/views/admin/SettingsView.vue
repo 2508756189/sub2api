@@ -1451,6 +1451,32 @@
                 <Toggle v-model="form.registration_enabled" />
               </div>
 
+              <!-- Registration Mode -->
+              <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
+                <label
+                  for="registration-mode"
+                  class="font-medium text-gray-900 dark:text-white"
+                >
+                  {{ t("admin.settings.registration.registrationMode") }}
+                </label>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {{ t("admin.settings.registration.registrationModeHint") }}
+                </p>
+                <select
+                  id="registration-mode"
+                  v-model="form.registration_mode"
+                  class="input mt-3 w-full max-w-md"
+                  data-testid="registration-mode"
+                >
+                  <option value="standard">
+                    {{ t("admin.settings.registration.modeStandard") }}
+                  </option>
+                  <option value="require_real_name">
+                    {{ t("admin.settings.registration.modeRequireRealName") }}
+                  </option>
+                </select>
+              </div>
+
               <!-- Email Verification -->
               <div
                 class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
@@ -2437,8 +2463,8 @@
             </div>
           </div>
 
-          <!-- LinuxDo Connect OAuth 登录 -->
-          <div class="card">
+          <!-- TokenPort: LinuxDo Connect 登录模块已下线，保留后端字段兼容存量数据 -->
+          <div v-if="false" class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -2555,7 +2581,7 @@
             </div>
           </div>
 
-          <!-- GitHub / Google 邮箱快捷登录 -->
+          <!-- Google 邮箱快捷登录（TokenPort 已下线 GitHub 登录/指引） -->
           <div class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
@@ -2566,15 +2592,15 @@
               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {{
                   localText(
-                    "开启 GitHub 或 Google 邮箱授权登录后，系统会读取已验证邮箱，存在则直接登录，不存在则自动注册。",
-                    "After GitHub or Google email OAuth is enabled, the system reads a verified email, signs in matching users, and auto-registers missing users.",
+                    "开启 Google 邮箱授权登录后，系统会读取已验证邮箱，存在则直接登录，不存在则自动注册，无需再手填邮箱。",
+                    "After Google email OAuth is enabled, the system reads a verified email, signs in matching users, and auto-registers missing users without asking them to type the email again.",
                   )
                 }}
               </p>
             </div>
             <div class="space-y-6 p-6">
               <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                <div class="rounded-lg border border-gray-200 p-4 dark:border-dark-700">
+                <div v-if="false" class="rounded-lg border border-gray-200 p-4 dark:border-dark-700">
                   <div class="flex items-start justify-between gap-4">
                     <div>
                       <h3 class="font-medium text-gray-900 dark:text-white">
@@ -6450,6 +6476,14 @@
 	                <Toggle v-model="form.backend_mode_enabled" />
 	              </div>
 
+              <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-700 dark:bg-dark-800/60">
+                <div>
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">系统版本</p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">已从侧边栏移到此处，避免干扰日常导航</p>
+                </div>
+                <VersionBadge />
+              </div>
+
 	              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
                   <label
@@ -7953,7 +7987,7 @@
         <!-- Tab: Email -->
         <!-- Tab: Payment -->
         <div v-show="activeTab === 'payment'" class="space-y-6">
-          <BillingModeSettings />
+          <!-- TokenPort .50: CNY 展示态，不提供美元结算/汇率切换面板 -->
           <!-- Payment System Settings -->
           <div class="card">
             <div
@@ -8823,7 +8857,7 @@
                 <div class="relative">
                   <span
                     class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    >$</span
+                    >{{ billingSymbol }}</span
                   >
                   <input
                     v-model.number="form.balance_low_notify_threshold"
@@ -9062,10 +9096,11 @@ import {
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import PaymentProviderList from "@/components/payment/PaymentProviderList.vue";
 import PaymentProviderDialog from "@/components/payment/PaymentProviderDialog.vue";
-import BillingModeSettings from "@/tokenport/billing/BillingModeSettings.vue";
+import { getBillingCurrencySymbol } from "@/tokenport/billing/currency";
 import GroupBadge from "@/components/common/GroupBadge.vue";
 import GroupOptionItem from "@/components/common/GroupOptionItem.vue";
 import Toggle from "@/components/common/Toggle.vue";
+import VersionBadge from "@/components/common/VersionBadge.vue";
 import ProxySelector from "@/components/common/ProxySelector.vue";
 import ImageUpload from "@/components/common/ImageUpload.vue";
 import BackupSettings from "@/views/admin/BackupView.vue";
@@ -9107,6 +9142,7 @@ import {
 
 const { t, locale } = useI18n();
 const appStore = useAppStore();
+const billingSymbol = getBillingCurrencySymbol();
 // 关闭 step-up 开关是敏感操作：后端返回 STEP_UP_REQUIRED 时弹 TOTP 码重试
 const settingsStepUp = useStepUp();
 const adminSettingsStore = useAdminSettingsStore();
@@ -9814,6 +9850,7 @@ function platformQuotaRows(map: DefaultPlatformQuotasMap | undefined): string[] 
 const form = reactive<SettingsForm>({
   registration_enabled: true,
   email_verify_enabled: false,
+  registration_mode: "standard",
   registration_email_suffix_whitelist: [],
   registration_email_domain_quota_enabled: false,
   promo_code_enabled: true,
@@ -11121,6 +11158,10 @@ async function loadSettings() {
       : defaultFingerprintSignalRows();
     form.login_agreement_mode =
       settings.login_agreement_mode === "checkbox" ? "checkbox" : "modal";
+    form.registration_mode =
+      settings.registration_mode === "require_real_name"
+        ? "require_real_name"
+        : "standard";
     form.channel_monitor_mode =
       settings.channel_monitor_mode === "v2" ? "v2" : "v1";
     form.channel_monitor_hide_throughput = Boolean(
@@ -11519,6 +11560,10 @@ async function saveSettings() {
     const payload: UpdateSettingsRequest = {
       registration_enabled: form.registration_enabled,
       email_verify_enabled: form.email_verify_enabled,
+      registration_mode:
+        form.registration_mode === "require_real_name"
+          ? "require_real_name"
+          : "standard",
       registration_email_suffix_whitelist:
         registrationEmailSuffixWhitelistTags.value.map((suffix) =>
           suffix.startsWith("*.") ? suffix : `@${suffix}`,

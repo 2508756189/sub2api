@@ -396,6 +396,7 @@
               <button
                 @click="openUseKeyModal(row)"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+                data-tour="keys-use-btn"
               >
                 <Icon name="terminal" size="sm" />
                 <span class="text-xs">{{ t('keys.useKey') }}</span>
@@ -695,7 +696,7 @@
           <div class="space-y-4">
             <div>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{{ billingSymbol }}</span>
                 <input
                   v-model.number="formData.quota"
                   type="number"
@@ -761,7 +762,7 @@
             <div>
               <label class="input-label">{{ t('keys.rateLimit5h') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{{ billingSymbol }}</span>
                 <input
                   v-model.number="formData.rate_limit_5h"
                   type="number"
@@ -807,7 +808,7 @@
             <div>
               <label class="input-label">{{ t('keys.rateLimit1d') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{{ billingSymbol }}</span>
                 <input
                   v-model.number="formData.rate_limit_1d"
                   type="number"
@@ -853,7 +854,7 @@
             <div>
               <label class="input-label">{{ t('keys.rateLimit7d') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{{ billingSymbol }}</span>
                 <input
                   v-model.number="formData.rate_limit_7d"
                   type="number"
@@ -1183,7 +1184,9 @@ import BulkEditKeysModal from '@/components/keys/BulkEditKeysModal.vue'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
-import { formatBillingNumber } from '@/tokenport/billing/currency'
+import { formatBillingNumber, getBillingCurrencySymbol } from '@/tokenport/billing/currency'
+
+const billingSymbol = getBillingCurrencySymbol()
 import { maskApiKey } from '@/utils/maskApiKey'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import { platformBadgeLightClass } from '@/utils/platformColors'

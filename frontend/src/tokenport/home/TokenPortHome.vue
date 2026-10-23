@@ -26,6 +26,13 @@
           <div class="desktop-actions">
             <router-link v-if="showModelPlazaEntry" to="/model-plaza" class="nav-login">Model Plaza</router-link>
             <router-link :to="entryPath" class="nav-login">登录控制台</router-link>
+            <router-link
+              v-if="!isAuthenticated && registrationEnabled"
+              to="/register"
+              class="nav-login"
+            >
+              注册账号
+            </router-link>
             <router-link :to="entryPath" class="tp-button primary small">预约演示</router-link>
           </div>
           <button
@@ -48,6 +55,14 @@
           <a href="#deploy" @click="closeMenu">部署交付</a>
           <router-link v-if="showModelPlazaEntry" to="/model-plaza" @click="closeMenu">Model Plaza</router-link>
           <router-link :to="entryPath" class="mobile-outline" @click="closeMenu">登录控制台</router-link>
+          <router-link
+            v-if="!isAuthenticated && registrationEnabled"
+            to="/register"
+            class="mobile-outline"
+            @click="closeMenu"
+          >
+            注册账号
+          </router-link>
           <router-link :to="entryPath" class="tp-button primary" @click="closeMenu">预约演示</router-link>
         </nav>
       </div>
@@ -362,6 +377,9 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const entryPath = computed(() => isAuthenticated.value
   ? (authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
   : '/login')
+const registrationEnabled = computed(
+  () => appStore.cachedPublicSettings?.registration_enabled !== false,
+)
 const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
 const modelPlazaRequiresAuth = computed(() => appStore.cachedPublicSettings?.model_plaza_require_auth === true)
 const showModelPlazaEntry = computed(() => modelPlazaEnabled.value && (isAuthenticated.value || !modelPlazaRequiresAuth.value))

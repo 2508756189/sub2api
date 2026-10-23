@@ -15,7 +15,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
   const { t } = useI18n()
   const userStore = useUserStore()
   const onboardingStore = useOnboardingStore()
-  const storageVersion = 'v4_interactive' // Bump version for new tour type
+  const storageVersion = 'v6_autofill_required' // Bump when required-field autofill / submit gating changes
 
   // Timing constants for better maintainability
   const TIMING = {
@@ -24,18 +24,95 @@ export function useOnboardingTour(options: OnboardingOptions) {
     AUTO_START_DELAY_MS: 1000        // Delay before auto-starting tour
   } as const
 
+  // Required name fields that users often skip with "Next", then get stuck on Create
+  const TOUR_DEMO_INPUTS: Record<string, () => string> = {
+    '[data-tour="group-form-name"]': () => t('onboarding.demoValues.groupName'),
+    '[data-tour="account-form-name"]': () => t('onboarding.demoValues.accountName'),
+    '[data-tour="key-form-name"]': () => t('onboarding.demoValues.keyName')
+  }
+
+  // Submit buttons that must have their related name fields filled first
+  const TOUR_SUBMIT_REQUIRED_INPUTS: Record<string, string[]> = {
+    '[data-tour="group-form-submit"]': ['[data-tour="group-form-name"]'],
+    '[data-tour="account-form-submit"]': ['[data-tour="account-form-name"]'],
+    '[data-tour="key-form-submit"]': ['[data-tour="key-form-name"]']
+  }
+
   // Helper: Check if a step is interactive (only close button shown)
   const isInteractiveStep = (step: DriveStep): boolean => {
     return step.popover?.showButtons?.length === 1 &&
            step.popover.showButtons[0] === 'close'
   }
 
+  const resolveStepSelector = (step?: DriveStep | null): string | null => {
+    if (!step?.element || typeof step.element !== 'string') return null
+    return step.element
+  }
+
+  /** Fill an empty tour input and sync Vue v-model via input/change events. */
+  const fillTourInputIfEmpty = (selector: string, value: string): boolean => {
+    const el = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement | null
+    if (!el) return false
+    if (el.value.trim()) return true
+
+    const prototype =
+      el instanceof HTMLTextAreaElement
+        ? window.HTMLTextAreaElement.prototype
+        : window.HTMLInputElement.prototype
+    const valueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set
+    if (valueSetter) {
+      valueSetter.call(el, value)
+    } else {
+      el.value = value
+    }
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    el.dispatchEvent(new Event('change', { bubbles: true }))
+    return Boolean(el.value.trim())
+  }
+
+  const ensureTourDemoInput = (selector: string): boolean => {
+    const demoFactory = TOUR_DEMO_INPUTS[selector]
+    if (!demoFactory) return true
+    return fillTourInputIfEmpty(selector, demoFactory())
+  }
+
+  /** Before Create/Submit, autofill any required empty name fields so the tour cannot soft-lock. */
+  const ensureRequiredFieldsForStep = (step?: DriveStep | null): void => {
+    const selector = resolveStepSelector(step)
+    if (!selector) return
+
+    if (TOUR_DEMO_INPUTS[selector]) {
+      ensureTourDemoInput(selector)
+      return
+    }
+
+    const requiredInputs = TOUR_SUBMIT_REQUIRED_INPUTS[selector]
+    if (!requiredInputs) return
+    for (const inputSelector of requiredInputs) {
+      ensureTourDemoInput(inputSelector)
+    }
+  }
+
+  const clickTourTarget = (step: DriveStep): boolean => {
+    ensureRequiredFieldsForStep(step)
+    const targetElement =
+      typeof step.element === 'string'
+        ? (document.querySelector(step.element) as HTMLElement | null)
+        : (step.element as HTMLElement | null)
+    if (!targetElement) return false
+    const isClickable = !['INPUT', 'TEXTAREA', 'SELECT'].includes(targetElement.tagName)
+    if (!isClickable) return false
+    targetElement.click()
+    return true
+  }
+
   // Helper: Clean up click listener
   const cleanupClickListener = () => {
     if (!currentClickListener) return
-    const { element: el, handler, keyHandler, originalTabIndex, eventTypes } = currentClickListener
+    const { element: el, handler, keyHandler, originalTabIndex, eventTypes, useCapture } =
+      currentClickListener
     if (eventTypes) {
-      eventTypes.forEach(type => el.removeEventListener(type, handler))
+      eventTypes.forEach((type) => el.removeEventListener(type, handler, useCapture === true))
     }
     if (keyHandler) el.removeEventListener('keydown', keyHandler)
     if (originalTabIndex !== undefined) {
@@ -53,6 +130,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
     keyHandler?: (e: KeyboardEvent) => void
     originalTabIndex?: string | null
     eventTypes?: string[] // Track which event types were added
+    useCapture?: boolean
   } | null = null
   let autoStartTimer: ReturnType<typeof setTimeout> | null = null
   let globalKeyboardHandler: ((e: KeyboardEvent) => void) | null = null
@@ -134,17 +212,12 @@ export function useOnboardingTour(options: OnboardingOptions) {
           const currentIndex = state.activeIndex ?? 0
           const currentStep = steps[currentIndex]
 
-          if (currentStep && isInteractiveStep(currentStep) && currentStep.element) {
-            const targetElement = typeof currentStep.element === 'string'
-              ? document.querySelector(currentStep.element) as HTMLElement
-              : currentStep.element as HTMLElement
+          // Autofill required demo values before leaving a field step or clicking Create
+          ensureRequiredFieldsForStep(currentStep)
 
-            if (targetElement) {
-              const isClickable = !['INPUT', 'TEXTAREA', 'SELECT'].includes(targetElement.tagName)
-              if (isClickable) {
-                targetElement.click()
-                return
-              }
+          if (currentStep && isInteractiveStep(currentStep) && currentStep.element) {
+            if (clickTourTarget(currentStep)) {
+              return
             }
           }
           driverInstance?.moveNext()
@@ -284,6 +357,10 @@ export function useOnboardingTour(options: OnboardingOptions) {
            element = document.querySelector(step.element) as HTMLElement
         }
 
+        // Prefill required demo names as soon as the field (or its Create button) is highlighted,
+        // so users cannot soft-lock on HTML5 "please fill out this field".
+        ensureRequiredFieldsForStep(step)
+
         if (isInteractiveStep(step) && element) {
           const htmlElement = element as HTMLElement
 
@@ -293,7 +370,18 @@ export function useOnboardingTour(options: OnboardingOptions) {
                                 (htmlElement.tagName === 'BUTTON' && htmlElement.closest('form'))
 
           if (isSubmitButton) {
-            return // Don't bind any click listeners for submit buttons
+            // Capture-phase: refill required fields before HTML5 validation can block Create
+            const preSubmitHandler = () => {
+              ensureRequiredFieldsForStep(step)
+            }
+            htmlElement.addEventListener('click', preSubmitHandler, true)
+            currentClickListener = {
+              element: htmlElement,
+              handler: preSubmitHandler,
+              eventTypes: ['click'],
+              useCapture: true
+            }
+            return
           }
 
           const originalTabIndex = htmlElement.getAttribute('tabindex')
@@ -470,18 +558,11 @@ export function useOnboardingTour(options: OnboardingOptions) {
         const currentStep = steps[currentIndex]
 
         if (currentStep && isInteractiveStep(currentStep) && currentStep.element) {
-          const targetElement = typeof currentStep.element === 'string'
-            ? document.querySelector(currentStep.element) as HTMLElement
-            : currentStep.element as HTMLElement
-
-          if (targetElement) {
-            const isClickable = !['INPUT', 'TEXTAREA', 'SELECT'].includes(targetElement.tagName)
-            if (isClickable) {
-              targetElement.click()
-              return
-            }
+          if (clickTourTarget(currentStep)) {
+            return
           }
         }
+        ensureRequiredFieldsForStep(currentStep)
         driverInstance!.moveNext()
       }
       else if (e.key === 'ArrowLeft') {

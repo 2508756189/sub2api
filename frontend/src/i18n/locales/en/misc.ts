@@ -152,6 +152,11 @@ export default {
       flipPage: 'Flip Page',
       exit: 'Exit'
     },
+    demoValues: {
+      groupName: 'Test Group',
+      accountName: 'Test Account',
+      keyName: 'Test Key'
+    },
     // Admin tour steps
     admin: {
       welcome: {
@@ -170,7 +175,7 @@ export default {
       },
       groupName: {
         title: '✏️ 1. Group Name',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Give your group an easy-to-identify name.</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 Naming Suggestions:</b><ul style="margin: 8px 0 0 16px;"><li>"Test Group" - For testing</li><li>"VIP Premium" - High-quality service</li><li>"Free Trial" - Trial version</li></ul></div><p style="font-size: 13px; color: #6b7280;">Click "Next" when done</p></div>',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Give your group an easy-to-identify name. <b>Name is required</b>; if left empty, the tour auto-fills "Test Group" so you can edit it.</p><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>💡 Naming Suggestions:</b><ul style="margin: 8px 0 0 16px;"><li>"Test Group" - For testing</li><li>"VIP Premium" - High-quality service</li><li>"Free Trial" - Trial version</li></ul></div><p style="font-size: 13px; color: #6b7280;">Confirm the name, then click Next</p></div>',
         nextBtn: 'Next'
       },
       groupPlatform: {
@@ -190,7 +195,7 @@ export default {
       },
       groupSubmit: {
         title: '✅ Save Group',
-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Confirm the information and click create to save the group.</p><p style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Note:</b> Platform type cannot be changed after creation, but other settings can be edited anytime</p><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>📌 Next Step:</b> After creation, we\'ll add upstream accounts to this group</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Click "Create" button</p></div>'
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Confirm the information and click Create to save the group. If the name is empty, the tour auto-fills "Test Group" before submit so you do not get stuck here.</p><p style="padding: 8px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Note:</b> Platform type cannot be changed after creation, but other settings can be edited anytime</p><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>📌 Next Step:</b> After creation, we\'ll add upstream accounts to this group</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Click Create to continue</p></div>'
       },
       accountManage: {
         title: '🔗 Step 2: Add Account',
@@ -250,6 +255,16 @@ export default {
       keySubmit: {
         title: '🎉 Generate and Copy',
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">System will generate a complete API Key after clicking create.</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Important Reminder:</b><ul style="margin: 8px 0 0 16px;"><li>Key is only shown once, copy immediately</li><li>Need to regenerate if lost</li><li>Keep it safe, don\'t share with others</li></ul></div><div style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>🚀 Next Steps:</b><ul style="margin: 8px 0 0 16px;"><li>Copy the generated sk-xxx key</li><li>Use in any OpenAI-compatible client</li><li>Start experiencing AI services!</li></ul></div><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Click "Create" button</p></div>'
+      },
+      useKey: {
+        title: 'Access configuration center',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">After the key is created, click Use to open the access center.</p><ul style="margin-left: 18px; margin-bottom: 12px; font-size: 13px;"><li>Pick Codex / Claude / TeleAgent / OpenCode</li><li>Use Direct setup or Import CCS</li><li>Optionally select Skill Market packs</li></ul><p style="color: #0f9f8f; font-weight: 600;">Create a key first, then click Use</p></div>'
+      },
+      done: {
+        title: 'Tour complete',
+        description: '<div class="tokenport-tour-intro"><p>You finished the first-run path: groups → accounts → API keys → access setup.</p><p><b>Next:</b></p><ul><li>Check usage and cost</li><li>Sync Skill Market packs</li><li>Replay the tour anytime from the avatar menu</li></ul><p class="tokenport-tour-emphasis">Exit the tour and start using TokenPort →</p></div>',
+        nextBtn: 'Finish and exit',
+        prevBtn: 'Back'
       }
     },
     // User tour steps
@@ -281,6 +296,20 @@ export default {
       keySubmit: {
         title: '🎉 Complete Creation',
         description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Click to confirm and create your API key.</p><div style="padding: 8px 12px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 13px; margin-bottom: 12px;"><b>⚠️ Important:</b><ul style="margin: 8px 0 0 16px;"><li>Copy the key (sk-xxx) immediately after creation</li><li>Key is only shown once, need to regenerate if lost</li></ul></div><p style="padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>🚀 How to Use:</b><br/>Configure the key in any OpenAI-compatible client (like ChatBox, OpenCat, etc.) and start using!</p><p style="margin-top: 12px; color: #10b981; font-weight: 600;">👉 Click "Create" button</p></div>'
+      },
+      useKey: {
+        title: 'Open access setup',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Click Use to open the access center and generate Codex / Claude / TeleAgent configs.</p><p style="padding: 8px 12px; background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;">Supports direct scripts or CCS import when CC Switch is installed.</p></div>'
+      },
+      usage: {
+        title: 'Check usage',
+        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;">Usage shows tokens, cost, and per-key consumption for budgeting.</p><p style="color: #0f9f8f; font-weight: 600;">You can open it later from the sidebar</p></div>'
+      },
+      done: {
+        title: 'You are ready',
+        description: '<div class="tokenport-tour-intro"><p>Key creation and access entry are covered.</p><p><b>Suggested next:</b></p><ul><li>Import your preferred client</li><li>Install skills if needed</li><li>Verify calls on the usage page</li></ul><p class="tokenport-tour-emphasis">Click finish to exit the tour →</p></div>',
+        nextBtn: 'Finish and exit',
+        prevBtn: 'Back'
       }
     }
   },
